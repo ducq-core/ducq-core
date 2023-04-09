@@ -6,7 +6,7 @@
 #include "../src/ducq.h"
 
 
-void error_0_return_ok(void** state) {
+void state_0_return_ok(void** state) {
 	// arrange
 	const char *expected = "ok";
 	ducq_state d_state = DUCQ_OK;
@@ -19,7 +19,7 @@ void error_0_return_ok(void** state) {
 }
 	
 
-void error_return_msg(void** state) {
+void state_return_msg(void** state) {
 	// arrange
 	const char *expected = "message invalid";
 	ducq_state d_state = DUCQ_EMSGINV;
@@ -32,7 +32,7 @@ void error_return_msg(void** state) {
 }
 
 
-void error_negative_return_msg(void** state) {
+void state_negative_return_msg(void** state) {
 	// arrange
 	const char *expected = "message invalid";
 	ducq_state d_state = -DUCQ_EMSGINV;
@@ -46,7 +46,7 @@ void error_negative_return_msg(void** state) {
 }
 
 
-void error_out_of_range_return_unknown(void** state) {
+void state_out_of_range_return_unknown(void** state) {
 	// arrange
 	const char *expected = "unknown";
 	int out_of_range = 999;
@@ -58,7 +58,7 @@ void error_out_of_range_return_unknown(void** state) {
 }
 
 
-void error_negative_out_of_range_return_unknown(void** state) {
+void state_negative_out_of_range_return_unknown(void** state) {
 	// arrange
 	const char *expected = "unknown";
 	int out_of_range = -999;

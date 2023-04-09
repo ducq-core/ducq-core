@@ -39,7 +39,7 @@ typedef struct ducq_i {
 ducq_state  ducq_conn(ducq_i *ducq) {
 	return ducq->tbl->conn(ducq);
 }
-ducq_state  ducq_send(ducq_i *ducq, void *buf, size_t *size) {
+ducq_state  ducq_send(ducq_i *ducq, const void *buf, size_t *size) {
 	return ducq->tbl->send(ducq, buf, size);
 }
 ducq_state  ducq_recv(ducq_i *ducq, void *buf, size_t *size) {
