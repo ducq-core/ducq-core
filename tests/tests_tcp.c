@@ -14,7 +14,7 @@
 #include "../src/ducq_vtbl.h"
 
 
-void tcp_connect_ok(void** state) {
+void tcp_connect_ok(void **state) {
 	// arrange
 	int fd = 4;
 	will_return_count(inet_tcp_connect, fd, 1);
@@ -32,7 +32,7 @@ void tcp_connect_ok(void** state) {
 }
 
 
-void tcp_connect_econnect(void** state) {
+void tcp_connect_econnect(void **state) {
 	// arrange
 	int fd = -1;
 	will_return_count(inet_tcp_connect, fd, 1);
@@ -50,7 +50,7 @@ void tcp_connect_econnect(void** state) {
 }
 
 
-void tcp_close_ok(void** state) {
+void tcp_close_ok(void **state) {
 	// arrange
 	int rc = 0;
 	will_return_count(inet_close, rc, 1);
@@ -68,7 +68,7 @@ void tcp_close_ok(void** state) {
 }
 
 
-void tcp_close_eclose(void** state) {
+void tcp_close_eclose(void **state) {
 	// arrange
 	int rc = -1;
 	will_return_count(inet_close, rc, 1);
@@ -87,7 +87,7 @@ void tcp_close_eclose(void** state) {
 
 
 
-void tcp_id_ok(void** state) {
+void tcp_id_ok(void **state) {
 	// arrange
 	char expected_id[] = "TCP:__id__";
 	expect_function_call(inet_peer_socket_tostring);
@@ -104,7 +104,7 @@ void tcp_id_ok(void** state) {
 }
 
 
-void tcp_id_called_only_once(void** state) {
+void tcp_id_called_only_once(void **state) {
 	// arrange
 	char expected_id[] = "TCP:__id__";
 	expect_function_calls(inet_peer_socket_tostring, 1);
@@ -124,7 +124,7 @@ void tcp_id_called_only_once(void** state) {
 
 
 
-void tcp_eq_ok(void** state) {
+void tcp_eq_ok(void **state) {
 	// arrange
 	ducq_i *ducq_a = ducq_new_tcp(10, NULL, NULL);
 	ducq_i *ducq_b = ducq_new_tcp(10, NULL, NULL);
@@ -141,7 +141,7 @@ void tcp_eq_ok(void** state) {
 	ducq_free(ducq_b);
 }
 
-void tcp_eq_ok_fd_not_equal(void** state) {
+void tcp_eq_ok_fd_not_equal(void **state) {
 	// arrange
 	ducq_i *ducq_a = ducq_new_tcp(10, NULL, NULL);
 	ducq_i *ducq_b = ducq_new_tcp(99, NULL, NULL);
@@ -158,7 +158,7 @@ void tcp_eq_ok_fd_not_equal(void** state) {
 	ducq_free(ducq_b);
 }
 
-void tcp_eq_ok_vtbl_not_equal(void** state) {
+void tcp_eq_ok_vtbl_not_equal(void **state) {
 	// arrange
 	ducq_i *ducq_a = ducq_new_tcp(10, NULL, NULL);
 	struct ducq_mock_s {
@@ -178,7 +178,7 @@ void tcp_eq_ok_vtbl_not_equal(void** state) {
 }
 
 
-void tcp_copy_is_equal(void** state) {
+void tcp_copy_is_equal(void **state) {
 	// arrange
 	ducq_i *ducq_a = ducq_new_tcp(10, NULL, NULL);
 
@@ -197,7 +197,7 @@ void tcp_copy_is_equal(void** state) {
 
 
 
-void tcp_timeout_ok(void** state) {
+void tcp_timeout_ok(void **state) {
 	// arrange
 	ducq_i *ducq = ducq_new_tcp(10, NULL, NULL);
 	ducq_state expected_state = DUCQ_OK;
@@ -214,7 +214,7 @@ void tcp_timeout_ok(void** state) {
 	// teardown
 	ducq_free(ducq);
 }
-void tcp_timeout_err(void** state) {
+void tcp_timeout_err(void **state) {
 	// arrange
 	ducq_i *ducq = ducq_new_tcp(10, NULL, NULL);
 	ducq_state expected_state = DUCQ_ECOMMLAYER;
@@ -237,7 +237,7 @@ void tcp_timeout_err(void** state) {
 
 
 
-void tcp_send_count_ok(void** state) {
+void tcp_send_count_ok(void **state) {
 	// arrange
 	char payload[] = "hello, world";
 	int payload_count = strlen(payload);
@@ -267,7 +267,7 @@ void tcp_send_count_ok(void** state) {
 }
 
 
-void tcp_send_ewrite_header(void** state) {
+void tcp_send_ewrite_header(void **state) {
 	// arrange
 	char payload[] = "hello, world";
 	int payload_count = strlen(payload);
@@ -291,7 +291,7 @@ void tcp_send_ewrite_header(void** state) {
 	ducq_free(ducq);
 }
 
-void tcp_send_ewrite_payload(void** state) {
+void tcp_send_ewrite_payload(void **state) {
 	// arrange
 	char payload[] = "hello, world";
 	int payload_count = strlen(payload);
@@ -321,7 +321,7 @@ void tcp_send_ewrite_payload(void** state) {
 extern char READ_BUFFER[];
 extern int  pos;
 
-void tcp_recv_ok(void** state) {
+void tcp_recv_ok(void **state) {
 	// arrange
 	ducq_state expected_state = DUCQ_OK;
 	char expected_msg[] = "1234567890";
@@ -347,7 +347,7 @@ void tcp_recv_ok(void** state) {
 	ducq_free(ducq);
 }
 
-void tcp_recv_read_err_on_parsing_length(void** state) {
+void tcp_recv_read_err_on_parsing_length(void **state) {
 	// arrange
 	ducq_state expected_state = DUCQ_EREAD;
 	char expected_msg[] = "1234567890";
@@ -370,7 +370,7 @@ void tcp_recv_read_err_on_parsing_length(void** state) {
 	ducq_free(ducq);
 }
 
-void tcp_recv_connclosed_on_parsing_length(void** state) {
+void tcp_recv_connclosed_on_parsing_length(void **state) {
 	// arrange
 	ducq_state expected_state = DUCQ_ECONNCLOSED;
 	char expected_msg[] = "1234567890";
@@ -393,7 +393,7 @@ void tcp_recv_connclosed_on_parsing_length(void** state) {
 	ducq_free(ducq);
 }
 
-void tcp_recv_parsed_length_too_big_for_buffer_size(void** state) {
+void tcp_recv_parsed_length_too_big_for_buffer_size(void **state) {
 	// arrange
 	ducq_state expected_state = DUCQ_EMSGSIZE;
 	int four_digits_length = 9999;
@@ -418,7 +418,7 @@ void tcp_recv_parsed_length_too_big_for_buffer_size(void** state) {
 }
 
 
-void tcp_recv_no_endline_after_length(void** state) {
+void tcp_recv_no_endline_after_length(void **state) {
 	// arrange
 	ducq_state expected_state = DUCQ_EMSGINV;
 	char expected_msg[] = "1234567890";
@@ -440,7 +440,7 @@ void tcp_recv_no_endline_after_length(void** state) {
 	ducq_free(ducq);
 }
 
-void tcp_recv_parsed_length_stop_at_buf_size(void** state) {
+void tcp_recv_parsed_length_stop_at_buf_size(void **state) {
 	// arrange
 	ducq_state expected_state = DUCQ_EMSGSIZE;
 	char expected_msg[] =
@@ -467,7 +467,7 @@ void tcp_recv_parsed_length_stop_at_buf_size(void** state) {
 }
 
 
-void tcp_recv_msg_size_too_big_for_buffer(void** state) {
+void tcp_recv_msg_size_too_big_for_buffer(void **state) {
 	// arrange
 	ducq_state expected_state = DUCQ_EMSGSIZE;
 
@@ -489,7 +489,7 @@ void tcp_recv_msg_size_too_big_for_buffer(void** state) {
 }
 
 
-void tcp_recv_read_err_on_reading_payload(void** state) {
+void tcp_recv_read_err_on_reading_payload(void **state) {
 	// arrange
 	ducq_state expected_state = DUCQ_EREAD;
 	char expected_msg[] = "1234567890";
@@ -512,7 +512,7 @@ void tcp_recv_read_err_on_reading_payload(void** state) {
 	ducq_free(ducq);
 }
 
-void tcp_recv_connclosed_on_reading_payload(void** state) {
+void tcp_recv_connclosed_on_reading_payload(void **state) {
 	// arrange
 	ducq_state expected_state = DUCQ_ECONNCLOSED;
 	char expected_msg[] = "1234567890";
@@ -535,7 +535,7 @@ void tcp_recv_connclosed_on_reading_payload(void** state) {
 	ducq_free(ducq);
 }
 
-void tcp_recv_payload_length_smaller_than_expected(void** state) {
+void tcp_recv_payload_length_smaller_than_expected(void **state) {
 	// arrange
 	ducq_state expected_state = DUCQ_EREAD;
 	char expected_msg[] = "1234567890";
@@ -559,7 +559,7 @@ void tcp_recv_payload_length_smaller_than_expected(void** state) {
 	ducq_free(ducq);
 }
 
-void tcp_recv_payload_length_bigger_than_expected(void** state) {
+void tcp_recv_payload_length_bigger_than_expected(void **state) {
 	// arrange
 	ducq_state expected_state = DUCQ_EREAD;
 	char expected_msg[] = "1234567890";
@@ -583,7 +583,7 @@ void tcp_recv_payload_length_bigger_than_expected(void** state) {
 	ducq_free(ducq);
 }
 
-void tcp_recv_payload_size_minus_one_buffer_is_null_terminated(void** state) {
+void tcp_recv_payload_size_minus_one_buffer_is_null_terminated(void **state) {
 	// arrange
 #define BUFFER_LENGTH  11
 	ducq_state expected_state = DUCQ_OK;
@@ -610,7 +610,7 @@ void tcp_recv_payload_size_minus_one_buffer_is_null_terminated(void** state) {
 }
 
 
-void tcp_recv_payload_exactly_same_as_buffer_is_err(void** state) {
+void tcp_recv_payload_exactly_same_as_buffer_is_err(void **state) {
 	// arrange
 #define MESSAGE_LENGTH 11
 #define BUFFER_LENGTH  10

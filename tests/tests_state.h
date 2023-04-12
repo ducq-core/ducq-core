@@ -12,5 +12,7 @@
 	
 foreach_state_tests(build_forward_declarations)
 
+#define build_state_tests() \
+	foreach_state_tests(build_cmocka_unit_test)
 
 #endif // _STATE_TESTS_HEADER_

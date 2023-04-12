@@ -10,31 +10,44 @@
 
 #include "tests_state.h"
 #include "tests_tcp.h"
+#include "tests_srv.h"
+#include "tests_srv_sub.h"
+#include "tests_srv_cmd.h"
 
 
 
 
 
-const struct CMUnitTest errors[] = { 
-	foreach_state_tests(build_cmocka_unit_test) 
+const struct CMUnitTest state[] = { 
+	build_state_tests()
 };
 const struct CMUnitTest tcp[] = { 
-	foreach_tcp_tests(build_cmocka_unit_test) 
+	build_tcp_tests()
+};
+const struct CMUnitTest srv[] = { 
+	build_srv_tests()
+};
+const struct CMUnitTest sub[] = {
+	build_sub_tests()
+};
+const struct CMUnitTest cmd[] = {
+	build_cmd_tests()
 };
 
 
 int main(int argc, char** argv){
 
-
 		printf("\n\n");
-	cmocka_run_group_tests(errors, NULL, NULL);
+	cmocka_run_group_tests(state, NULL, NULL);
 		printf("\n\n");
 	cmocka_run_group_tests(tcp, NULL, NULL);
-		
-		
-	// 	printf("\n\n");
-	// cmocka_run_group_tests(basemsg, NULL, NULL);
-	// 	printf("\n\n");
+		printf("\n\n");
+	cmocka_run_group_tests(srv, NULL, NULL);
+		printf("\n\n");
+	cmocka_run_group_tests(sub, NULL, NULL);
+		printf("\n\n");
+	cmocka_run_group_tests(cmd, NULL, NULL);
+		printf("\n\n");
 
 	return 0;
 }

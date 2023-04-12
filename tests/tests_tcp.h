@@ -35,5 +35,7 @@
 	
 foreach_tcp_tests(build_forward_declarations)
 
+#define build_tcp_tests() \
+	foreach_tcp_tests(build_cmocka_unit_test) 
 
 #endif // _TCP_TESTS_HEADER_
