@@ -5,25 +5,25 @@
 #include "subscribe.h"
 
 static
-const char * parse_route(char *buffer, const char **end) {
+const char *_parse_route(char *buffer, const char **end) {
 	       strtok(buffer, " ");
 	return strtok(NULL,  "\n");
 }
 
 
-void list_subs(ducq_sub *sub) {
-	printf("listing all subs:\n");
-	while(sub) {
-		printf("\t'%s' listening on '%s'\n", sub->id, sub->route);
-		sub = sub->next;
-	}
-}
+// void list_subs(ducq_sub *sub) {
+// 	printf("listing all subs:\n");
+// 	while(sub) {
+// 		printf("\t'%s' listening on '%s'\n", sub->id, sub->route);
+// 		sub = sub->next;
+// 	}
+// }
 
-ducq_state subscribe(struct ducq_srv *srv, ducq_t *ducq, char *buffer, size_t size) {
-	printf("new subscriber :)\n");
+ducq_state subscribe(struct ducq_srv *srv, ducq_i *ducq, char *buffer, size_t size) {
+	// printf("new subscriber :)\n");
 
 	const char *end = NULL;
-	const char *route = parse_route(buffer, &end);
+	const char *route = _parse_route(buffer, &end);
 	if(route == NULL)
 		return DUCQ_EMSGINV;
 
@@ -45,7 +45,7 @@ ducq_state subscribe(struct ducq_srv *srv, ducq_t *ducq, char *buffer, size_t si
 	srv->subs = sub;
 
 
-list_subs(srv->subs);
+// list_subs(srv->subs);
 
 
 	return DUCQ_OK;

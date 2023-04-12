@@ -18,6 +18,7 @@
 	apply(DUCQ_ECLOSE,      "error closing connection") \
 	apply(DUCQ_EMSGINV,     "message invalid") \
 	apply(DUCQ_EMSGSIZE,    "message too big") \
+	apply(DUCQ_ENOCMD,      "command unknown") \
 	apply(DUCQ_EACK,        "no ack received") \
 
 

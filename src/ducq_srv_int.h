@@ -13,15 +13,15 @@ typedef struct ducq_cmd ducq_cmd;
 
 
 typedef struct ducq_sub {
-	const char   *id;
-	char   *route;
-	ducq_t *ducq;
-	ducq_sub  *next;
+	const char *id;
+	char       *route;
+	ducq_i     *ducq;
+	ducq_sub   *next;
 } ducq_sub;
 
 
 
-typedef ducq_state (*command_f)(ducq_srv*, ducq_t *, char *, size_t);
+typedef ducq_state (*command_f)(ducq_srv*, ducq_i*, char *, size_t);
 
 struct ducq_cmd_t {
 	char *name;
@@ -29,20 +29,22 @@ struct ducq_cmd_t {
 	command_f exec;
 };
 
-struct ducq_cmd {
-	struct ducq_cmd_t *cmd;
-	void *handle;
-};
 
 
 struct ducq_srv {
 	ducq_sub *subs;
-	struct ducq_cmd *cmds;
+	// struct ducq_cmd *cmds;
+	struct ducq_cmd_t **cmds;
+	void **hdls;
 	int ncmd;
 };
 
 
+const char * parse_command(const char *buffer, const char **end);
+const char * parse_route(const char *buffer, const char **end);
 
+ducq_state send_ack(ducq_i *ducq, ducq_state state);
 
+void ducq_sub_free(ducq_sub *sub);
 
 #endif // _DUCQ_SRV_INT_HEADER_

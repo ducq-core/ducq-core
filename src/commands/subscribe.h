@@ -3,6 +3,6 @@
 
 #include "../ducq_srv_int.h"
 
-ducq_state subscribe(struct ducq_srv *srv, ducq_t *ducq, char *buffer, size_t size);
+ducq_state subscribe(struct ducq_srv *srv, ducq_i *ducq, char *buffer, size_t size);
 
 #endif // _DUCQ_SUBSCRIBE_HEADER_

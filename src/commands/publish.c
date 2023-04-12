@@ -12,7 +12,7 @@ bool route_cmp(const char *a, const char *b, size_t size) {
 }
 
 static
-const char * parse_route(const char *buffer, const char **end) {
+const char * _parse_route(const char *buffer, const char **end) {
 	const char *start = strchr(buffer, ' ');
 	*end = strchr(start, '\n');
 
@@ -22,11 +22,11 @@ const char * parse_route(const char *buffer, const char **end) {
 }
 
 
-ducq_state publish(struct ducq_srv *srv, ducq_t *ducq, char *buffer, size_t size) {
+ducq_state publish(struct ducq_srv *srv, ducq_i *ducq, char *buffer, size_t size) {
 printf("new message :)\n");
 
 	const char *end;
-	const char *route = parse_route(buffer, &end);
+	const char *route = _parse_route(buffer, &end);
 	if(route == NULL)
 		return DUCQ_EMSGINV;
 
@@ -39,7 +39,7 @@ printf("new message :)\n");
 		ducq_state state = ducq_send(sub->ducq, buffer, &len);
 
 		if(state != DUCQ_OK) {
-			fprintf(stderr, "ducq_send() failed: %s\n", ducq_state_tostr_state(state));
+			fprintf(stderr, "ducq_send() failed: %s\n", ducq_state_tostr(state));
 			// unsubscribe, should be done on next reactor's read==0
 		}
 		else
