@@ -9,6 +9,7 @@
 	apply(srv_parse_command_no_space_returns_null) \
 	apply(srv_parse_route_ok) \
 	apply(srv_parse_route_after_parse_command_ok) \
+	apply(srv_parse_route_no_space_err) \
 	apply(srv_parse_route_no_newline_err) \
 	apply(srv_parse_send_ack_ok) \
 	apply(srv_parse_send_ack_returns_send_rc) \

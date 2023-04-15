@@ -5,7 +5,8 @@
 
 
 #define foreach_publish_tests(apply) \
-	apply(publish_) \
+	apply(publish_msg_invalide_if_cant_parse_route) \
+	apply(publish_subscribers_has_ducq_send_called)
 	
 
 foreach_publish_tests(build_forward_declarations)

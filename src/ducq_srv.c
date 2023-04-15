@@ -35,7 +35,9 @@ const char * parse_route(const char *buffer, const char **end) {
 	
 	if(*buffer != ' ')
 		buffer = strchr(buffer, ' ');
-	
+	if(!buffer)
+		return NULL;
+		
 	buffer++;
 	const char *ptr = strchr(buffer, '\n');
 
@@ -166,7 +168,7 @@ int _count_commands() {
 		return DUCQ_EFILE;
 
 	struct dirent *dp;
-	while(dp = readdir(dirp)) {
+	while( (dp = readdir(dirp)) ) {
 		char *ext = strrchr(dp->d_name, '.');
 		if(strcmp(ext, ".so") == 0)
 			count++;

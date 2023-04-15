@@ -14,7 +14,7 @@
 
 
 const struct CMUnitTest publish_command[] = {
-	build_subscribe_tests()
+	build_publish_tests()
 };
 const struct CMUnitTest subscribe_command[] = {
 	build_subscribe_tests()
@@ -26,7 +26,7 @@ int main(int argc, char** argv){
 		printf("\n\n");
 	cmocka_run_group_tests(publish_command, publish_tests_setup, publish_tests_teardown);
 		printf("\n\n");
-	cmocka_run_group_tests(subscribe_command, NULL, NULL);
+	cmocka_run_group_tests(subscribe_command, subscribe_tests_setup, subscribe_tests_teardown);
 
 	return 0;
 }

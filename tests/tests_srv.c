@@ -81,6 +81,19 @@ void srv_parse_route_after_parse_command_ok(void **state) {
 	assert_memory_equal(expected_route, actual_route, actual_route_end-actual_route);
 }
 
+void srv_parse_route_no_space_err(void **state) {
+	// arange
+	char msg[] = "commandROUTE\npayload";
+
+	// act
+	const char *actual_route_end = NULL;
+	const char *actual_route = parse_route(msg, &actual_route_end);
+
+	// audit
+	assert_null(actual_route);
+	assert_null(actual_route_end);
+}
+
 void srv_parse_route_no_newline_err(void **state) {
 	// arange
 	char msg[] = "command ROUTEpayload";
