@@ -10,7 +10,7 @@
 
 #include "tests_state.h"
 #include "tests_tcp.h"
-#include "tests_srv.h"
+#include "tests_srv_parse.h"
 #include "tests_srv_sub.h"
 #include "tests_srv_cmd.h"
 

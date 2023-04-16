@@ -90,7 +90,7 @@ void tcp_close_eclose(void **state) {
 void tcp_id_ok(void **state) {
 	// arrange
 	char expected_id[] = "TCP:__id__";
-	expect_function_call(inet_peer_socket_tostring);
+	expect_value(inet_socket_tostring, self, false);
 
 	// act
 	ducq_i *ducq = ducq_new_tcp(-1, NULL, NULL);
@@ -107,7 +107,7 @@ void tcp_id_ok(void **state) {
 void tcp_id_called_only_once(void **state) {
 	// arrange
 	char expected_id[] = "TCP:__id__";
-	expect_function_calls(inet_peer_socket_tostring, 1);
+		expect_value(inet_socket_tostring, self, false);
 
 	// act
 	ducq_i *ducq = ducq_new_tcp(-1, NULL, NULL);

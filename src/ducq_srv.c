@@ -8,13 +8,13 @@
 #include "ducq_srv.h"
 #include "ducq_srv_int.h"
 
-#ifdef __linux__
+#ifndef __linux__
+	#warning "as of now, ducq server is supported on linux only"
+#else
 	#include <dirent.h>
 	#include <dlfcn.h>
 	#include <linux/limits.h> // PATH_MAX
-#else
-	#error "as of now, ducq server is supported on linux only"
-#endif
+
 
 
 
@@ -283,3 +283,8 @@ void ducq_srv_free(ducq_srv* srv) {
 
 	free(srv);
 }
+
+
+
+
+#endif // #ifndef __linux__

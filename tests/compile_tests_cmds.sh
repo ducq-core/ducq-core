@@ -1,3 +1,6 @@
+set -e
+
+
 src=../../src
 cmds=../../src/commands
 tests=..
@@ -23,11 +26,12 @@ gcc \
 	${tests}/tests_cmd_publish.c \
 	${tests}/tests_cmd_subscribe.c \
 	${tests}/unit_tests_cmd.c \
-	${tests}/tests_cmds.c \
+	${tests}/main_cmds.c \
 	-o tests_cmds.out \
 	-ldl \
 	-lcmocka
 
 
 
+valgrind ./tests_cmds.out
 

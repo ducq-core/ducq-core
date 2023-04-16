@@ -28,7 +28,7 @@ int ducq_tcp_recv(int fd, char *ptr, size_t size) {
 	char *end   = start + size - 1;
 	
 	while ( (n = readn(fd, ptr, 1)) > 0){
-		if(!isdigit(*ptr))
+		if(!isdigit((int)*ptr))
 			break;
 
 		ptr++;
@@ -91,8 +91,7 @@ const char *_id(ducq_i *ducq) {
 	if(tcp->id[0] != '\0') return tcp->id;
 
 	int n = snprintf(tcp->id, MAX_ID, "TCP:");
-	size_t size = MAX_ID - n;
-	inet_peer_socket_tostring(tcp->fd, tcp->id + n, &size);
+	inet_peer_socket_tostring(tcp->fd, tcp->id + n, MAX_ID - n);
 	return tcp->id;
 }
 static

@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "tests_srv.h"
+#include "tests_srv_parse.h"
 
 
 #include "../src/ducq_srv.h"

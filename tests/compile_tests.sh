@@ -1,3 +1,5 @@
+set -e
+
 src=../../src
 tests=..
 
@@ -6,7 +8,7 @@ cd build
 
 gcc -g -c -fPIC -Wall -c ${src}/ducq.c
 mkdir -p ./commands
-rm ./commands/*.so
+rm ./commands/*.so -f
 rm ./commands/_not_a_shared_object.txt -f
 gcc -g -c -fPIC -Wall -c ${tests}/mock_command_a.c
 gcc -g -shared -Wl,-Bsymbolic mock_command_a.o ducq.o -o ./commands/mock_command_a.so
@@ -29,10 +31,15 @@ gcc \
 	${tests}/mock_inet.c \
 	${tests}/tests_srv_cmd.c \
 	${tests}/tests_srv_sub.c \
-	${tests}/tests_srv.c \
+	${tests}/tests_srv_parse.c \
 	${tests}/tests_state.c \
 	${tests}/tests_tcp.c \
-	${tests}/tests.c \
+	${tests}/main.c \
 	-o tests.out \
 	-ldl \
 	-lcmocka
+
+
+
+
+valgrind ./tests.out
