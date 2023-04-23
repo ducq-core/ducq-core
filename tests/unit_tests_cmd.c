@@ -16,7 +16,7 @@ struct fixture * fix_new(const char *cmd_name) {
 	snprintf(path, 100, "./commands/%s.so", cmd_name);
 	fix->handle = dlopen(path, RTLD_NOW | RTLD_LOCAL);
 	if(!fix->handle) {
-		fprintf(stderr, "dlopen failed: %s", dlerror());
+		fprintf(stderr, "dlopen failed: %s\n", dlerror());
 		free(fix);
 		return NULL;
 	}
@@ -24,7 +24,7 @@ struct fixture * fix_new(const char *cmd_name) {
 	fix->command = dlsym(fix->handle, cmd_name);
 	char *err = dlerror();
 	if(!fix->command  || err) {
-		fprintf(stderr, "dlsym failed: %s", err);
+		fprintf(stderr, "dlsym failed: %s\n", err);
 		dlclose(fix->handle);
 		free(fix);
 		return NULL;
