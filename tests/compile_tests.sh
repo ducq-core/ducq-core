@@ -3,6 +3,7 @@ set -e
 src=../../src
 tests=..
 
+#rm -r build/
 mkdir -p build
 cd build
 

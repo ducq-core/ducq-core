@@ -61,6 +61,11 @@ void subscribe_add_subscriber_to_srv_subs(void **state) {
 
 	will_return(_copy, subscriber);
 
+	expect_value(_send, ducq, subscriber);
+	expect_any(_send, buf);
+	expect_any(_send, *count);
+	will_return(_send, DUCQ_OK);
+
 	ducq_state expected_state = DUCQ_OK;
 	char  expected_route[] = "ROUTE";
 	const char *expected_id = ducq_id(subscriber);
@@ -97,6 +102,12 @@ void subscribe_add_second_subscriber_to_srv_subs(void **state) {
 
 	will_return(_copy, subscriber1);
 	will_return(_copy, subscriber2);
+	
+	expect_value(_send, ducq, subscriber1);
+	expect_value(_send, ducq, subscriber2);
+	expect_any_count(_send, buf, 2);
+	expect_any_count(_send, *count, 2);
+	will_return_count(_send, DUCQ_OK, 2);
 
 	ducq_state expected_state = DUCQ_OK;
 	char  expected_route[] = "ROUTE";
@@ -128,7 +139,6 @@ void subscribe_add_second_subscriber_to_srv_subs(void **state) {
 }
 
 
-
 void subscribe_mem_error_cleans_up(void **state) {
 //arrange
 	command_f subscribe = get_command(state);
@@ -151,5 +161,41 @@ void subscribe_mem_error_cleans_up(void **state) {
 
 	//teardown
 	ducq_srv_free(srv);
-	ducq_free(subscriber); // err, not freed
+	ducq_free(subscriber);
+}
+
+
+
+
+void subscribe_send_ack_fail_cleans_up(void **state) {
+//arrange
+	command_f subscribe = get_command(state);
+
+	ducq_srv *srv = ducq_srv_new();
+	ducq_i *subscriber = ducq_new_mock();
+	char buffer[] = "subscribe ROUTE\npayload";
+	size_t size = sizeof(buffer);
+
+	will_return(_copy, subscriber);
+	
+	expect_value(_send, ducq, subscriber);
+	expect_any(_send, buf);
+	expect_any(_send, *count);
+	will_return(_send, DUCQ_EWRITE);
+
+
+	expect_value(_close, ducq, subscriber);
+	will_return(_close, DUCQ_OK);
+
+	ducq_state expected_state = DUCQ_EWRITE;
+
+	// act
+	ducq_state actual_state = subscribe(srv, subscriber, buffer, size);
+
+	//audit
+	assert_int_equal(expected_state, actual_state);
+	assert_null(srv->subs);
+
+	//teardown
+	ducq_srv_free(srv);
 }

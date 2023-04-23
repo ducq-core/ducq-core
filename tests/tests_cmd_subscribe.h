@@ -8,7 +8,8 @@
 	apply(subscribe_msg_invalide_if_cant_parse_route) \
 	apply(subscribe_add_subscriber_to_srv_subs) \
 	apply(subscribe_add_second_subscriber_to_srv_subs) \
-	apply(subscribe_mem_error_cleans_up)
+	apply(subscribe_mem_error_cleans_up) \
+	apply(subscribe_send_ack_fail_cleans_up)
 	
 
 foreach_subscribe_tests(build_forward_declarations)

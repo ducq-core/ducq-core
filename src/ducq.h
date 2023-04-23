@@ -6,7 +6,6 @@
 
 
 #define _foreach_state(apply) \
-	apply(DUCQ_OK,          "ok") \
 	apply(DUCQ_ESTDC,       "std c lib error") \
 	apply(DUCQ_EMEMFAIL,    "os memory allocation failed") \
 	apply(DUCQ_EFILE,       "os file io error") \
@@ -23,6 +22,7 @@
 
 
 typedef enum ducq_state {
+	DUCQ_OK = 0,
 	#define list_constants(s, _) s,
 	_foreach_state(list_constants)
 	#undef list_constants
@@ -44,6 +44,8 @@ ducq_state  ducq_timeout(ducq_i *ducq, int timeout);
 ducq_state  ducq_close(ducq_i *ducq);
 void        ducq_free (ducq_i *ducq);
 
+
+typedef ducq_state (*ducq_apply_f)(void* ctx, ducq_i* ducq);
 
 
 #endif // _DUCQ_HEADER_

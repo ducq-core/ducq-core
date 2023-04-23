@@ -117,8 +117,7 @@ void srv_parse_send_ack_ok(void **state) {
 	will_return(_send, expected_state);
 	expect_value(_send, ducq, ducq);
 	expect_string(_send, buf, expected_message);
-	size_t expected_size = strlen(expected_message);
-	expect_memory(_send, count, &expected_size, sizeof(size_t));
+	expect_value(_send, *count,strlen(expected_message));
 
 	// act
 	ducq_state actual_state = send_ack(ducq, DUCQ_OK);
@@ -139,7 +138,7 @@ void srv_parse_send_ack_returns_send_rc(void **state) {
 	will_return(_send, expected_state);
 	expect_any(_send, ducq);
 	expect_any(_send, buf);
-	expect_any(_send, count);
+	expect_any(_send, *count);
 
 	// act
 	ducq_state actual_state = send_ack(ducq, DUCQ_OK);
@@ -161,8 +160,8 @@ void srv_parse_send_nack_ok(void **state) {
 	will_return(_send, expected_state);
 	expect_value(_send, ducq, ducq);
 	expect_string(_send, buf, expected_message);
-	size_t expected_size = strlen(expected_message);
-	expect_memory(_send, count, &expected_size, sizeof(size_t));
+	expect_value(_send, *count,strlen(expected_message));
+
 
 	// act
 	ducq_state actual_state = send_ack(ducq, DUCQ_EMSGSIZE);
@@ -183,7 +182,7 @@ void srv_parse_send_nack_returns_send_rc(void **state) {
 	will_return(_send, expected_state);
 	expect_any(_send, ducq);
 	expect_any(_send, buf);
-	expect_any(_send, count);
+	expect_any(_send, *count);
 
 	// act
 	ducq_state actual_state = send_ack(ducq, DUCQ_EMSGSIZE);

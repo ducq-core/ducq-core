@@ -45,6 +45,7 @@ const char * parse_route(const char *buffer, const char **end);
 
 ducq_state send_ack(ducq_i *ducq, ducq_state state);
 
+bool ducq_srv_unsubscribe(ducq_srv *srv, ducq_i *ducq);
 void ducq_sub_free(ducq_sub *sub);
 
 #endif // _DUCQ_SRV_INT_HEADER_

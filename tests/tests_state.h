@@ -4,6 +4,7 @@
 #include "unit_tests.h"
 
 #define foreach_state_tests(apply) \
+	apply(state_DUCQ_OK_has_value_0) \
 	apply(state_0_return_ok) \
 	apply(state_return_msg) \
 	apply(state_negative_return_msg) \

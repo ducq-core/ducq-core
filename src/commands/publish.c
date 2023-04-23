@@ -16,19 +16,34 @@ bool route_cmp(const char *a, const char *b, size_t size) {
 ducq_state publish(struct ducq_srv *srv, ducq_i *ducq, char *buffer, size_t size) {
 	const char *end;
 	const char *route = parse_route(buffer, &end);
-	if(route == NULL)
+	if(route == NULL) {
+		send_ack(ducq, DUCQ_EMSGINV);
+		ducq_close(ducq);
 		return DUCQ_EMSGINV;
-
-	for(ducq_sub *sub = srv->subs; sub; sub = sub->next) {
-		if( ! route_cmp(sub->route, route, end-route) )
-			continue;
-
-		size_t len = size;
-		ducq_send(sub->ducq, buffer, &len);
-			// ignore error, unsubscribe, should be done on next reactor's read or keepalive
 	}
 
-	return DUCQ_OK;
+	ducq_sub *sub = srv->subs;
+	while(sub) {
+		ducq_sub *next = sub->next;
+		if( route_cmp(sub->route, route, end-route) ) {
+			size_t len = size;
+			if( ducq_send(sub->ducq, buffer, &len) )
+				ducq_srv_unsubscribe(srv, sub->ducq);
+		}
+		sub = next;
+	}
+
+	// 	for(ducq_sub *sub = srv->subs; sub; sub = sub->next) {
+	// 	if( ! route_cmp(sub->route, route, end-route) )
+	// 		continue;
+
+	// 	size_t len = size;
+	// 	if( ducq_send(sub->ducq, buffer, &len) )
+	// 		ducq_srv_unsubscribe(srv, sub->ducq);
+	// }
+	
+
+	return ducq_close(ducq);;
 }
 
 

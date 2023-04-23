@@ -116,11 +116,6 @@ void cmd_dispatch_ducq_recv_receive_dispatch_params(void **state) {
 	expect_any  (mock_command_a, size);
 	will_return (mock_command_a, DUCQ_OK);
 
-	expect_any  (_send, ducq);
-	expect_any  (_send, buf);
-	expect_any  (_send, count);
-	will_return (_send, DUCQ_OK);
-
 	// act
 	ducq_state actual_state = ducq_srv_dispatch(srv, sender);
 
@@ -183,10 +178,6 @@ void cmd_dispatch_recv_msg_buffer_size_minus_one_ok(void **state) {
 	expect_any (mock_command_a, size);
 	will_return(mock_command_a, DUCQ_OK);
 
-	expect_any (_send, ducq);
-	expect_any (_send, buf);
-	expect_any (_send, count);
-	will_return(_send, DUCQ_OK);
 
 	// act
 	ducq_state actual_state = ducq_srv_dispatch(srv, sender);
@@ -254,11 +245,6 @@ void cmd_dispatch_command_a_receive_params(void **state) {
 	expect_value (mock_command_a, size, strlen(expected_msg) +1);
 	will_return  (mock_command_a, DUCQ_OK);
 
-	expect_any   (_send, ducq);
-	expect_any   (_send, buf);
-	expect_any   (_send, count);
-	will_return  (_send, DUCQ_OK);
-
 	// act
 	ducq_state actual_state = ducq_srv_dispatch(srv, sender);
 
@@ -292,11 +278,6 @@ void cmd_dispatch_command_b_receive_params(void **state) {
 	expect_string(mock_command_b, buffer, expected_msg);
 	expect_value (mock_command_b, size, strlen(expected_msg) +1);
 	will_return  (mock_command_b, DUCQ_OK);
-
-	expect_any   (_send, ducq);
-	expect_any   (_send, buf);
-	expect_any   (_send, count);
-	will_return  (_send, DUCQ_OK);
 
 	// act
 	ducq_state actual_state = ducq_srv_dispatch(srv, sender);
@@ -333,93 +314,6 @@ void cmd_dispatch_command_receive_buffer_always_null_terminated(void **state) {
 	expect_value (mock_command_a, size, expected_size);
 	will_return  (mock_command_a, DUCQ_OK);
 
-	expect_any   (_send, ducq);
-	expect_any   (_send, buf);
-	expect_any   (_send, count);
-	will_return  (_send, DUCQ_OK);
-
-	// act
-	ducq_state actual_state = ducq_srv_dispatch(srv, sender);
-
-	// audit
-	assert_int_equal(expected_state, actual_state);
-
-	// teardown
-	ducq_srv_free(srv);
-	ducq_free(sender);
-}
-
-
-
-
-void cmd_dispatch_sender_receive_ack(void **state) {
-	// arange
-	ducq_srv *srv = ducq_srv_new();
-	ducq_srv_load_commands(srv);
-	ducq_i *sender = ducq_new_mock();
-
-	ducq_state expected_state = DUCQ_OK;
-	char expected_ack_msg[] = "ACK *\n0\nok";
-	size_t expected_count = strlen(expected_ack_msg);
-	MOCK_CLIENT_RECV_BUFFER_LEN = snprintf(MOCK_CLIENT_RECV_BUFFER, BUFSIZ, "mock_command_a route/\npayload");
-
-
-	expect_any   (_recv, ducq);
-	expect_any   (_recv, ptr);
-	expect_any   (_recv, count);
-	will_return  (_recv, DUCQ_OK);
-
-	expect_any   (mock_command_a, srv);
-	expect_any   (mock_command_a, ducq);
-	expect_any   (mock_command_a, buffer);
-	expect_any   (mock_command_a, size);
-	will_return  (mock_command_a, DUCQ_OK);
-
-	expect_value (_send, ducq, sender);
-	expect_string(_send, buf, expected_ack_msg);
-	expect_memory(_send, count, &expected_count, sizeof(size_t));
-	will_return  (_send, DUCQ_OK);
-
-	// act
-	ducq_state actual_state = ducq_srv_dispatch(srv, sender);
-
-	// audit
-	assert_int_equal(expected_state, actual_state);
-
-	// teardown
-	ducq_srv_free(srv);
-	ducq_free(sender);
-}
-
-void cmd_dispatch_sender_receive_nack_with_command_rc(void **state) {
-	// arange
-	ducq_srv *srv = ducq_srv_new();
-	ducq_srv_load_commands(srv);
-	ducq_i *sender = ducq_new_mock();
-
-	ducq_state expected_state = DUCQ_EMEMFAIL;
-	char expected_nack_msg[100];
-	size_t expected_count = snprintf(expected_nack_msg, 100, 
-		"NACK *\n%d\n%s", DUCQ_EMEMFAIL, ducq_state_tostr(DUCQ_EMEMFAIL));
-
-	MOCK_CLIENT_RECV_BUFFER_LEN = snprintf(MOCK_CLIENT_RECV_BUFFER, BUFSIZ, "mock_command_a route/\npayload");	
-
-	expect_any   (_recv, ducq);
-	expect_any   (_recv, ptr);
-	expect_any   (_recv, count);
-	will_return  (_recv, DUCQ_OK);
-
-	expect_any   (mock_command_a, srv);
-	expect_any   (mock_command_a, ducq);
-	expect_any   (mock_command_a, buffer);
-	expect_any   (mock_command_a, size);
-	will_return  (mock_command_a, expected_state); // command's rc
-
-	expect_value (_send, ducq, sender);
-	expect_string(_send, buf, expected_nack_msg);
-	expect_memory(_send, count, &expected_count, sizeof(size_t));
-	will_return  (_send, DUCQ_OK);
-
 	// act
 	ducq_state actual_state = ducq_srv_dispatch(srv, sender);
 
@@ -453,8 +347,11 @@ void cmd_dispatch_sender_receive_nack_if_command_unknown(void **state) {
 
 	expect_value (_send, ducq, sender);
 	expect_string(_send, buf, expected_nack_msg);
-	expect_memory(_send, count, &expected_count, sizeof(size_t));
+	expect_value(_send, *count, expected_count);
 	will_return  (_send, DUCQ_OK);
+
+	expect_value (_close, ducq, sender);
+	will_return  (_close, DUCQ_OK);
 
 	// act
 	ducq_state actual_state = ducq_srv_dispatch(srv, sender);
@@ -471,7 +368,7 @@ void cmd_dispatch_sender_receive_nack_if_command_unknown(void **state) {
 
 
 
-void cmd_dispatch_returns_send_ack_state_over_command_state(void **state) {
+void cmd_dispatch_returns_command_state(void **state) {
 	// arange
 	ducq_srv *srv = ducq_srv_new();
 	ducq_srv_load_commands(srv);
@@ -491,12 +388,8 @@ void cmd_dispatch_returns_send_ack_state_over_command_state(void **state) {
 	expect_any  (mock_command_a, ducq);
 	expect_any  (mock_command_a, buffer);
 	expect_any  (mock_command_a, size);
-	will_return (mock_command_a, command_returned_state);
+	will_return (mock_command_a, expected_state);
 
-	expect_any  (_send, ducq);
-	expect_any  (_send, buf);
-	expect_any  (_send, count);
-	will_return (_send, expected_state);
 
 	// act
 	ducq_state actual_state = ducq_srv_dispatch(srv, sender);
@@ -508,3 +401,86 @@ void cmd_dispatch_returns_send_ack_state_over_command_state(void **state) {
 	ducq_srv_free(srv);
 	ducq_free(sender);
 }
+
+
+
+
+// void cmd_dispatch_sender_receive_ack(void **state) {
+// 	// arange
+// 	ducq_srv *srv = ducq_srv_new();
+// 	ducq_srv_load_commands(srv);
+// 	ducq_i *sender = ducq_new_mock();
+
+// 	ducq_state expected_state = DUCQ_OK;
+// 	char expected_ack_msg[] = "ACK *\n0\nok";
+// 	size_t expected_count = strlen(expected_ack_msg);
+// 	MOCK_CLIENT_RECV_BUFFER_LEN = snprintf(MOCK_CLIENT_RECV_BUFFER, BUFSIZ, "mock_command_a route/\npayload");
+
+
+// 	expect_any   (_recv, ducq);
+// 	expect_any   (_recv, ptr);
+// 	expect_any   (_recv, count);
+// 	will_return  (_recv, DUCQ_OK);
+
+// 	expect_any   (mock_command_a, srv);
+// 	expect_any   (mock_command_a, ducq);
+// 	expect_any   (mock_command_a, buffer);
+// 	expect_any   (mock_command_a, size);
+// 	will_return  (mock_command_a, DUCQ_OK);
+
+// 	expect_value (_send, ducq, sender);
+// 	expect_string(_send, buf, expected_ack_msg);
+// 	expect_memory(_send, count, &expected_count, sizeof(size_t));
+// 	will_return  (_send, DUCQ_OK);
+
+// 	// act
+// 	ducq_state actual_state = ducq_srv_dispatch(srv, sender);
+
+// 	// audit
+// 	assert_int_equal(expected_state, actual_state);
+
+// 	// teardown
+// 	ducq_srv_free(srv);
+// 	ducq_free(sender);
+// }
+
+// void cmd_dispatch_sender_receive_nack_with_command_rc(void **state) {
+// 	// arange
+// 	ducq_srv *srv = ducq_srv_new();
+// 	ducq_srv_load_commands(srv);
+// 	ducq_i *sender = ducq_new_mock();
+
+// 	ducq_state expected_state = DUCQ_EMEMFAIL;
+// 	char expected_nack_msg[100];
+// 	size_t expected_count = snprintf(expected_nack_msg, 100, 
+// 		"NACK *\n%d\n%s", DUCQ_EMEMFAIL, ducq_state_tostr(DUCQ_EMEMFAIL));
+
+// 	MOCK_CLIENT_RECV_BUFFER_LEN = snprintf(MOCK_CLIENT_RECV_BUFFER, BUFSIZ, "mock_command_a route/\npayload");	
+
+// 	expect_any   (_recv, ducq);
+// 	expect_any   (_recv, ptr);
+// 	expect_any   (_recv, count);
+// 	will_return  (_recv, DUCQ_OK);
+
+// 	expect_any   (mock_command_a, srv);
+// 	expect_any   (mock_command_a, ducq);
+// 	expect_any   (mock_command_a, buffer);
+// 	expect_any   (mock_command_a, size);
+// 	will_return  (mock_command_a, expected_state); // command's rc
+
+// 	expect_value (_send, ducq, sender);
+// 	expect_string(_send, buf, expected_nack_msg);
+// 	expect_memory(_send, count, &expected_count, sizeof(size_t));
+// 	will_return  (_send, DUCQ_OK);
+
+// 	// act
+// 	ducq_state actual_state = ducq_srv_dispatch(srv, sender);
+
+// 	// audit
+// 	assert_int_equal(expected_state, actual_state);
+
+// 	// teardown
+// 	ducq_srv_free(srv);
+// 	ducq_free(sender);
+// }
+

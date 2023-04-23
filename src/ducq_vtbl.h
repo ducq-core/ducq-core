@@ -20,6 +20,7 @@ typedef struct ducq_vtbl {
 	ducq_state   (* timeout) (ducq_i *ducq, int timeout);
 	ducq_state   (* close)   (ducq_i *ducq);
 	void         (* free)    (ducq_i *ducq);
+	void         (* dtor)    (ducq_i *ducq);
 } ducq_vtbl;
 
 

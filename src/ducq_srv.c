@@ -115,6 +115,8 @@ ducq_state _recv_msg(ducq_i *ducq, char *buffer, size_t *size) {
 	return DUCQ_OK;
 }
 ducq_state unknown(ducq_srv *srv, ducq_i *ducq, char *buffer, size_t size) {
+	send_ack(ducq, DUCQ_ENOCMD);
+	ducq_close(ducq);
 	return DUCQ_ENOCMD;
 }
 command_f _find_command(ducq_srv* srv, const char *buffer) {
@@ -145,9 +147,8 @@ ducq_state ducq_srv_dispatch(ducq_srv *srv, ducq_i *ducq) {
 
 	command_f command     = _find_command(srv, buffer);
 	ducq_state cmd_rc     = command(srv, ducq, buffer, size);
-	ducq_state send_state = send_ack(ducq, cmd_rc);
 
-	return send_state ? send_state : cmd_rc;
+	return cmd_rc;
 }
 
 
@@ -255,10 +256,10 @@ ducq_srv *ducq_srv_new() {
 
 void ducq_sub_free(ducq_sub *sub) {
 	if(!sub) return;
+	if(sub->route) free(sub->route);
 	if(sub->ducq) {
 		ducq_close(sub->ducq);
-		if(sub->ducq)  ducq_free(sub->ducq);
-		if(sub->route) free(sub->route);
+		ducq_free(sub->ducq);
 	}
 	free(sub);
 }

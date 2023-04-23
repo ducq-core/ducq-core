@@ -64,7 +64,7 @@ static
 ducq_state _send(ducq_i *ducq, const void *buf, size_t *count) {
 	check_expected(ducq);
 	check_expected(buf);
-	check_expected(count);
+	check_expected(*count);
 	return mock();
 }
 

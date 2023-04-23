@@ -12,6 +12,7 @@
 
 static
 const char *state_str[] = {
+	"ok",
 	#define list_msg(_, str) str,
 	_foreach_state(list_msg)
 	#undef list_msg

@@ -6,6 +6,21 @@
 #include "../src/ducq.h"
 
 
+
+void state_DUCQ_OK_has_value_0(void **state) {
+	assert_int_equal(0, DUCQ_OK);
+	if(DUCQ_OK) {
+		fail();
+	}
+
+	if(!DUCQ_OK) {
+		;
+	}
+	else {
+		fail();
+	}
+}
+
 void state_0_return_ok(void **state) {
 	// arrange
 	const char *expected = "ok";

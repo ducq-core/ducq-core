@@ -9,7 +9,8 @@ mkdir -p build
 cd build
 
 
-rm ./commands/*
+rm -f ./commands/*
+mkdir -p ./commands
 
 gcc -g -c -fPIC -Wall -c ${src}/ducq.c ${src}/ducq_srv.c 
 

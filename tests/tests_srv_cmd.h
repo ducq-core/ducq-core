@@ -15,10 +15,10 @@
 	apply(cmd_dispatch_command_a_receive_params) \
 	apply(cmd_dispatch_command_b_receive_params) \
 	apply(cmd_dispatch_command_receive_buffer_always_null_terminated) \
-	apply(cmd_dispatch_sender_receive_ack) \
-	apply(cmd_dispatch_sender_receive_nack_with_command_rc) \
 	apply(cmd_dispatch_sender_receive_nack_if_command_unknown) \
-	apply(cmd_dispatch_returns_send_ack_state_over_command_state)
+	apply(cmd_dispatch_returns_command_state)
+	// apply(cmd_dispatch_sender_receive_ack) \
+	// apply(cmd_dispatch_sender_receive_nack_with_command_rc) \
 	
 foreach_cmd_tests(build_forward_declarations)
 
