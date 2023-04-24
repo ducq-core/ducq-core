@@ -5,6 +5,9 @@ _*
 **/*.out
 **/*.a
 
+#build
+build/
+
 # Prerequisites
 *.d
 

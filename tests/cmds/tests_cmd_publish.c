@@ -109,8 +109,8 @@ void publish_subscribers_has_ducq_send_called(void **state) {
 	//teardown
 	ducq_free(publisher);
 
-	expect_any_always(_close, ducq);
-	will_return_always(_close, DUCQ_OK);
+	expect_any_count(_close, ducq, 3);
+	will_return_count(_close, DUCQ_OK, 3);
 	ducq_srv_free(srv);
 }
 
@@ -170,7 +170,7 @@ void publish_unsubcribe_sub_on_write_error(void **state) {
 	//teardown
 	ducq_free(publisher);
 
-	expect_any_always(_close, ducq);
-	will_return_always(_close, DUCQ_OK);
+	expect_any_count(_close, ducq, 2);
+	will_return_count(_close, DUCQ_OK, 2);
 	ducq_srv_free(srv);
 }

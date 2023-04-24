@@ -3,7 +3,7 @@
 #include <cmocka.h>
 
 
-#include "../src/ducq.h"
+#include "../../src/ducq.h"
 
 
 

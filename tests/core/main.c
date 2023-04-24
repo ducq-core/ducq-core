@@ -16,8 +16,6 @@
 
 
 
-
-
 const struct CMUnitTest state[] = { 
 	build_state_tests()
 };

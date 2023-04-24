@@ -10,8 +10,6 @@
 #include <string.h>
 
 
-
-
 char READ_BUFFER[BUFSIZ] = {};
 int  pos = 0;
 
@@ -21,12 +19,10 @@ ssize_t readn(int fd, void *vptr, size_t n) {
 	pos += n;
 	return mock();
 }
-
 ssize_t writen(int fd, const void *vptr, size_t n) {
 	check_expected(vptr);
 	return mock();
 }
-
 int inet_close(int fd) {
 	return mock();
 }
@@ -38,7 +34,6 @@ int inet_tcp_connect(const char *host, const char *service) {
 }
 char *inet_socket_tostring(int socket, int self, char *buffer, size_t len) {
 	check_expected(self);
-
 	len = snprintf(buffer, len, "__id__");
 	return buffer;
 }

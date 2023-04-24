@@ -4,8 +4,8 @@
 #include <stdint.h>
 #include <cmocka.h>
 
-#include "../src/ducq.h"
-#include "../src/ducq_srv_int.h"
+#include "../../src/ducq.h"
+#include "../../src/ducq_srv_int.h"
 
 
 ducq_state mock_command_err(struct ducq_srv *srv, ducq_i *ducq, char *buffer, size_t size) {
@@ -16,8 +16,6 @@ ducq_state mock_command_err(struct ducq_srv *srv, ducq_i *ducq, char *buffer, si
 
 	return mock();
 }
-
-
 
 struct ducq_cmd_t not_a_command = {
 	.name = "mock_command_err",
