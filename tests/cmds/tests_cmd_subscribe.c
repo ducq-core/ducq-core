@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <cmocka.h>
 
+#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -37,6 +38,13 @@ void subscribe_msg_invalide_if_cant_parse_route(void **state) {
 	ducq_i *subscriber = ducq_new_mock();
 	char buffer[] = "subscriberoute\npayload";
 	size_t size = sizeof(buffer);
+
+	char expected_msg[64] = "";
+	size_t count = snprintf(expected_msg, 64, "NACK *\n%d\n%s", expected_state, ducq_state_tostr(expected_state));
+	expect_value(_send, ducq, subscriber);
+	expect_string(_send, buf, expected_msg);
+	expect_value(_send, *count, count);
+	will_return(_send, DUCQ_OK);
 
 	// act
 	ducq_state actual_state = subscribe(srv, subscriber, buffer, size);

@@ -15,8 +15,10 @@
 ducq_state subscribe(struct ducq_srv *srv, ducq_i *ducq, char *buffer, size_t size) {
 	const char *end = NULL;
 	const char *route = parse_route(buffer, &end);
-	if(route == NULL)
+	if(route == NULL) {
+		send_ack(ducq, DUCQ_EMSGINV);
 		return DUCQ_EMSGINV;
+	}
 
 	ducq_sub *sub = malloc(sizeof(ducq_sub));
 	if(!sub) return DUCQ_EMEMFAIL;
