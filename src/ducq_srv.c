@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <signal.h>
 #include <errno.h>
 
 #include "ducq.h"
@@ -161,10 +162,10 @@ ducq_state ducq_srv_dispatch(ducq_srv *srv, ducq_i *ducq) {
 //
 
 static
-int _count_commands() {
+int _count_commands(const char *path) {
 	int count = 0;
 
-	DIR *dirp = opendir("./commands");
+	DIR *dirp = opendir(path);
 	if(dirp == NULL)
 		return DUCQ_EFILE;
 
@@ -181,20 +182,21 @@ int _count_commands() {
 	return count;
 }
 static
-void _load_command(ducq_srv* srv, struct dirent *dp) {
+void _load_command(ducq_srv* srv, const char *path, struct dirent *dp) {
 	char fullpath[PATH_MAX];
 	char *name = dp->d_name;
 	char *ext  = strrchr(name, '.');
 	if(strcmp(ext, ".so") != 0)
 		return;
-	snprintf(fullpath, PATH_MAX, "./commands/%s", name);
+	snprintf(fullpath, PATH_MAX, "%s/%s", path, name);
 
 	void *handle = dlopen(fullpath, RTLD_NOW | RTLD_LOCAL);
 	if(!handle) {
 		// fprintf(stderr, "dlopen() failed for: %s\n", dlerror());
 		return;
 	}
-
+	
+	(void)dlerror(); // clear
 	struct ducq_cmd_t *cmd = dlsym(handle, "command");
 	char *err = dlerror();
 	if(!cmd || err) {
@@ -208,8 +210,11 @@ void _load_command(ducq_srv* srv, struct dirent *dp) {
 
 	srv->ncmd++;
 }
-ducq_state ducq_srv_load_commands(ducq_srv* srv) {
-	int ncmd = _count_commands();
+ducq_state ducq_srv_load_commands_path(ducq_srv* srv, const char *path) {
+	if(path == NULL)
+		 path = "/usr/local/lib/ducq_commands";
+
+	int ncmd = _count_commands(path);
 	if( ncmd < 0 ) return ncmd;
 
 	void *mem = malloc( sizeof(void*) * ncmd * 2 );
@@ -219,12 +224,12 @@ ducq_state ducq_srv_load_commands(ducq_srv* srv) {
 	srv->ncmd = 0;
 
 
-	DIR *dirp = opendir("./commands");
+	DIR *dirp = opendir(path);
 	if(dirp == NULL) return DUCQ_EFILE;
 
 	struct dirent *dp;
 	while( (dp = readdir(dirp)) && srv->ncmd < ncmd )
-		_load_command(srv, dp);
+		_load_command(srv, path, dp);
 
 	if(closedir(dirp) == -1) return DUCQ_EFILE;
 
@@ -242,6 +247,9 @@ ducq_state ducq_srv_load_commands(ducq_srv* srv) {
 //
 
 ducq_srv *ducq_srv_new() {
+	if(signal(SIGPIPE, SIG_IGN) == SIG_ERR)
+		return NULL;
+		
 	ducq_srv* srv = malloc(sizeof(ducq_srv));
 	if(!srv) return NULL;
 

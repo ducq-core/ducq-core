@@ -35,7 +35,6 @@ int ducq_tcp_recv(int fd, char *ptr, size_t size) {
 		if(ptr >= end)
 			return -DUCQ_EMSGSIZE;
 	}
-
 	if(n <  0)        return -DUCQ_EREAD;
 	if(n == 0)        return -DUCQ_ECONNCLOSED;
 	if(*ptr != '\n')  return -DUCQ_EMSGINV;
@@ -73,7 +72,6 @@ int ducq_tcp_send(int fd, const void *buf, size_t count) {
 
 static
 ducq_state _conn(ducq_i *ducq) {
-	// printf("in %s\n", __func__);
 	ducq_tcp_t *tcp = (ducq_tcp_t*)ducq;
 
 	int fd = inet_tcp_connect(tcp->host, tcp->port);
@@ -87,7 +85,6 @@ ducq_state _conn(ducq_i *ducq) {
 
 static
 const char *_id(ducq_i *ducq) {
-	// printf("in %s\n", __func__);
 	ducq_tcp_t *tcp = (ducq_tcp_t*)ducq;
 
 	if(tcp->id[0] != '\0') return tcp->id;
@@ -98,7 +95,6 @@ const char *_id(ducq_i *ducq) {
 }
 static
 ducq_state _timeout(ducq_i *ducq, int timeout) {
-	// printf("in %s\n", __func__);
 	ducq_tcp_t *tcp = (ducq_tcp_t*)ducq;
 
 	int rc = inet_set_read_timeout(tcp->fd, timeout);
@@ -108,7 +104,6 @@ ducq_state _timeout(ducq_i *ducq, int timeout) {
 
 static
 ducq_state _recv(ducq_i *ducq, char *ptr, size_t *count) {
-	// printf("in %s\n", __func__);
 	ducq_tcp_t *tcp = (ducq_tcp_t*)ducq;
 
 	int rc = ducq_tcp_recv(tcp->fd, ptr, *count);
@@ -122,7 +117,6 @@ ducq_state _recv(ducq_i *ducq, char *ptr, size_t *count) {
 
 static
 ducq_state _send(ducq_i *ducq, const void *buf, size_t *count) {
-	// printf("in %s\n", __func__);
 	ducq_tcp_t *tcp = (ducq_tcp_t*) ducq;
 
 	int rc = ducq_tcp_send(tcp->fd, buf, *count);
@@ -135,14 +129,12 @@ ducq_state _send(ducq_i *ducq, const void *buf, size_t *count) {
 
 static
 ducq_i *_copy(ducq_i * ducq) {
-	// printf("in %s\n", __func__);
 	ducq_tcp_t *tcp = (ducq_tcp_t*)ducq;
 	return ducq_new_tcp(tcp->fd, tcp->host, tcp->port);
 }
 
 static
 bool _eq(ducq_i *a, ducq_i *b) {
-	// printf("in %s\n", __func__);
 	ducq_tcp_t *tcp = (ducq_tcp_t*)a;
 	ducq_tcp_t *oth = (ducq_tcp_t*)b;
 
@@ -163,13 +155,11 @@ ducq_state _close(ducq_i *ducq) {
 
 static
 void _free (ducq_i *ducq) {
-	// printf("in %s\n", __func__);
 	if(ducq) free(ducq);
 }
 
 static
 void _dtor (ducq_i *ducq) {
-	// printf("in %s\n", __func__);
 }
 
 

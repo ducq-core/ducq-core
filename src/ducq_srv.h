@@ -13,7 +13,9 @@ void ducq_srv_free(ducq_srv* srv);
 bool ducq_srv_unsubscribe(ducq_srv *srv, ducq_i *ducq);
 
 
-ducq_state ducq_srv_load_commands(ducq_srv* srv);
+ducq_state ducq_srv_load_commands_path(ducq_srv* srv, const char *path);
+#define ducq_srv_load_commands(srv) ducq_srv_load_commands_path(srv, "./commands");
+
 
 ducq_state ducq_srv_dispatch(ducq_srv *srv, ducq_i *ducq);
 
