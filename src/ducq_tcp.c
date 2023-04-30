@@ -128,6 +128,24 @@ ducq_state _send(ducq_i *ducq, const void *buf, size_t *count) {
 }
 
 static
+ducq_state _emit(ducq_i *ducq, char *command, char *route, char *payload, size_t payload_size, bool close) {
+	char msg[BUFSIZ];
+	size_t len = snprintf(msg, BUFSIZ, "%s %s\n%.*s", command, route, (int)payload_size, payload);
+
+	ducq_state state = ducq_send(ducq, msg, &len);
+	if(state != DUCQ_OK) return state;
+
+	if(close) {
+		ducq_tcp_t *tcp = (ducq_tcp_t*)ducq;
+		if(inet_shutdown_write(tcp->fd))
+			return DUCQ_ECLOSE;
+	}
+
+	return DUCQ_OK;
+}
+
+
+static
 ducq_i *_copy(ducq_i * ducq) {
 	ducq_tcp_t *tcp = (ducq_tcp_t*)ducq;
 	return ducq_new_tcp(tcp->fd, tcp->host, tcp->port);
@@ -144,7 +162,6 @@ bool _eq(ducq_i *a, ducq_i *b) {
 
 static
 ducq_state _close(ducq_i *ducq) {
-	// printf("in %s -- %p\n", __func__, ducq);
 	ducq_tcp_t *tcp = (ducq_tcp_t*)ducq;
 
 	int rc = inet_close(tcp->fd);
@@ -171,6 +188,7 @@ static ducq_vtbl table = {
 	.id      = _id,
 	.recv    = _recv,
 	.send    = _send,
+	.emit    = _emit,
 	.copy    = _copy,
 	.eq      = _eq,
 	.timeout = _timeout,

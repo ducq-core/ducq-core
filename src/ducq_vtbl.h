@@ -14,6 +14,7 @@ typedef struct ducq_vtbl {
 	ducq_state   (* conn)    (ducq_i *ducq);
 	ducq_state   (* send)    (ducq_i *ducq, const void *ptr, size_t *size);
 	ducq_state   (* recv)    (ducq_i *ducq, char *ptr, size_t *size);
+	ducq_state   (* emit)    (ducq_i *ducq, char *command, char *route, char *payload, size_t payload_size, bool close);
 	const char * (* id)      (ducq_i *ducq);
 	ducq_i *     (* copy)    (ducq_i *ducq);
 	bool         (* eq)      (ducq_i *a, ducq_i *b);

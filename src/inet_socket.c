@@ -94,7 +94,9 @@ int inet_close(int fd) {
 	return close(fd);
 }
 
-
+int inet_shutdown_write(int fd) {
+	return shutdown(fd, SHUT_WR);
+}
 
 
 

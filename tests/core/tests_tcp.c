@@ -634,3 +634,70 @@ void tcp_recv_payload_exactly_same_as_buffer_is_err(void **state) {
 	ducq_free(ducq);
 #undef BUFFER_LENGTH
 }
+
+
+
+void tcp_emit_param_received(void **state) {
+	// arrange
+	char command[] = "command";
+	char route[]   = "route";
+	char payload[] = "payload";
+	int payload_size = sizeof(payload);
+
+	char msg[BUFSIZ];
+	size_t packetsize = snprintf(msg, BUFSIZ, "%s %s\n%.*s", command, route, (int)payload_size, payload);
+	char header[10];
+	int header_count = snprintf(header, 10, "%ld\n", packetsize);
+
+	ducq_state expected_state = DUCQ_OK;
+	
+	expect_string(writen, vptr, header);
+	expect_string(writen, vptr, msg);
+
+	will_return(writen, header_count);
+	will_return(writen, packetsize);
+
+	// act
+	ducq_i *ducq = ducq_new_tcp(-1, NULL, NULL);
+	ducq_state actual_state  = ducq_emit(ducq, command, route, payload, payload_size, false);
+
+	// audit
+	assert_int_equal(expected_state, actual_state);
+
+	// teardown
+	ducq_free(ducq);
+}
+
+void tcp_emit_shutdown_called(void **state) {
+	// arrange
+	char command[] = "command";
+	char route[]   = "route";
+	char payload[] = "payload";
+	int payload_size = sizeof(payload);
+
+	char msg[BUFSIZ];
+	size_t packetsize = snprintf(msg, BUFSIZ, "%s %s\n%.*s", command, route, (int)payload_size, payload);
+	char header[10];
+	int header_count = snprintf(header, 10, "%ld\n", packetsize);
+
+	ducq_state expected_state = DUCQ_OK;
+	
+	expect_string(writen, vptr, header);
+	expect_string(writen, vptr, msg);
+
+	will_return(writen, header_count);
+	will_return(writen, packetsize);
+
+	expect_value(inet_shutdown_write, fd, -1);
+	will_return(inet_shutdown_write, 0);
+
+	// act
+	ducq_i *ducq = ducq_new_tcp(-1, NULL, NULL);
+	ducq_state actual_state  = ducq_emit(ducq, command, route, payload, payload_size, true);
+
+	// audit
+	assert_int_equal(expected_state, actual_state);
+
+	// teardown
+	ducq_free(ducq);
+}

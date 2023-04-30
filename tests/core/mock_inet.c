@@ -26,6 +26,10 @@ ssize_t writen(int fd, const void *vptr, size_t n) {
 int inet_close(int fd) {
 	return mock();
 }
+int inet_shutdown_write(int fd) {
+	check_expected(fd);
+	return mock();
+}
 int inet_set_read_timeout(int fd, unsigned timeout_sec) {
 	return mock();
 }

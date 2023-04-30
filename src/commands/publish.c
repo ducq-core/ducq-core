@@ -1,4 +1,3 @@
-#include <stdio.h> // FOR TESTS ONLY
 #include <string.h>
 #include <stdbool.h>
 
@@ -22,6 +21,9 @@ ducq_state publish(struct ducq_srv *srv, ducq_i *ducq, char *buffer, size_t size
 		return DUCQ_EMSGINV;
 	}
 
+
+	send_ack(ducq, DUCQ_OK);
+	
 	ducq_sub *sub = srv->subs;
 	while(sub) {
 		ducq_sub *next = sub->next;
@@ -32,16 +34,6 @@ ducq_state publish(struct ducq_srv *srv, ducq_i *ducq, char *buffer, size_t size
 		}
 		sub = next;
 	}
-
-	// 	for(ducq_sub *sub = srv->subs; sub; sub = sub->next) {
-	// 	if( ! route_cmp(sub->route, route, end-route) )
-	// 		continue;
-
-	// 	size_t len = size;
-	// 	if( ducq_send(sub->ducq, buffer, &len) )
-	// 		ducq_srv_unsubscribe(srv, sub->ducq);
-	// }
-	
 
 	return ducq_close(ducq);;
 }

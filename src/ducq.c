@@ -37,6 +37,9 @@ typedef struct ducq_i {
 	const ducq_vtbl *tbl;
 } ducq_i;
 
+ducq_state  ducq_emit(ducq_i *ducq, char *command, char *route, char *payload, size_t payload_size, bool close) {
+	return ducq->tbl->emit(ducq, command, route, payload, payload_size, close);
+}
 ducq_state  ducq_conn(ducq_i *ducq) {
 	return ducq->tbl->conn(ducq);
 }
@@ -63,4 +66,27 @@ ducq_state ducq_close(ducq_i *ducq) {
 }
 void ducq_free(ducq_i *ducq) {
 	return ducq->tbl->free(ducq);
+}
+
+ducq_state ducq_publish(ducq_i *ducq, char *route, char *payload, size_t size) {
+	ducq_state state = DUCQ_OK;
+
+	state = ducq_conn(ducq);
+	if(state != DUCQ_OK) return state;
+
+	state = ducq_emit(ducq, "publish", route, payload, size, true);
+	if(state != DUCQ_OK) return state;
+
+	char recvbuf[25] = "";
+	size_t len = 25;
+	state = ducq_recv(ducq, recvbuf, &len);
+	if(state == DUCQ_OK) {
+		if(strncmp("ACK", recvbuf, 3) != 0)
+			state = DUCQ_EACK;
+	};
+	
+	if(ducq_close(ducq))
+		return DUCQ_ECLOSE;
+
+	return state;
 }
