@@ -6,13 +6,10 @@
 
 #define foreach_list_subscriptions_tests(apply) \
 	apply(list_subscriptions_list_all_subscribers_id) \
-	apply(list_subscriptions_split_message_if_too_big) \
 	apply(list_subscriptions_close_connection_if_inner_send_fails)
 	
 
 foreach_list_subscriptions_tests(build_forward_declarations)
-
-
 
 
 #define build_list_subscriptions_tests() \

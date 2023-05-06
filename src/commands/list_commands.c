@@ -1,5 +1,5 @@
+#include <stdio.h>
 #include <string.h>
-#include <stdbool.h>
 
 #include "../ducq_srv_int.h"
 
@@ -7,26 +7,31 @@
 
 
 
-ducq_state list_commands(struct ducq_srv *srv, ducq_i *ducq, char *buffer, size_t size) {
+ducq_state list_commands(struct ducq_srv *srv, ducq_i *ducq, char *message, size_t size) {
+	(void) message;
+	(void) size;
+
 	char payload[DUCQ_MSGSZ] = "";
-	size_t left = DUCQ_MSGSZ;
-	char *ptr = payload;
+	ducq_state state = DUCQ_OK;
 
 	for(int i = 0; i < srv->ncmd; i++) {
-		left -+ snprintf(ptr, left, "%s,%s\n", srv->cmds[i]->name, srv->cmds[i]->doc);
-		ptr += left;
+		struct ducq_cmd_t *cmd = srv->cmds[i];
+		size_t len = snprintf(payload, DUCQ_MSGSZ, "%s,%s\n", cmd->name, cmd->doc);
 		
-		if(left <= 0)
+		state = ducq_send(ducq, payload, &len);
+		if(state) break;
 	}
 
-
-	return ducq_close(ducq);;
+	ducq_close(ducq);
+	return state;
 }
+
+
 
 
 
 struct ducq_cmd_t command = {
 	.name = "list_commands",
-	.doc  = "list all available server commands.",
+	.doc  = "list all available server commands as csv: <name>,<doc>\\n.",
 	.exec =  list_commands
 };
