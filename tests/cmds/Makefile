@@ -15,6 +15,7 @@ LINK_TEST_LIB = -lcmocka
 cmd_test_objs= \
 	$(BUILDDIR)/commands/publish.so \
 	$(BUILDDIR)/commands/subscribe.so \
+	$(BUILDDIR)/commands/list_subscriptions.so \
 	${SRCDIR}/ducq.c \
 	${SRCDIR}/ducq_srv.c \
 	${TESTDIR}/*.c \

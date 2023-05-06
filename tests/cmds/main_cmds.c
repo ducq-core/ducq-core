@@ -11,6 +11,7 @@
 
 #include "tests_cmd_publish.h"
 #include "tests_cmd_subscribe.h"
+#include "tests_cmd_list_subscriptions.h"
 
 
 const struct CMUnitTest publish_command[] = {
@@ -20,6 +21,10 @@ const struct CMUnitTest subscribe_command[] = {
 	build_subscribe_tests()
 };
 
+const struct CMUnitTest list_subscriptions_command[] = {
+	build_list_subscriptions_tests()
+};
+
 
 int main(int argc, char** argv){
 
@@ -27,6 +32,8 @@ int main(int argc, char** argv){
 	cmocka_run_group_tests(publish_command, publish_tests_setup, publish_tests_teardown);
 		printf("\n\n");
 	cmocka_run_group_tests(subscribe_command, subscribe_tests_setup, subscribe_tests_teardown);
+	printf("\n\n");
+		cmocka_run_group_tests(list_subscriptions_command, list_subscriptions_tests_setup, list_subscriptions_tests_teardown);
 
 	return 0;
 }
