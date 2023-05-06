@@ -37,7 +37,7 @@ typedef struct ducq_i {
 	const ducq_vtbl *tbl;
 } ducq_i;
 
-ducq_state  ducq_emit(ducq_i *ducq, char *command, char *route, char *payload, size_t payload_size, bool close) {
+ducq_state  ducq_emit(ducq_i *ducq, const char *command, const char *route, const char *payload, size_t payload_size, bool close) {
 	return ducq->tbl->emit(ducq, command, route, payload, payload_size, close);
 }
 ducq_state  ducq_conn(ducq_i *ducq) {

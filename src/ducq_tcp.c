@@ -128,7 +128,7 @@ ducq_state _send(ducq_i *ducq, const void *buf, size_t *count) {
 }
 
 static
-ducq_state _emit(ducq_i *ducq, char *command, char *route, char *payload, size_t payload_size, bool close) {
+ducq_state _emit(ducq_i *ducq, const char *command, const char *route, const char *payload, size_t payload_size, bool close) {
 	char msg[BUFSIZ];
 	size_t len = snprintf(msg, BUFSIZ, "%s %s\n%.*s", command, route, (int)payload_size, payload);
 

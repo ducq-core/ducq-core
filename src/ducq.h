@@ -41,7 +41,7 @@ typedef struct ducq_i ducq_i;
 ducq_state  ducq_conn(ducq_i *ducq);
 ducq_state  ducq_send(ducq_i *ducq, const void *buf, size_t *size);
 ducq_state  ducq_recv(ducq_i *ducq, void *buf, size_t *size);
-ducq_state  ducq_emit(ducq_i *ducq, char *command, char *route, char *payload, size_t payload_size, bool close);
+ducq_state  ducq_emit(ducq_i *ducq, const char *command, const char *route, const char *payload, size_t payload_size, bool close);
 const char *ducq_id  (ducq_i *ducq);
 bool        ducq_eq  (ducq_i *a, ducq_i *b);
 ducq_i     *ducq_copy(ducq_i *ducq);
