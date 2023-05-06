@@ -111,7 +111,7 @@ void srv_parse_route_no_newline_err(void **state) {
 void srv_parse_send_ack_ok(void **state) {
 	// arange
 	char expected_message[] = "ACK *\n0\nok";
-	ducq_i *ducq = ducq_new_mock();
+	ducq_i *ducq = ducq_new_mock(NULL);
 	ducq_state expected_state = DUCQ_OK;
 
 	will_return(_send, expected_state);
@@ -133,7 +133,7 @@ void srv_parse_send_ack_ok(void **state) {
 void srv_parse_send_ack_returns_send_rc(void **state) {
 	// arange
 	ducq_state expected_state = DUCQ_EWRITE;
-	ducq_i *ducq = ducq_new_mock();
+	ducq_i *ducq = ducq_new_mock(NULL);
 
 	will_return(_send, expected_state);
 	expect_any(_send, ducq);
@@ -154,7 +154,7 @@ void srv_parse_send_ack_returns_send_rc(void **state) {
 void srv_parse_send_nack_ok(void **state) {
 	// arange
 	char expected_message[] = "NACK *\n11\nmessage too big";
-	ducq_i *ducq = ducq_new_mock();
+	ducq_i *ducq = ducq_new_mock(NULL);
 	ducq_state expected_state = DUCQ_OK;
 
 	will_return(_send, expected_state);
@@ -177,7 +177,7 @@ void srv_parse_send_nack_ok(void **state) {
 void srv_parse_send_nack_returns_send_rc(void **state) {
 	// arange
 	ducq_state expected_state = DUCQ_EWRITE;
-	ducq_i *ducq = ducq_new_mock();
+	ducq_i *ducq = ducq_new_mock(NULL);
 
 	will_return(_send, expected_state);
 	expect_any(_send, ducq);

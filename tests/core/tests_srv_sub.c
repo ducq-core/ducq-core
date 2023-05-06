@@ -19,9 +19,9 @@
 
 
 int sub_setup(void **state) {
-	ducq_i *ducq_a = ducq_new_mock();
-	ducq_i *ducq_b = ducq_new_mock();
-	ducq_i *ducq_c = ducq_new_mock();
+	ducq_i *ducq_a = ducq_new_mock(NULL);
+	ducq_i *ducq_b = ducq_new_mock(NULL);
+	ducq_i *ducq_c = ducq_new_mock(NULL);
 
 	ducq_sub *sub_c = malloc(sizeof(ducq_sub));
 	sub_c->ducq  = ducq_c;
@@ -64,7 +64,7 @@ void srv_free_sub_no_leak(void **state) {
 	expect_any(_close, ducq);
 	will_return_always(_close, DUCQ_OK);
 
-	ducq_i *ducq = ducq_new_mock();
+	ducq_i *ducq = ducq_new_mock(NULL);
 
 	ducq_sub *sub = malloc(sizeof(ducq_sub));
 	sub->ducq  = ducq;
@@ -172,7 +172,7 @@ void srv_unsubscribe_inexistant_return_false(void **state) {
 	ducq_sub *expected_last   = expected_second->next;
 	bool expected_has_unsubscribed = false;
 
-	ducq_i * ducq = ducq_new_mock();
+	ducq_i * ducq = ducq_new_mock(NULL);
 
 	// act
 	bool actual_has_unsubscribed = ducq_srv_unsubscribe(srv, ducq);

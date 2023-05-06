@@ -4,6 +4,10 @@
 #include <stdbool.h>
 
 
+#ifndef DUCQ_MSGSZ
+#define DUCQ_MSGSZ 256
+#endif
+
 
 #define _foreach_state(apply) \
 	apply(DUCQ_ESTDC,       "std c lib error") \

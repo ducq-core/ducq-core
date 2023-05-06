@@ -70,7 +70,7 @@ ducq_state _send(ducq_i *ducq, const void *buf, size_t *count) {
 
 static
 ducq_i *_copy(ducq_i * ducq) {
-	return (ducq_i*) mock();
+	return (ducq_i *) mock();
 }
 
 static
@@ -108,12 +108,19 @@ static ducq_vtbl table = {
 	.free    = _free
 };
 
-ducq_i *ducq_new_mock() {
+ducq_i *ducq_new_mock(const char *id) {
 	mock_ducq_client *cli = malloc(sizeof(mock_ducq_client));
 	if(!cli) return NULL;
 
-	cli->tbl = &table;
-	snprintf(cli->id, MAX_ID, "%d", next_id++);
+	*cli = (mock_ducq_client) {
+		.tbl = &table,
+		.id = ""
+	};
+
+	if(id)
+		memcpy(cli->id, id, strlen(id));
+	else
+		snprintf(cli->id, MAX_ID, "%d", next_id++);
 
 	return (ducq_i *) cli;
 }

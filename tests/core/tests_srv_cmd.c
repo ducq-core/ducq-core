@@ -98,7 +98,7 @@ void cmd_dispatch_ducq_recv_receive_dispatch_params(void **state) {
 	// arange
 	ducq_srv *srv = ducq_srv_new();
 	ducq_srv_load_commands(srv);
-	ducq_i *sender = ducq_new_mock();
+	ducq_i *sender = ducq_new_mock(NULL);
 
 	ducq_state expected_state = DUCQ_OK;
 
@@ -133,7 +133,7 @@ void cmd_dispatch_recv_fails_return_rc(void **state) {
 	// arange
 	ducq_srv *srv = ducq_srv_new();
 	ducq_srv_load_commands(srv);
-	ducq_i *sender = ducq_new_mock();
+	ducq_i *sender = ducq_new_mock(NULL);
 
 	ducq_state expected_state = DUCQ_EREAD;
 
@@ -160,7 +160,7 @@ void cmd_dispatch_recv_msg_buffer_size_minus_one_ok(void **state) {
 	// arange
 	ducq_srv *srv = ducq_srv_new();
 	ducq_srv_load_commands(srv);
-	ducq_i *sender = ducq_new_mock();
+	ducq_i *sender = ducq_new_mock(NULL);
 
 	ducq_state expected_state = DUCQ_OK;
 
@@ -196,7 +196,7 @@ void cmd_dispatch_recv_msg_exact_buffer_size_too_big(void **state) {
 	// arange
 	ducq_srv *srv = ducq_srv_new();
 	ducq_srv_load_commands(srv);
-	ducq_i *sender = ducq_new_mock();
+	ducq_i *sender = ducq_new_mock(NULL);
 
 	ducq_state expected_state = DUCQ_EMSGSIZE;
 
@@ -227,7 +227,7 @@ void cmd_dispatch_command_a_receive_params(void **state) {
 	// arange
 	ducq_srv *srv = ducq_srv_new();
 	ducq_srv_load_commands(srv);
-	ducq_i *sender = ducq_new_mock();
+	ducq_i *sender = ducq_new_mock(NULL);
 
 	ducq_state expected_state = DUCQ_OK;
 	char expected_msg[] = "mock_command_a route/\npayload";
@@ -261,7 +261,7 @@ void cmd_dispatch_command_b_receive_params(void **state) {
 	// arange
 	ducq_srv *srv = ducq_srv_new();
 	ducq_srv_load_commands(srv);
-	ducq_i *sender = ducq_new_mock();
+	ducq_i *sender = ducq_new_mock(NULL);
 
 	ducq_state expected_state = DUCQ_OK;
 	char expected_msg[] = "mock_command_b route/\npayload";
@@ -294,7 +294,7 @@ void cmd_dispatch_command_receive_buffer_always_null_terminated(void **state) {
 	// arange
 	ducq_srv *srv = ducq_srv_new();
 	ducq_srv_load_commands(srv);
-	ducq_i *sender = ducq_new_mock();
+	ducq_i *sender = ducq_new_mock(NULL);
 	
 	ducq_state expected_state = DUCQ_OK;
 	char expected_msg[] = "mock_command_a route/\npayload";
@@ -331,7 +331,7 @@ void cmd_dispatch_sender_receive_nack_if_command_unknown(void **state) {
 	// arange
 	ducq_srv *srv = ducq_srv_new();
 	ducq_srv_load_commands(srv);
-	ducq_i *sender = ducq_new_mock();
+	ducq_i *sender = ducq_new_mock(NULL);
 
 	ducq_state expected_state = DUCQ_ENOCMD;
 	char expected_nack_msg[100];
@@ -372,7 +372,7 @@ void cmd_dispatch_returns_command_state(void **state) {
 	// arange
 	ducq_srv *srv = ducq_srv_new();
 	ducq_srv_load_commands(srv);
-	ducq_i *sender = ducq_new_mock();
+	ducq_i *sender = ducq_new_mock(NULL);
 
 	ducq_state expected_state         = DUCQ_EWRITE;
 	ducq_state command_returned_state = DUCQ_EMEMFAIL;
