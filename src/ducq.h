@@ -54,4 +54,12 @@ typedef ducq_state (*ducq_apply_f)(void* ctx, ducq_i* ducq);
 
 ducq_state ducq_publish(ducq_i *ducq, char *route, char *payload, size_t size);
 
+
+const char * ducq_parse_command(const char *buffer, const char **end);
+const char * ducq_parse_route(const char *buffer, const char **end);
+const char * ducq_parse_payload(const char *buffer);
+
+bool ducq_route_cmp(const char *sub_route, const char *pub_route);
+
+
 #endif // _DUCQ_HEADER_

@@ -1,14 +1,16 @@
 #include <string.h>
 #include <stdlib.h>
-#include "subscribe.h"
 
-#include <stdio.h>
+#include "../ducq.h"
+#include "../ducq_srv_int.h"
+
+
 
 
 
 ducq_state subscribe(struct ducq_srv *srv, ducq_i *ducq, char *buffer, size_t size) {
 	const char *end = NULL;
-	const char *route = parse_route(buffer, &end);
+	const char *route = ducq_parse_route(buffer, &end);
 	if(route == NULL) {
 		send_ack(ducq, DUCQ_EMSGINV);
 		return DUCQ_EMSGINV;

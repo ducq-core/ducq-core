@@ -90,3 +90,61 @@ ducq_state ducq_publish(ducq_i *ducq, char *route, char *payload, size_t size) {
 
 	return state;
 }
+
+
+const char * ducq_parse_command(const char *buffer, const char **end) {
+	const char *command = NULL;
+	const char *ptr = strchr(buffer, ' ');
+
+	if(ptr && *ptr)
+		command = buffer;
+	if(end)
+		*end = ptr;
+
+	return command;
+}
+
+const char * ducq_parse_route(const char *buffer, const char **end) {
+	const char *route = NULL;
+	
+	if(*buffer != ' ')
+		buffer = strchr(buffer, ' ');
+	if(!buffer)
+		return NULL;
+		
+	buffer++;
+	const char *ptr = strchr(buffer, '\n');
+
+	if(ptr && *ptr)
+		route = buffer;
+	if(end)
+		*end = ptr;
+
+	return route;
+}
+
+const char * ducq_parse_payload(const char *buffer) {
+	char *ptr = strchr(buffer, '\n');
+	return ptr ? ++ptr : NULL;
+}
+
+
+
+
+bool ducq_route_cmp(const char *sub, const char *pub) {
+	for( ; *sub && *pub; sub++, pub++) {
+		if(*sub == '*') {
+			sub++;
+			if(*sub == '\0')
+				return true;
+
+			pub = strchr(pub, *sub);
+			if(!pub) return false;
+		}
+
+		if(*sub != *pub)
+			return false;
+	}
+
+	return *sub == '\0' && *pub == '\0';
+}

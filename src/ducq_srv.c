@@ -18,42 +18,6 @@
 
 
 
-
-const char * parse_command(const char *buffer, const char **end) {
-	const char *command = NULL;
-	const char *ptr = strchr(buffer, ' ');
-
-	if(ptr && *ptr)
-		command = buffer;
-	if(end)
-		*end = ptr;
-
-	return command;
-}
-
-const char * parse_route(const char *buffer, const char **end) {
-	const char *route = NULL;
-	
-	if(*buffer != ' ')
-		buffer = strchr(buffer, ' ');
-	if(!buffer)
-		return NULL;
-		
-	buffer++;
-	const char *ptr = strchr(buffer, '\n');
-
-	if(ptr && *ptr)
-		route = buffer;
-	if(end)
-		*end = ptr;
-
-	return route;
-}
-
-
-
-
-
 ducq_state send_ack(ducq_i *ducq, ducq_state state) {
 	char msg[128];
 	size_t size = snprintf(msg, 128, "%s *\n%d\n%s",
@@ -124,7 +88,7 @@ command_f _find_command(ducq_srv* srv, const char *buffer) {
 	command_f command = unknown;
 
 	char *end = NULL;
-	const char *name = parse_command(buffer, (const char**) &end);
+	const char *name = ducq_parse_command(buffer, (const char**) &end);
 	if ( !name) return command;
 	*end = '\0';
 

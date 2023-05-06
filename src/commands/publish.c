@@ -1,41 +1,47 @@
 #include <string.h>
+#include <stdlib.h>
 #include <stdbool.h>
 
+
+#include "../ducq.h"
 #include "../ducq_srv_int.h"
-
-static
-bool route_cmp(const char *a, const char *b, size_t size) {
-	return strlen(a) == size
-			&& strncmp(a, b, size) == 0;
-}
-
 
 
 
 ducq_state publish(struct ducq_srv *srv, ducq_i *ducq, char *buffer, size_t size) {
+	ducq_state state = DUCQ_OK;
 	const char *end;
-	const char *route = parse_route(buffer, &end);
-	if(route == NULL) {
-		send_ack(ducq, DUCQ_EMSGINV);
+	const char *route = ducq_parse_route(buffer, &end);
+
+	if( !route) 
+		state = DUCQ_EMSGINV;
+	else if( ! (route = strndup(route, end-route)) )
+		state = DUCQ_EMEMFAIL;
+	if(state) {
+		send_ack(ducq, state);
 		ducq_close(ducq);
-		return DUCQ_EMSGINV;
+		return state;
 	}
 
 
 	send_ack(ducq, DUCQ_OK);
-	
-	ducq_sub *sub = srv->subs;
-	while(sub) {
-		ducq_sub *next = sub->next;
-		if( route_cmp(sub->route, route, end-route) ) {
-			size_t len = size;
-			if( ducq_send(sub->ducq, buffer, &len) )
-				ducq_srv_unsubscribe(srv, sub->ducq);
-		}
-		sub = next;
+
+
+	ducq_sub *next = NULL;
+	for(ducq_sub *sub = srv->subs; sub; sub = next) {
+		next = sub->next;
+
+		if( ! ducq_route_cmp(sub->route, route) )
+			continue;
+
+		size_t len = size;
+		if( ducq_send(sub->ducq, buffer, &len) )
+			ducq_srv_unsubscribe(srv, sub->ducq);
 	}
 
-	return ducq_close(ducq);;
+
+	free( (void*) route ); // discard const
+	return ducq_close(ducq);
 }
 
 

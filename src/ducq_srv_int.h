@@ -40,9 +40,6 @@ struct ducq_srv {
 };
 
 
-const char * parse_command(const char *buffer, const char **end);
-const char * parse_route(const char *buffer, const char **end);
-
 ducq_state send_ack(ducq_i *ducq, ducq_state state);
 
 bool ducq_srv_unsubscribe(ducq_srv *srv, ducq_i *ducq);

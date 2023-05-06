@@ -33,7 +33,8 @@ core_test_objs= \
 	mock_inet.c \
 	tests_srv_cmd.c \
 	tests_srv_sub.c \
-	tests_srv_parse.c \
+	tests_srv_ack.c \
+	tests_parse.c \
 	tests_state.c \
 	tests_tcp.c \
 	main.c
