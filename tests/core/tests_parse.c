@@ -181,12 +181,65 @@ void route_cmp_wildcard_not_at_end_ok(void **state) {
 
 void route_cmp_wildcard_in_middle_ok(void **state) {
 	// arange
-	char route_a[] = "route/*route";
+	char sub_route[] = "route/*route";
 	char pub_route[] = "route/subroute";
 	bool expected_result = true;
 
 	// act
-	bool actual_result = ducq_route_cmp(route_a, pub_route);
+	bool actual_result = ducq_route_cmp(sub_route, pub_route);
+
+	// audit
+	assert_int_equal(expected_result, actual_result);
+}
+
+
+void route_cmp_wildcard_is_flush_ok(void **state) {
+	// arange
+	char sub_route[] = "route/*";
+	char pub_route[] = "route/";
+	bool expected_result = true;
+
+	// act
+	bool actual_result = ducq_route_cmp(sub_route, pub_route);
+
+	// audit
+	assert_int_equal(expected_result, actual_result);
+}
+
+void route_cmp_wildcard_in_middle_flush_ok(void **state) {
+	// arange
+	char sub_route[] = "route/*!";
+	char pub_route[] = "route/subroute!";
+	bool expected_result = true;
+
+	// act
+	bool actual_result = ducq_route_cmp(sub_route, pub_route);
+
+	// audit
+	assert_int_equal(expected_result, actual_result);
+}
+
+void route_cmp_wildcard_in_middle_flush_not_matched(void **state) {
+	// arange
+	char sub_route[] = "route/*!";
+	char pub_route[] = "route/subroute";
+	bool expected_result = false;
+
+	// act
+	bool actual_result = ducq_route_cmp(sub_route, pub_route);
+
+	// audit
+	assert_int_equal(expected_result, actual_result);
+}
+
+void route_cmp_wildcard_in_middle_flush_not_matched2(void **state) {
+	// arange
+	char sub_route[] = "hello*!";
+	char pub_route[] = "hello";
+	bool expected_result = false;
+
+	// act
+	bool actual_result = ducq_route_cmp(sub_route, pub_route);
 
 	// audit
 	assert_int_equal(expected_result, actual_result);

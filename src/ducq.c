@@ -130,21 +130,31 @@ const char * ducq_parse_payload(const char *buffer) {
 
 
 
+static inline  // GNU strchrnul() is non-standard
+const char *strchrnull(const char *str, char c) {
+	while( *str && *str != c)
+			str++;
+	return str;
+}
 
 bool ducq_route_cmp(const char *sub, const char *pub) {
-	for( ; *sub && *pub; sub++, pub++) {
+	while(*sub && *pub) {
+
 		if(*sub == '*') {
 			sub++;
-			if(*sub == '\0')
-				return true;
-
-			pub = strchr(pub, *sub);
-			if(!pub) return false;
+			pub = strchrnull(pub, *sub);
 		}
 
-		if(*sub != *pub)
-			return false;
+		else if(*sub == *pub)
+			sub++, pub++;
+
+		else 
+			break;
 	}
 
-	return *sub == '\0' && *pub == '\0';
+	if(*sub == '*')
+		sub++;
+		
+	return *sub == '\0' 
+			&& *pub == '\0';
 }
