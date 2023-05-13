@@ -1,3 +1,9 @@
+#include <stdarg.h>
+#include <stddef.h>
+#include <setjmp.h>
+#include <stdint.h>
+#include <cmocka.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -41,3 +47,9 @@ int fix_free(struct fixture *fix) {
 	return 0;
 }
 
+
+
+void mock_log(void *ctx, const char *function_name, enum ducq_log_level level, const char *fmt, va_list args) {
+	check_expected(function_name);
+	check_expected(level);
+}

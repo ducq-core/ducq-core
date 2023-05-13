@@ -14,4 +14,6 @@ struct fixture * fix_new(const char *cmd_name);
 int fix_free(struct fixture *fix);
 
 
+void mock_log(void *ctx, const char *function_name, enum ducq_log_level level, const char *fmt, va_list args);
+
 #endif //_UNIT_TEST_CMD_HEADER_

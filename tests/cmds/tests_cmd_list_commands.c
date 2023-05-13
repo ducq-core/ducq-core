@@ -54,6 +54,8 @@ void list_commands_list_all_commands(void **state) {
 	
 
 	ducq_srv *srv = ducq_srv_new();
+	ducq_srv_set_log(srv, NULL, mock_log);
+	
 	srv->cmds = calloc(ncmds, sizeof(struct ducq_cmd_t*));
 	if(!srv->cmds)
 		fail();
@@ -80,6 +82,8 @@ void list_commands_list_all_commands(void **state) {
 	expect_value(_send, *count, strlen("name4,doc4\n"));
 	will_return_count(_send, DUCQ_OK, 4);
 
+	expect_string(mock_log, function_name, "list_commands");
+	expect_value(mock_log, level, DUCQ_LOG_INFO);
 	
 	expect_value(_close, ducq, emitter);
 	will_return(_close, DUCQ_OK);

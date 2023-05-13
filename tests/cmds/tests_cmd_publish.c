@@ -34,6 +34,8 @@ void publish_send_msg_invalide_if_cant_parse_route(void **state) {
 	ducq_state expected_state = DUCQ_EMSGINV;
 
 	ducq_srv *srv = ducq_srv_new();
+	ducq_srv_set_log(srv, NULL, mock_log);
+
 	ducq_i *publisher = ducq_new_mock(NULL);
 	char buffer[] = "publishroute\npayload";
 	size_t size = sizeof(buffer);
@@ -47,7 +49,10 @@ void publish_send_msg_invalide_if_cant_parse_route(void **state) {
 	expect_string(_send, buf, expected_msg);
 	expect_value(_send, *count, strlen(expected_msg));
 	will_return(_send, DUCQ_OK);
-	
+
+	expect_string(mock_log, function_name, "publish");
+	expect_value(mock_log, level, DUCQ_LOG_WARNING);
+
 	expect_value(_close, ducq, publisher);
 	will_return(_close, DUCQ_OK);
 
@@ -69,6 +74,8 @@ void publish_subscribers_has_ducq_send_called(void **state) {
 	ducq_state expected_state = DUCQ_OK;
 
 	ducq_srv *srv = ducq_srv_new();
+	ducq_srv_set_log(srv, NULL, mock_log);
+
 	ducq_i *publisher = ducq_new_mock(NULL);
 	char buffer[] = "publish route\npayload";
 	size_t size = sizeof(buffer);
@@ -103,6 +110,9 @@ void publish_subscribers_has_ducq_send_called(void **state) {
 	expect_value_count(_send, *count, sizeof(buffer), 2);
 	will_return_count(_send, DUCQ_OK, 2);
 	
+	expect_string(mock_log, function_name, "publish");
+	expect_value(mock_log, level, DUCQ_LOG_INFO);
+
 	expect_value(_close, ducq, publisher);
 	will_return(_close, DUCQ_OK);
 

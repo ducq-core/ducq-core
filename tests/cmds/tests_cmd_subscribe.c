@@ -35,6 +35,8 @@ void subscribe_msg_invalide_if_cant_parse_route(void **state) {
 	ducq_state expected_state = DUCQ_EMSGINV;
 
 	ducq_srv *srv = ducq_srv_new();
+	ducq_srv_set_log(srv, NULL, mock_log);
+
 	ducq_i *subscriber = ducq_new_mock(NULL);
 	char buffer[] = "subscriberoute\npayload";
 	size_t size = sizeof(buffer);
@@ -45,6 +47,9 @@ void subscribe_msg_invalide_if_cant_parse_route(void **state) {
 	expect_string(_send, buf, expected_msg);
 	expect_value(_send, *count, count);
 	will_return(_send, DUCQ_OK);
+
+	expect_string(mock_log, function_name, "subscribe");
+	expect_value(mock_log, level, DUCQ_LOG_WARNING);
 
 	// act
 	ducq_state actual_state = subscribe(srv, subscriber, buffer, size);
@@ -208,6 +213,8 @@ void subscribe_mem_error_cleans_up(void **state) {
 	command_f subscribe = get_command(state);
 
 	ducq_srv *srv = ducq_srv_new();
+	ducq_srv_set_log(srv, NULL, mock_log);
+
 	ducq_i *subscriber = ducq_new_mock(NULL);
 	char buffer[] = "subscribe ROUTE\npayload";
 	size_t size = sizeof(buffer);
@@ -220,6 +227,9 @@ void subscribe_mem_error_cleans_up(void **state) {
 	expect_string(_send, buf, expected_res);
 	expect_value(_send, *count, reslen);
 	will_return(_send, DUCQ_OK);
+
+	expect_string(mock_log, function_name, "subscribe");
+	expect_value(mock_log, level, DUCQ_LOG_ERROR);
 
 	ducq_state expected_state = DUCQ_EMEMFAIL;
 
@@ -243,6 +253,8 @@ void subscribe_send_ack_fail_cleans_up(void **state) {
 	command_f subscribe = get_command(state);
 
 	ducq_srv *srv = ducq_srv_new();
+	ducq_srv_set_log(srv, NULL, mock_log);
+
 	ducq_i *subscriber = ducq_new_mock(NULL);
 	char buffer[] = "subscribe ROUTE\npayload";
 	size_t size = sizeof(buffer);
@@ -253,6 +265,9 @@ void subscribe_send_ack_fail_cleans_up(void **state) {
 	expect_any(_send, buf);
 	expect_any(_send, *count);
 	will_return(_send, DUCQ_EWRITE);
+
+	expect_string(mock_log, function_name, "subscribe");
+	expect_value(mock_log, level, DUCQ_LOG_WARNING);
 
 
 	expect_value(_close, ducq, subscriber);

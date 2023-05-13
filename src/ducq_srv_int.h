@@ -4,6 +4,7 @@
 #include <stddef.h>
 
 #include "ducq.h"
+#include "ducq_srv.h"
 
 
 
@@ -31,13 +32,19 @@ struct ducq_cmd_t {
 
 
 
+
 struct ducq_srv {
 	ducq_sub *subs;
-	// struct ducq_cmd *cmds;
+	
 	struct ducq_cmd_t **cmds;
 	void **hdls;
 	int ncmd;
+
+	bool allow_monitor_route;
+	ducq_log_f log;
+	void *log_ctx;
 };
+
 
 
 ducq_state send_ack(ducq_i *ducq, ducq_state state);

@@ -41,6 +41,7 @@ void list_subscriptions_list_all_subscribers_id(void **state) {
 	
 
 	ducq_srv *srv = ducq_srv_new();
+	ducq_srv_set_log(srv, NULL, mock_log);
 
 	ducq_sub *sub1 = malloc(sizeof(ducq_sub));
 	ducq_sub *sub2 = malloc(sizeof(ducq_sub));
@@ -75,12 +76,15 @@ void list_subscriptions_list_all_subscribers_id(void **state) {
 	expect_value(_send, *count, strlen("sub_id_2,route_2\n"));
 	expect_value(_send, *count, strlen("sub_id_1,route_1\n"));
 	will_return_count(_send, DUCQ_OK, 3);
-	
+
+	expect_string(mock_log, function_name, "list_subscriptions");
+	expect_value(mock_log, level, DUCQ_LOG_INFO);
+
 	expect_value(_close, ducq, emitter);
 	will_return(_close, DUCQ_OK);
 
 	// // act
-		ducq_state actual_state = list_subscriptions(srv, emitter, request, req_size);
+	ducq_state actual_state = list_subscriptions(srv, emitter, request, req_size);
 
 	//audit
 	assert_int_equal(expected_state, actual_state);
@@ -132,7 +136,7 @@ void list_subscriptions_close_connection_if_inner_send_fails(void **state) {
 	expect_value(_send, *count, strlen("sub_id_2,route_2\n"));
 	will_return(_send, DUCQ_OK);
 	will_return(_send, DUCQ_EWRITE);
-	
+
 	expect_value(_close, ducq, emitter);
 	will_return(_close, DUCQ_OK);
 

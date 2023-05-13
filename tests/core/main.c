@@ -12,6 +12,7 @@
 #include "tests_tcp.h"
 #include "tests_parse.h"
 #include "tests_srv_ack.h"
+#include "tests_srv_log.h"
 #include "tests_srv_sub.h"
 #include "tests_srv_cmd.h"
 
@@ -35,6 +36,9 @@ const struct CMUnitTest sub[] = {
 const struct CMUnitTest cmd[] = {
 	build_cmd_tests()
 };
+const struct CMUnitTest log_func[] = {
+	build_log_tests()
+};
 
 
 int main(int argc, char** argv){
@@ -51,6 +55,8 @@ int main(int argc, char** argv){
 	cmocka_run_group_tests(sub, NULL, NULL);
 		printf("\n\n");
 	cmocka_run_group_tests(cmd, NULL, NULL);
+		printf("\n\n");
+	cmocka_run_group_tests(log_func, NULL, NULL);
 		printf("\n\n");
 
 	return 0;

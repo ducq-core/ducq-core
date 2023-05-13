@@ -34,6 +34,7 @@ core_test_objs= \
 	tests_srv_cmd.c \
 	tests_srv_sub.c \
 	tests_srv_ack.c \
+	tests_srv_log.c \
 	tests_parse.c \
 	tests_state.c \
 	tests_tcp.c \
