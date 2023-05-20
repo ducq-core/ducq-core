@@ -45,7 +45,7 @@ void ducq_srv_set_log(ducq_srv *srv, void* ctx, ducq_log_f log);
 void ducq_srv_set_default_log(ducq_srv *srv);
 
 void ducq_srv_log(ducq_srv *srv, enum ducq_log_level level, const char *function_name, const char *sender_id, const char *fmt, ...);
-#define ducq_log(level, fmt, ...) ducq_srv_log(srv, DUCQ_LOG_##level, __func__, ducq_id(ducq), fmt __VA_OPT__(,) __VA_ARGS__)
+#define ducq_log(level, fmt, ...) ducq_srv_log(srv, DUCQ_LOG_##level, __func__, ducq_id(ducq), fmt ,##__VA_ARGS__)
 
 
 
