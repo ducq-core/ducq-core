@@ -39,6 +39,7 @@ core_test_objs= \
 	tests_state.c \
 	tests_tcp.c \
 	tests_cli_publish.c \
+	tests_cli_subscribe.c \
 	main.c
 .PHONY: tests_core
 tests_core: PREREQ $(mock_commands) $(core_test_objs)

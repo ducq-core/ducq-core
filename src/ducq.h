@@ -22,7 +22,7 @@
 	apply(DUCQ_EMSGINV,     "message invalid") \
 	apply(DUCQ_EMSGSIZE,    "message too big") \
 	apply(DUCQ_ENOCMD,      "command unknown") \
-	apply(DUCQ_EACK,        "no ack received") \
+	apply(DUCQ_EACK,        "no ack received")
 
 
 typedef enum ducq_state {
@@ -34,6 +34,9 @@ typedef enum ducq_state {
 
 const char *ducq_state_tostr(int state);
 
+
+
+#define DUCQ_CHECK(func) do { ducq_state state = func; if(state != DUCQ_OK) return state; } while(0)
 
 
 typedef struct ducq_i ducq_i;
@@ -51,7 +54,9 @@ void        ducq_free (ducq_i *ducq);
 
 
 typedef ducq_state (*ducq_apply_f)(void* ctx, ducq_i* ducq);
+typedef int (*ducq_on_msg_f)(char *payload, size_t size, void *ctx);
 
+ducq_state ducq_subscribe(ducq_i *ducq, const char *route, ducq_on_msg_f on_msg, void *ctx);
 ducq_state ducq_publish(ducq_i *ducq, char *route, char *payload, size_t size);
 
 

@@ -16,6 +16,7 @@
 #include "tests_srv_sub.h"
 #include "tests_srv_cmd.h"
 #include "tests_cli_publish.h"
+#include "tests_cli_subscribe.h"
 
 
 
@@ -40,8 +41,11 @@ const struct CMUnitTest cmd[] = {
 const struct CMUnitTest log_func[] = {
 	build_log_tests()
 };
-const struct CMUnitTest pub[] = {
-	build_pub_tests()
+const struct CMUnitTest cli_pub[] = {
+	build_cli_pub_tests()
+};
+const struct CMUnitTest cli_sub[] = {
+	build_cli_sub_tests()
 };
 
 
@@ -62,7 +66,9 @@ int main(int argc, char** argv){
 		printf("\n\n");
 	cmocka_run_group_tests(log_func, NULL, NULL);
 		printf("\n\n");
-			cmocka_run_group_tests(pub, NULL, NULL);
+	cmocka_run_group_tests(cli_pub, NULL, NULL);
+		printf("\n\n");
+	cmocka_run_group_tests(cli_sub, NULL, NULL);
 		printf("\n\n");
 
 	return 0;
