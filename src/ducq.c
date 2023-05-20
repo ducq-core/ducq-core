@@ -70,44 +70,38 @@ void ducq_free(ducq_i *ducq) {
 
 
 ducq_state ducq_subscribe(ducq_i *ducq, const char *route, ducq_on_msg_f on_msg, void *ctx) {
+	char recvbuf[DUCQ_MSGSZ] = "";
+	size_t len = DUCQ_MSGSZ;
+	
 	DUCQ_CHECK( ducq_conn(ducq) );
 	DUCQ_CHECK( ducq_emit(ducq, "subscribe", route, "", 0, true) );
+	DUCQ_CHECK( ducq_recv(ducq, recvbuf, &len) );
+	DUCQ_CHECK( ducq_ack_to_state(recvbuf) );
 	DUCQ_CHECK( ducq_timeout(ducq, 0) );
 
-	
-	char buffer[DUCQ_MSGSZ] = "";
-	size_t size = sizeof(buffer);
-	DUCQ_CHECK( ducq_recv(ducq, buffer, &size) );
-	DUCQ_CHECK( ducq_ack_to_state(buffer) );
-
 	for(;;) {
-		DUCQ_CHECK( ducq_recv(ducq, buffer, &size) );
-		if(on_msg(buffer, size, ctx))
+		len = DUCQ_MSGSZ;
+		DUCQ_CHECK( ducq_recv(ducq, recvbuf, &len) );
+		if( on_msg(recvbuf, len, ctx) )
 			break;
 	}
 
-	if(ducq_close(ducq))
-		return DUCQ_ECLOSE;
-
+	DUCQ_CHECK( ducq_close(ducq) );
 	return DUCQ_OK;
 }
 
+
 ducq_state ducq_publish(ducq_i *ducq, char *route, char *payload, size_t size) {
-	DUCQ_CHECK( ducq_conn(ducq) );
-	DUCQ_CHECK( ducq_emit(ducq, "publish", route, payload, size, true) );
-
-
 	char recvbuf[DUCQ_MSGSZ] = "";
 	size_t len = DUCQ_MSGSZ;
-	ducq_state state = ducq_recv(ducq, recvbuf, &len);
-	if(state == DUCQ_OK)
-		state = ducq_ack_to_state(recvbuf);
 	
+	DUCQ_CHECK( ducq_conn(ducq) );
+	DUCQ_CHECK( ducq_emit(ducq, "publish", route, payload, size, true) );
+	DUCQ_CHECK( ducq_recv(ducq, recvbuf, &len) );
+	DUCQ_CHECK( ducq_ack_to_state(recvbuf) );
 
-	if(ducq_close(ducq))
-		return DUCQ_ECLOSE;
-
-	return state;
+	DUCQ_CHECK( ducq_close(ducq) );
+	return DUCQ_OK;
 }
 
 

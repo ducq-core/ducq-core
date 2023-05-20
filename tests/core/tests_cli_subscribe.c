@@ -157,10 +157,6 @@ void sub_nack_state_returned(void **state) {
 	expect_any (_emit, payload);
 	expect_any (_emit, payload_size);
 	will_return(_emit, DUCQ_OK);
-	
-	expect_any (_timeout, ducq);
-	expect_any (_timeout, timeout);
-	will_return(_timeout, DUCQ_OK);
 
 	strcpy(MOCK_CLIENT_RECV_BUFFER, "NACK *\n22\nerror");
 	MOCK_CLIENT_RECV_BUFFER_LEN = strlen("NACK *\n22\nerror");

@@ -122,9 +122,6 @@ void pub_recv_error(void **state) {
 	expect_any (_recv, count);
 	will_return(_recv, DUCQ_ECLOSE);
 
-	expect_any (_close, ducq);
-	will_return(_close, DUCQ_OK);
-
 	ducq_state expected_state = DUCQ_ECLOSE;
 
 	// act
@@ -159,8 +156,6 @@ void pub_nack_state_returned(void **state) {
 	expect_any (_recv, count);
 	will_return(_recv, DUCQ_OK);
 
-	expect_value(_close, ducq, ducq);
-	will_return (_close, DUCQ_OK);
 
 	ducq_state expected_state = 22;
 
