@@ -701,3 +701,24 @@ void tcp_emit_shutdown_called(void **state) {
 	// teardown
 	ducq_free(ducq);
 }
+
+void tcp_emit_msg_too_big(void **state) {
+	// arrange
+	char command[] = "command";
+	char route[]   = "route";
+	char payload[DUCQ_MSGSZ] = "";
+	memset(payload, 1, DUCQ_MSGSZ);
+	int payload_size = sizeof(payload);
+
+	ducq_state expected_state = DUCQ_EMSGSIZE;
+
+	// act
+	ducq_i *ducq = ducq_new_tcp(-1, NULL, NULL);
+	ducq_state actual_state  = ducq_emit(ducq, command, route, payload, payload_size, true);
+
+	// audit
+	assert_int_equal(expected_state, actual_state);
+
+	// teardown
+	ducq_free(ducq);
+}

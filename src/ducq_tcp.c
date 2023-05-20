@@ -129,8 +129,11 @@ ducq_state _send(ducq_i *ducq, const void *buf, size_t *count) {
 
 static
 ducq_state _emit(ducq_i *ducq, const char *command, const char *route, const char *payload, size_t payload_size, bool close) {
-	char msg[BUFSIZ];
-	size_t len = snprintf(msg, BUFSIZ, "%s %s\n%.*s", command, route, (int)payload_size, payload);
+	char msg[DUCQ_MSGSZ];
+	size_t len = snprintf(msg, DUCQ_MSGSZ, "%s %s\n%.*s", command, route, (int)payload_size, payload);
+
+	if(len >= DUCQ_MSGSZ)
+		return DUCQ_EMSGSIZE;
 
 	ducq_state state = ducq_send(ducq, msg, &len);
 	if(state != DUCQ_OK) return state;

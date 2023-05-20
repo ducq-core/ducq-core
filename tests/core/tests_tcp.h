@@ -33,7 +33,8 @@
 	apply(tcp_recv_payload_size_minus_one_buffer_is_null_terminated) \
 	apply(tcp_recv_payload_exactly_same_as_buffer_is_err) \
 	apply(tcp_emit_param_received) \
-	apply(tcp_emit_shutdown_called)
+	apply(tcp_emit_shutdown_called) \
+	apply(tcp_emit_msg_too_big)
 	
 foreach_tcp_tests(build_forward_declarations)
 

@@ -69,6 +69,16 @@ ducq_state _send(ducq_i *ducq, const void *buf, size_t *count) {
 }
 
 static
+ducq_state _emit(ducq_i *ducq, const char *command, const char *route, const char *payload, size_t payload_size, bool close) {
+	check_expected(ducq);
+	check_expected(command);
+	check_expected(payload);
+	check_expected(payload_size);
+	return mock();
+}
+
+
+static
 ducq_i *_copy(ducq_i * ducq) {
 	return (ducq_i *) mock();
 }
@@ -102,6 +112,7 @@ static ducq_vtbl table = {
 	.id      = _id,
 	.recv    = _recv,
 	.send    = _send,
+	.emit    = _emit,
 	.copy    = _copy,
 	.eq      = _eq,
 	.timeout = _timeout,

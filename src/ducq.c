@@ -77,14 +77,14 @@ ducq_state ducq_publish(ducq_i *ducq, char *route, char *payload, size_t size) {
 	state = ducq_emit(ducq, "publish", route, payload, size, true);
 	if(state != DUCQ_OK) return state;
 
+
 	char recvbuf[25] = "";
 	size_t len = 25;
 	state = ducq_recv(ducq, recvbuf, &len);
-	if(state == DUCQ_OK) {
-		if(strncmp("ACK", recvbuf, 3) != 0)
-			state = DUCQ_EACK;
-	};
+	if(state == DUCQ_OK)
+		state = ducq_ack_to_state(recvbuf);
 	
+
 	if(ducq_close(ducq))
 		return DUCQ_ECLOSE;
 
