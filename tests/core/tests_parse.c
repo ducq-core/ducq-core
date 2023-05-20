@@ -125,6 +125,49 @@ void parse_payload_no_newline_err(void **state) {
 
 
 
+
+
+void parse_ack(void **state) {
+	// arange
+	char msg[] = "ACK *\n0\nok";
+	ducq_state expected_state = DUCQ_OK;
+
+	// act
+	ducq_state actual_state = ducq_ack_to_state(msg);
+
+	// audit
+	assert_int_equal(expected_state, actual_state);
+}
+
+void parse_nack(void **state) {
+	// arange
+	char msg[] = "NACK *\n22\nerror";
+	ducq_state expected_state = 22;
+
+	// act
+	ducq_state actual_state = ducq_ack_to_state(msg);
+
+	// audit
+	assert_int_equal(expected_state, actual_state);
+}
+
+void parse_nack_invalid(void **state) {
+	// arange
+	char msg[] = "NACK *\nerror";
+	ducq_state expected_state = DUCQ_EMSGINV;
+
+	// act
+	ducq_state actual_state = ducq_ack_to_state(msg);
+
+	// audit
+	assert_int_equal(expected_state, actual_state);
+}
+
+
+
+
+
+
 void route_cmp_identical_ok(void **state) {
 	// arange
 	char sub_route[] = "route";

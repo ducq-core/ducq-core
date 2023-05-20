@@ -128,7 +128,20 @@ const char * ducq_parse_payload(const char *buffer) {
 	return ptr ? ++ptr : NULL;
 }
 
+ducq_state ducq_ack_to_state(const char *msg) {
+	if(strncmp(msg, "ACK", 3) == 0)
+		return DUCQ_OK;
+	
+	const char *payload = ducq_parse_payload(msg);
+	if(!payload)
+		return DUCQ_EMSGINV;
 
+	long ack = strtol(payload, NULL, 10);
+	if(ack == 0)
+		return DUCQ_EMSGINV;
+
+	return ack;
+}
 
 static inline  // GNU strchrnul() is non-standard
 const char *strchrnull(const char *str, char c) {

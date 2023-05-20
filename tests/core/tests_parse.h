@@ -12,6 +12,9 @@
 	apply(parse_route_no_newline_err) \
 	apply(parse_payload_ok) \
 	apply(parse_payload_no_newline_err) \
+	apply(parse_ack) \
+	apply(parse_nack) \
+	apply(parse_nack_invalid) \
 	apply(route_cmp_identical_ok) \
 	apply(route_cmp_not_identical_ok) \
 	apply(route_cmp_wildcard_at_end_ok) \
