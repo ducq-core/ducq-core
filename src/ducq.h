@@ -60,12 +60,21 @@ ducq_state ducq_subscribe(ducq_i *ducq, const char *route, ducq_on_msg_f on_msg,
 ducq_state ducq_publish(ducq_i *ducq, char *route, char *payload, size_t size);
 
 
+// none-destructive
 const char * ducq_parse_command(const char *buffer, const char **end);
 const char * ducq_parse_route(const char *buffer, const char **end);
 const char * ducq_parse_payload(const char *buffer);
 ducq_state ducq_ack_to_state(const char *msg);
 
 bool ducq_route_cmp(const char *sub_route, const char *pub_route);
+
+// desctructive
+struct ducq_msg {
+	char *command;
+	char *route;
+	char *payload;
+};
+struct ducq_msg ducq_parse_msg(char *message);
 
 
 #endif // _DUCQ_HEADER_

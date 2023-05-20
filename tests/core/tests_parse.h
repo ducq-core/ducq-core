@@ -23,7 +23,8 @@
 	apply(route_cmp_wildcard_is_flush_ok) \
 	apply(route_cmp_wildcard_in_middle_flush_ok) \
 	apply(route_cmp_wildcard_in_middle_flush_not_matched) \
-	apply(route_cmp_wildcard_in_middle_flush_not_matched2)
+	apply(route_cmp_wildcard_in_middle_flush_not_matched2) \
+	apply(parse_msg)
 
 foreach_parse_tests(build_forward_declarations) 
 

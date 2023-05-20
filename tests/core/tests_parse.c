@@ -10,7 +10,7 @@
 
 #include "tests_parse.h"
 
-#include "ducq.h"
+#include "../../src/ducq.h"
 
 
 void parse_command_ok(void **state) {
@@ -286,4 +286,18 @@ void route_cmp_wildcard_in_middle_flush_not_matched2(void **state) {
 
 	// audit
 	assert_int_equal(expected_result, actual_result);
+}
+
+
+void parse_msg(void **state) {
+	// arange
+	char buffer[] = "command route\npayload";
+
+	// act
+	struct ducq_msg msg = ducq_parse_msg(buffer);
+
+	// audit
+	assert_string_equal(msg.command, "command");
+	assert_string_equal(msg.route,   "route"  );
+	assert_string_equal(msg.payload, "payload");
 }

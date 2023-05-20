@@ -190,3 +190,12 @@ bool ducq_route_cmp(const char *sub, const char *pub) {
 	return *sub == '\0' 
 			&& *pub == '\0';
 }
+
+
+struct ducq_msg ducq_parse_msg(char *message) {
+	return (struct ducq_msg) {
+		.command = strtok(message, " "),
+		.route   = strtok(NULL,   "\n"),
+		.payload = strtok(NULL,   "")
+	};
+}
