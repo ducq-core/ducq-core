@@ -9,7 +9,7 @@ ducq_state list_subscriptions(struct ducq_srv *srv, ducq_i *ducq, char *message,
 	(void) message;
 	(void) size;
 
-	ducq_log_info("%s", ducq_id(ducq));
+	ducq_log(INFO, "");
 
 	char payload[DUCQ_MSGSZ] = "";
 	ducq_state state = DUCQ_OK;

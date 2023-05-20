@@ -17,7 +17,7 @@
 
 
 
-void mock_log(void *ctx, const char *function_name, enum ducq_log_level level, const char *fmt, va_list args) {
+void mock_log(void *ctx, enum ducq_log_level level, const char *function_name, const char *sender_id, const char *fmt, va_list args) {
 	check_expected(ctx);
 	check_expected(function_name);
 	check_expected(level);
@@ -34,7 +34,7 @@ void srv_log_calls_log_callback(void **state) {
 	expect_value(mock_log, level, DUCQ_LOG_INFO);
 
 	// act
-	ducq_srv_log(srv, __func__, DUCQ_LOG_INFO, "");
+	ducq_srv_log(srv, DUCQ_LOG_INFO, __func__, "sender_id", "");
 
 	// teardown
 	ducq_srv_free(srv);
@@ -61,14 +61,14 @@ void srv_log_sent_to_monitor_route(void **state) {
 	srv->subs = sub2;
 
 	char expected_buffer[DUCQ_MSGSZ] = "";
-	size_t expected_size = snprintf(expected_buffer, DUCQ_MSGSZ, "INFO,%s,message", __func__);
+	size_t expected_size = snprintf(expected_buffer, DUCQ_MSGSZ, "INFO,%s,sender_id,message", __func__);
 	expect_value(_send, ducq, sub1->ducq);
 	expect_string(_send, buf, expected_buffer);
 	expect_value(_send, *count, expected_size);
 	will_return(_send, DUCQ_OK);
 
 	// act
-	ducq_srv_log(srv, __func__, DUCQ_LOG_INFO, "message");
+	ducq_srv_log(srv, DUCQ_LOG_INFO, __func__, "sender_id", "message");
 
 	// teardown
 	expect_any_always(_close, ducq);
@@ -96,7 +96,7 @@ void srv_log_dont_sent_to_monitor_route_if_not_set(void **state) {
 	srv->subs = sub2;
 
 	// act
-	ducq_srv_log(srv, __func__, DUCQ_LOG_INFO, "message");
+	ducq_srv_log(srv, DUCQ_LOG_INFO, __func__, "sender_id", "message");
 
 	// teardown
 	expect_any_always(_close, ducq);
@@ -115,12 +115,15 @@ void srv_log_warn_macro(void **state) {
 
 	expect_string(mock_log, ctx, ctx);
 	expect_string(mock_log, function_name, __func__);
-	expect_value(mock_log, level, DUCQ_LOG_WARNING);
+	expect_value(mock_log, level, DUCQ_LOG_WARN);
+
+	ducq_i *ducq = ducq_new_mock(NULL);
 
 	// act
-	ducq_log_warn("message");
+	ducq_log(WARN, "message");
 
 	// teardown
 	ducq_srv_free(srv);
+	ducq_free(ducq);
 }
 

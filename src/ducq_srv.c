@@ -85,7 +85,7 @@ ducq_state unknown(ducq_srv *srv, ducq_i *ducq, char *buffer, size_t size) {
 	char *end   = NULL;
 	const char *route = ducq_parse_route(buffer, (const char **)&end);
 	*end = '\0';
-	ducq_log_warn("%s:%s", ducq_id(ducq), route);
+	ducq_log(WARN, "%s", route);
 
 	send_ack(ducq, DUCQ_ENOCMD);
 	ducq_close(ducq);
@@ -163,7 +163,7 @@ void _load_command(ducq_srv* srv, const char *path, struct dirent *dp) {
 
 	void *handle = dlopen(fullpath, RTLD_NOW | RTLD_LOCAL);
 	if(!handle) {
-		ducq_log_error("server,dlopen() failed for: %s", dlerror());
+		ducq_srv_log(srv, DUCQ_LOG_ERROR, __func__, "server", "dlopen() failed for: %s", dlerror());
 		return;
 	}
 	
@@ -171,7 +171,7 @@ void _load_command(ducq_srv* srv, const char *path, struct dirent *dp) {
 	struct ducq_cmd_t *cmd = dlsym(handle, "command");
 	char *err = dlerror();
 	if(!cmd || err) {
-		ducq_log_error("server,dlsym() failed for %s: %s\n", name, err);
+		ducq_srv_log(srv, DUCQ_LOG_ERROR, __func__, "server", "dlsym() failed for %s: %s\n", name, err);
 		dlclose(handle);
 		return;
 	}
@@ -241,11 +241,11 @@ void ducq_srv_set_log(ducq_srv *srv, void* ctx, ducq_log_f log) {
 
 
 static
-void _no_log(void *ctx, const char *function_name, enum ducq_log_level level, const char *fmt, va_list args) {
+void _no_log(void *ctx, enum ducq_log_level level, const char *function_name, const char *sender_id, const char *fmt, va_list args) {
 	;
 }
 static
-void _color_console_log(void *ctx, const char *function_name, enum ducq_log_level level, const char *fmt, va_list args) {
+void _color_console_log(void *ctx, enum ducq_log_level level, const char *function_name, const char *sender_id, const char *fmt, va_list args) {
 	(void) ctx; // unused
 	
 	char now[] = "YYYY-MM-DDTHH:MM:SS";
@@ -253,12 +253,12 @@ void _color_console_log(void *ctx, const char *function_name, enum ducq_log_leve
 	strftime(now, sizeof(now), "%F%T", localtime(&timer));
 	
 	switch(level) {
-		case DUCQ_LOG_DEBUG   : printf("\033[92m"); break;
-		case DUCQ_LOG_INFO    : printf("\033[39m"); break;
-		case DUCQ_LOG_WARNING : printf("\033[93m"); break;
-		case DUCQ_LOG_ERROR   : printf("\033[91m"); break;
+		case DUCQ_LOG_DEBUG : printf("\033[92m"); break;
+		case DUCQ_LOG_INFO  : printf("\033[39m"); break;
+		case DUCQ_LOG_WARN  : printf("\033[93m"); break;
+		case DUCQ_LOG_ERROR : printf("\033[91m"); break;
 	}
-	printf("%s  %s  ", now, function_name);
+	printf("%s  %s  %s", now, function_name, sender_id);
 	vprintf(fmt, args);
 	printf("\n");
 	printf("\033[39m");
@@ -268,11 +268,13 @@ void ducq_srv_set_default_log(ducq_srv *srv) {
 }
 
 
-void ducq_srv_log(ducq_srv *srv, const char *function_name, enum ducq_log_level level, const char *fmt, ...) {
+
+// LEVEL,funcname,id,msg
+void ducq_srv_log(ducq_srv *srv, enum ducq_log_level level, const char *function_name, const char *sender_id, const char *fmt, ...) {
 	va_list args;
 
 	va_start(args, fmt);
-		srv->log(srv->log_ctx, function_name, level, fmt, args);
+		srv->log(srv->log_ctx, level, function_name, sender_id, fmt, args);
 	va_end(args);
 	
 
@@ -282,7 +284,7 @@ void ducq_srv_log(ducq_srv *srv, const char *function_name, enum ducq_log_level 
 	va_start(args, fmt);
 		char buffer[DUCQ_MSGSZ] = "";
 		size_t len = 0;
-		len +=  snprintf(buffer    , DUCQ_MSGSZ    , "%s,%s,", ducq_loglevel_tostring(level), function_name);
+		len +=  snprintf(buffer    , DUCQ_MSGSZ    , "%s,%s,%s,", ducq_loglevel_tostring(level), function_name, sender_id);
 		len += vsnprintf(buffer+len, DUCQ_MSGSZ-len, fmt    , args);
 	va_end(args);
 

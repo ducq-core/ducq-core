@@ -11,7 +11,7 @@ ducq_state list_commands(struct ducq_srv *srv, ducq_i *ducq, char *message, size
 	(void) message;
 	(void) size;
 	
-	ducq_log_info("%s", ducq_id(ducq));
+	ducq_log(INFO, "");
 
 	char payload[DUCQ_MSGSZ] = "";
 	ducq_state state = DUCQ_OK;

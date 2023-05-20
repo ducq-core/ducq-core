@@ -18,7 +18,7 @@ ducq_state publish(struct ducq_srv *srv, ducq_i *ducq, char *buffer, size_t size
 	else if( ! (route = strndup(route, end-route)) )
 		state = DUCQ_EMEMFAIL;
 	if(state) {
-		ducq_log_warn("%s,%s,%s", ducq_id(ducq), route, ducq_state_tostr(state));
+		ducq_log(WARN, "%s,%s", route, ducq_state_tostr(state));
 
 		send_ack(ducq, state);
 		ducq_close(ducq);
@@ -43,7 +43,7 @@ ducq_state publish(struct ducq_srv *srv, ducq_i *ducq, char *buffer, size_t size
 			count++;
 	}
 
-	ducq_log_info("%s,%s,%d notified", ducq_id(ducq), route, count);
+	ducq_log(INFO, "%s,%d notified", route, count);
 
 	free( (void*) route ); // discard const
 	return ducq_close(ducq);

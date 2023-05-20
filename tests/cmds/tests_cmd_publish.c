@@ -51,7 +51,7 @@ void publish_send_msg_invalide_if_cant_parse_route(void **state) {
 	will_return(_send, DUCQ_OK);
 
 	expect_string(mock_log, function_name, "publish");
-	expect_value(mock_log, level, DUCQ_LOG_WARNING);
+	expect_value(mock_log, level, DUCQ_LOG_WARN);
 
 	expect_value(_close, ducq, publisher);
 	will_return(_close, DUCQ_OK);
