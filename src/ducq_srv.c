@@ -82,10 +82,8 @@ ducq_state _recv_msg(ducq_i *ducq, char *buffer, size_t *size) {
 	return DUCQ_OK;
 }
 ducq_state unknown(ducq_srv *srv, ducq_i *ducq, char *buffer, size_t size) {
-	char *end   = NULL;
-	const char *route = ducq_parse_route(buffer, (const char **)&end);
-	*end = '\0';
-	ducq_log(WARN, "%s", route);
+	struct ducq_msg msg = ducq_parse_msg(buffer);
+	ducq_log(WARN, "%s,%s", msg.command, msg.route);
 
 	send_ack(ducq, DUCQ_ENOCMD);
 	ducq_close(ducq);
@@ -258,7 +256,7 @@ void _color_console_log(void *ctx, enum ducq_log_level level, const char *functi
 		case DUCQ_LOG_WARN  : printf("\033[93m"); break;
 		case DUCQ_LOG_ERROR : printf("\033[91m"); break;
 	}
-	printf("%s  %s  %s", now, function_name, sender_id);
+	printf("%s  %s  %s: ", now, function_name, sender_id);
 	vprintf(fmt, args);
 	printf("\n");
 	printf("\033[39m");
