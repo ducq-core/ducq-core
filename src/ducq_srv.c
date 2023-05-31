@@ -70,9 +70,8 @@ bool ducq_srv_unsubscribe(ducq_srv *srv, ducq_i *ducq) {
 ducq_state _recv_msg(ducq_i *ducq, char *buffer, size_t *size) {
 	size_t max_size = *size;
 
-	ducq_state recv_state = ducq_recv(ducq, buffer, size);
-	if( recv_state != DUCQ_OK )
-		return recv_state;
+	DUCQ_CHECK(ducq_timeout(ducq, 5));
+	DUCQ_CHECK(ducq_recv(ducq, buffer, size));
 	
 	(*size)++;
 	if(*size > max_size)
@@ -239,16 +238,16 @@ void ducq_srv_set_log(ducq_srv *srv, void* ctx, ducq_log_f log) {
 
 
 static
-void _no_log(void *ctx, enum ducq_log_level level, const char *function_name, const char *sender_id, const char *fmt, va_list args) {
-	;
+int _no_log(void *ctx, enum ducq_log_level level, const char *function_name, const char *sender_id, const char *fmt, va_list args) {
+	return 0;
 }
-static
-void _color_console_log(void *ctx, enum ducq_log_level level, const char *function_name, const char *sender_id, const char *fmt, va_list args) {
+
+int ducq_color_console_log(void *ctx, enum ducq_log_level level, const char *function_name, const char *sender_id, const char *fmt, va_list args) {
 	(void) ctx; // unused
 	
 	char now[] = "YYYY-MM-DDTHH:MM:SS";
 	time_t timer = time(NULL);
-	strftime(now, sizeof(now), "%F%T", localtime(&timer));
+	strftime(now, sizeof(now), "%FT%T", localtime(&timer));
 	
 	switch(level) {
 		case DUCQ_LOG_DEBUG : printf("\033[92m"); break;
@@ -260,24 +259,26 @@ void _color_console_log(void *ctx, enum ducq_log_level level, const char *functi
 	vprintf(fmt, args);
 	printf("\n");
 	printf("\033[39m");
+
+	return 0;
 }
 void ducq_srv_set_default_log(ducq_srv *srv) {
-	srv->log     = _color_console_log;
+	srv->log     = ducq_color_console_log;
 }
 
 
 
 // LEVEL,funcname,id,msg
-void ducq_srv_log(ducq_srv *srv, enum ducq_log_level level, const char *function_name, const char *sender_id, const char *fmt, ...) {
+int ducq_srv_log(ducq_srv *srv, enum ducq_log_level level, const char *function_name, const char *sender_id, const char *fmt, ...) {
 	va_list args;
 
 	va_start(args, fmt);
-		srv->log(srv->log_ctx, level, function_name, sender_id, fmt, args);
+		int rc = srv->log(srv->log_ctx, level, function_name, sender_id, fmt, args);
 	va_end(args);
 	
 
 	if(! srv->allow_monitor_route)
-		return;
+		return rc;
 
 	va_start(args, fmt);
 		char buffer[DUCQ_MSGSZ] = "";
@@ -296,6 +297,8 @@ void ducq_srv_log(ducq_srv *srv, enum ducq_log_level level, const char *function
 				ducq_srv_unsubscribe(srv, sub->ducq);
 		}
 	}
+
+	return rc;
 }
 
 
