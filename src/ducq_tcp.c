@@ -151,7 +151,9 @@ ducq_state _emit(ducq_i *ducq, const char *command, const char *route, const cha
 static
 ducq_i *_copy(ducq_i * ducq) {
 	ducq_tcp_t *tcp = (ducq_tcp_t*)ducq;
-	return ducq_new_tcp(tcp->fd, tcp->host, tcp->port);
+	ducq_tcp_t *copy = (ducq_tcp_t*) ducq_new_tcp(tcp->host, tcp->port);
+	copy->fd = tcp->fd;
+	return (ducq_i*) copy;
 }
 
 static
@@ -199,12 +201,12 @@ static ducq_vtbl table = {
 	.dtor    = _dtor
 };
 
-ducq_i *ducq_new_tcp(int fd, const char *host, const char *port) {
+ducq_i *ducq_new_tcp(const char *host, const char *port) {
 	ducq_tcp_t *tcp = malloc(sizeof(ducq_tcp_t));
 	if(!tcp) return NULL;
 
 	tcp->tbl = &table;
-	tcp->fd   = fd;
+	tcp->fd   = -1;
 	tcp->host = host;
 	tcp->port = port;
 	tcp->id[0] = '\0';

@@ -110,6 +110,10 @@ void cmd_dispatch_ducq_recv_receive_dispatch_params(void **state) {
 	expect_memory   (_recv, count, &size, sizeof(size_t));
 	will_return     (_recv, DUCQ_OK);
 
+	expect_any (_timeout, ducq);
+	expect_any (_timeout, timeout);
+	will_return(_timeout, DUCQ_OK);
+
 	expect_any  (mock_command_a, srv);
 	expect_any  (mock_command_a, ducq);
 	expect_any  (mock_command_a, buffer);
@@ -143,6 +147,10 @@ void cmd_dispatch_recv_fails_return_rc(void **state) {
 	expect_any (_recv, count);
 	will_return(_recv, expected_state);
 
+	expect_any (_timeout, ducq);
+	expect_any (_timeout, timeout);
+	will_return(_timeout, DUCQ_OK);
+
 	// act
 	ducq_state actual_state = ducq_srv_dispatch(srv, sender);
 
@@ -171,6 +179,10 @@ void cmd_dispatch_recv_msg_buffer_size_minus_one_ok(void **state) {
 	expect_any (_recv, ptr);
 	expect_any (_recv, count);
 	will_return(_recv, DUCQ_OK);
+
+	expect_any (_timeout, ducq);
+	expect_any (_timeout, timeout);
+	will_return(_timeout, DUCQ_OK);
 
 	expect_any (mock_command_a, srv);
 	expect_any (mock_command_a, ducq);
@@ -207,6 +219,10 @@ void cmd_dispatch_recv_msg_exact_buffer_size_too_big(void **state) {
 	expect_any (_recv, count);
 	will_return(_recv, DUCQ_OK);
 
+	expect_any (_timeout, ducq);
+	expect_any (_timeout, timeout);
+	will_return(_timeout, DUCQ_OK);
+
 	// act
 	ducq_state actual_state = ducq_srv_dispatch(srv, sender);
 
@@ -238,6 +254,10 @@ void cmd_dispatch_command_a_receive_params(void **state) {
 	expect_any   (_recv, ptr);
 	expect_any   (_recv, count);
 	will_return  (_recv, DUCQ_OK);
+
+	expect_any (_timeout, ducq);
+	expect_any (_timeout, timeout);
+	will_return(_timeout, DUCQ_OK);
 
 	expect_value (mock_command_a, srv, srv);
 	expect_value (mock_command_a, ducq, sender);
@@ -273,6 +293,10 @@ void cmd_dispatch_command_b_receive_params(void **state) {
 	expect_any   (_recv, count);
 	will_return  (_recv, DUCQ_OK);
 
+	expect_any (_timeout, ducq);
+	expect_any (_timeout, timeout);
+	will_return(_timeout, DUCQ_OK);
+
 	expect_value (mock_command_b, srv, srv);
 	expect_value (mock_command_b, ducq, sender);
 	expect_string(mock_command_b, buffer, expected_msg);
@@ -307,6 +331,10 @@ void cmd_dispatch_command_receive_buffer_always_null_terminated(void **state) {
 	expect_any  (_recv, ptr);
 	expect_any  (_recv, count);
 	will_return (_recv, DUCQ_OK);
+
+	expect_any (_timeout, ducq);
+	expect_any (_timeout, timeout);
+	will_return(_timeout, DUCQ_OK);
 
 	expect_value (mock_command_a, srv, srv);
 	expect_value (mock_command_a, ducq, sender);
@@ -344,6 +372,11 @@ void cmd_dispatch_sender_receive_nack_if_command_unknown(void **state) {
 	expect_any   (_recv, ptr);
 	expect_any   (_recv, count);
 	will_return  (_recv, DUCQ_OK);
+
+
+	expect_any (_timeout, ducq);
+	expect_any (_timeout, timeout);
+	will_return(_timeout, DUCQ_OK);
 
 	expect_value (_send, ducq, sender);
 	expect_string(_send, buf, expected_nack_msg);
@@ -383,6 +416,10 @@ void cmd_dispatch_returns_command_state(void **state) {
 	expect_any  (_recv, ptr);
 	expect_any  (_recv, count);
 	will_return (_recv, DUCQ_OK);
+
+	expect_any (_timeout, ducq);
+	expect_any (_timeout, timeout);
+	will_return(_timeout, DUCQ_OK);
 
 	expect_any  (mock_command_a, srv);
 	expect_any  (mock_command_a, ducq);

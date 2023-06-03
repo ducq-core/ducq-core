@@ -21,7 +21,7 @@ void tcp_connect_ok(void **state) {
 	ducq_state expected_state = DUCQ_OK;
 
 	// act
-	ducq_i *ducq = ducq_new_tcp(-1, NULL, NULL);
+	ducq_i *ducq = ducq_new_tcp(NULL, NULL);
 	ducq_state actual_state  = ducq_conn(ducq);
 
 	// audit
@@ -39,7 +39,7 @@ void tcp_connect_econnect(void **state) {
 	ducq_state expected_state = DUCQ_ECONNECT;
 
 	// act
-	ducq_i *ducq = ducq_new_tcp(-1, NULL, NULL);
+	ducq_i *ducq = ducq_new_tcp(NULL, NULL);
 	ducq_state actual_state  = ducq_conn(ducq);
 
 	// audit
@@ -57,7 +57,7 @@ void tcp_close_ok(void **state) {
 	ducq_state expected_state = DUCQ_OK;
 
 	// act
-	ducq_i *ducq = ducq_new_tcp(-1, NULL, NULL);
+	ducq_i *ducq = ducq_new_tcp(NULL, NULL);
 	ducq_state actual_state  = ducq_close(ducq);
 
 	// audit
@@ -75,7 +75,7 @@ void tcp_close_eclose(void **state) {
 	ducq_state expected_state = DUCQ_ECLOSE;
 
 	// act
-	ducq_i *ducq = ducq_new_tcp(-1, NULL, NULL);
+	ducq_i *ducq = ducq_new_tcp(NULL, NULL);
 	ducq_state actual_state  = ducq_close(ducq);
 
 	// audit
@@ -93,7 +93,7 @@ void tcp_id_ok(void **state) {
 	expect_value(inet_socket_tostring, self, false);
 
 	// act
-	ducq_i *ducq = ducq_new_tcp(-1, NULL, NULL);
+	ducq_i *ducq = ducq_new_tcp(NULL, NULL);
 	const char *actual_id  = ducq_id(ducq);
 
 	// audit
@@ -110,7 +110,7 @@ void tcp_id_called_only_once(void **state) {
 		expect_value(inet_socket_tostring, self, false);
 
 	// act
-	ducq_i *ducq = ducq_new_tcp(-1, NULL, NULL);
+	ducq_i *ducq = ducq_new_tcp(NULL, NULL);
 	const char *actual_id1  = ducq_id(ducq);
 	const char *actual_id2  = ducq_id(ducq);
 
@@ -126,8 +126,8 @@ void tcp_id_called_only_once(void **state) {
 
 void tcp_eq_ok(void **state) {
 	// arrange
-	ducq_i *ducq_a = ducq_new_tcp(10, NULL, NULL);
-	ducq_i *ducq_b = ducq_new_tcp(10, NULL, NULL);
+	ducq_i *ducq_a = ducq_new_tcp(NULL, NULL);
+	ducq_i *ducq_b = ducq_new_tcp(NULL, NULL);
 
 	// act
 	bool are_equal = ducq_eq(ducq_a, ducq_b);
@@ -143,9 +143,15 @@ void tcp_eq_ok(void **state) {
 
 void tcp_eq_ok_fd_not_equal(void **state) {
 	// arrange
-	ducq_i *ducq_a = ducq_new_tcp(10, NULL, NULL);
-	ducq_i *ducq_b = ducq_new_tcp(99, NULL, NULL);
+	ducq_i *ducq_a = ducq_new_tcp(NULL, NULL);
+	ducq_i *ducq_b = ducq_new_tcp(NULL, NULL);
 
+	will_return(inet_tcp_connect, 4);
+	will_return(inet_tcp_connect, 5);
+
+	ducq_conn(ducq_a);
+	ducq_conn(ducq_b);
+	
 	// act
 	bool are_equal = ducq_eq(ducq_a, ducq_b);
 
@@ -160,7 +166,7 @@ void tcp_eq_ok_fd_not_equal(void **state) {
 
 void tcp_eq_ok_vtbl_not_equal(void **state) {
 	// arrange
-	ducq_i *ducq_a = ducq_new_tcp(10, NULL, NULL);
+	ducq_i *ducq_a = ducq_new_tcp(NULL, NULL);
 	struct ducq_mock_s {
 		ducq_vtbl tbl;
 	} _ducq_mock = { 0 };
@@ -180,7 +186,7 @@ void tcp_eq_ok_vtbl_not_equal(void **state) {
 
 void tcp_copy_is_equal(void **state) {
 	// arrange
-	ducq_i *ducq_a = ducq_new_tcp(10, NULL, NULL);
+	ducq_i *ducq_a = ducq_new_tcp(NULL, NULL);
 
 	// act
 	ducq_i *ducq_b = ducq_copy(ducq_a);
@@ -199,7 +205,7 @@ void tcp_copy_is_equal(void **state) {
 
 void tcp_timeout_ok(void **state) {
 	// arrange
-	ducq_i *ducq = ducq_new_tcp(10, NULL, NULL);
+	ducq_i *ducq = ducq_new_tcp(NULL, NULL);
 	ducq_state expected_state = DUCQ_OK;
 
 	int rc = 0;
@@ -216,7 +222,7 @@ void tcp_timeout_ok(void **state) {
 }
 void tcp_timeout_err(void **state) {
 	// arrange
-	ducq_i *ducq = ducq_new_tcp(10, NULL, NULL);
+	ducq_i *ducq = ducq_new_tcp(NULL, NULL);
 	ducq_state expected_state = DUCQ_ECOMMLAYER;
 
 	int rc = -1;
@@ -254,7 +260,7 @@ void tcp_send_count_ok(void **state) {
 	will_return(writen, payload_count);
 
 	// act
-	ducq_i *ducq = ducq_new_tcp(-1, NULL, NULL);
+	ducq_i *ducq = ducq_new_tcp(NULL, NULL);
 	size_t actual_count = strlen(payload);
 	ducq_state actual_state  = ducq_send(ducq, payload, &actual_count);
 
@@ -280,7 +286,7 @@ void tcp_send_ewrite_header(void **state) {
 	ducq_state expected_state = DUCQ_EWRITE;
 
 	// act
-	ducq_i *ducq = ducq_new_tcp(-1, NULL, NULL);
+	ducq_i *ducq = ducq_new_tcp(NULL, NULL);
 	size_t actual_count = strlen(payload);
 	ducq_state actual_state  = ducq_send(ducq, payload, &actual_count);
 
@@ -306,7 +312,7 @@ void tcp_send_ewrite_payload(void **state) {
 	ducq_state expected_state = DUCQ_EWRITE;
 
 	// act
-	ducq_i *ducq = ducq_new_tcp(-1, NULL, NULL);
+	ducq_i *ducq = ducq_new_tcp(NULL, NULL);
 	size_t actual_count = strlen(payload);
 	ducq_state actual_state  = ducq_send(ducq, payload, &actual_count);
 
@@ -336,7 +342,7 @@ void tcp_recv_ok(void **state) {
 	// act
 	char actual_msg[BUFSIZ];
 	size_t size = BUFSIZ;
-	ducq_i *ducq = ducq_new_tcp(-1, NULL, NULL);
+	ducq_i *ducq = ducq_new_tcp(NULL, NULL);
 	ducq_state actual_state = ducq_recv(ducq, actual_msg, &size);
 	
 	// audit
@@ -360,7 +366,7 @@ void tcp_recv_read_err_on_parsing_length(void **state) {
 	// act
 	char actual_msg[BUFSIZ] = {};
 	size_t size = BUFSIZ;
-	ducq_i *ducq = ducq_new_tcp(-1, NULL, NULL);
+	ducq_i *ducq = ducq_new_tcp(NULL, NULL);
 	ducq_state actual_state = ducq_recv(ducq, actual_msg, &size);
 
 	// audit
@@ -383,7 +389,7 @@ void tcp_recv_connclosed_on_parsing_length(void **state) {
 	// act
 	char actual_msg[BUFSIZ] = {};
 	size_t size = BUFSIZ;
-	ducq_i *ducq = ducq_new_tcp(-1, NULL, NULL);
+	ducq_i *ducq = ducq_new_tcp(NULL, NULL);
 	ducq_state actual_state = ducq_recv(ducq, actual_msg, &size);
 
 	// audit
@@ -407,7 +413,7 @@ void tcp_recv_parsed_length_too_big_for_buffer_size(void **state) {
 	char actual_msg[THREE_DIGITS_BUFFER] = {};
 	size_t size = THREE_DIGITS_BUFFER;
 #undef THREE_DIGITS_BUFFER
-	ducq_i *ducq = ducq_new_tcp(-1, NULL, NULL);
+	ducq_i *ducq = ducq_new_tcp(NULL, NULL);
 	ducq_state actual_state = ducq_recv(ducq, actual_msg, &size);
 
 	// audit
@@ -430,7 +436,7 @@ void tcp_recv_no_endline_after_length(void **state) {
 	// act
 	char actual_msg[BUFSIZ] = {};
 	size_t size = BUFSIZ;
-	ducq_i *ducq = ducq_new_tcp(-1, NULL, NULL);
+	ducq_i *ducq = ducq_new_tcp(NULL, NULL);
 	ducq_state actual_state = ducq_recv(ducq, actual_msg, &size);
 
 	// audit
@@ -456,7 +462,7 @@ void tcp_recv_parsed_length_stop_at_buf_size(void **state) {
 	char actual_msg[SMALL_BUFFER] = {};
 	size_t size = SMALL_BUFFER;
 #undef SMALL_BUFFER
-	ducq_i *ducq = ducq_new_tcp(-1, NULL, NULL);
+	ducq_i *ducq = ducq_new_tcp(NULL, NULL);
 	ducq_state actual_state = ducq_recv(ducq, actual_msg, &size);
 
 	// audit
@@ -478,7 +484,7 @@ void tcp_recv_msg_size_too_big_for_buffer(void **state) {
 	// act
 	char actual_msg[BUFSIZ] = {};
 	size_t size = BUFSIZ;
-	ducq_i *ducq = ducq_new_tcp(-1, NULL, NULL);
+	ducq_i *ducq = ducq_new_tcp(NULL, NULL);
 	ducq_state actual_state = ducq_recv(ducq, actual_msg, &size);
 
 	// audit
@@ -502,7 +508,7 @@ void tcp_recv_read_err_on_reading_payload(void **state) {
 	// act
 	char actual_msg[BUFSIZ] = {};
 	size_t size = BUFSIZ;
-	ducq_i *ducq = ducq_new_tcp(-1, NULL, NULL);
+	ducq_i *ducq = ducq_new_tcp(NULL, NULL);
 	ducq_state actual_state = ducq_recv(ducq, actual_msg, &size);
 
 	// audit
@@ -525,7 +531,7 @@ void tcp_recv_connclosed_on_reading_payload(void **state) {
 	// act
 	char actual_msg[BUFSIZ] = {};
 	size_t size = BUFSIZ;
-	ducq_i *ducq = ducq_new_tcp(-1, NULL, NULL);
+	ducq_i *ducq = ducq_new_tcp(NULL, NULL);
 	ducq_state actual_state = ducq_recv(ducq, actual_msg, &size);
 	
 	// audit
@@ -549,7 +555,7 @@ void tcp_recv_payload_length_smaller_than_expected(void **state) {
 	// act
 	char actual_msg[BUFSIZ] = {};
 	size_t size = BUFSIZ;
-	ducq_i *ducq = ducq_new_tcp(-1, NULL, NULL);
+	ducq_i *ducq = ducq_new_tcp(NULL, NULL);
 	ducq_state actual_state = ducq_recv(ducq, actual_msg, &size);
 	
 	// audit
@@ -573,7 +579,7 @@ void tcp_recv_payload_length_bigger_than_expected(void **state) {
 	// act
 	char actual_msg[BUFSIZ] = {};
 	size_t size = BUFSIZ;
-	ducq_i *ducq = ducq_new_tcp(-1, NULL, NULL);
+	ducq_i *ducq = ducq_new_tcp(NULL, NULL);
 	ducq_state actual_state = ducq_recv(ducq, actual_msg, &size);
 	
 	// audit
@@ -597,7 +603,7 @@ void tcp_recv_payload_size_minus_one_buffer_is_null_terminated(void **state) {
 	// act
 	char actual_msg[BUFFER_LENGTH] = {};
 	size_t size = BUFFER_LENGTH;
-	ducq_i *ducq = ducq_new_tcp(-1, NULL, NULL);
+	ducq_i *ducq = ducq_new_tcp(NULL, NULL);
 	ducq_state actual_state = ducq_recv(ducq, actual_msg, &size);
 	
 	// audit
@@ -624,7 +630,7 @@ void tcp_recv_payload_exactly_same_as_buffer_is_err(void **state) {
 	// act
 	char actual_msg[BUFFER_LENGTH] = {};
 	size_t size = BUFFER_LENGTH;
-	ducq_i *ducq = ducq_new_tcp(-1, NULL, NULL);
+	ducq_i *ducq = ducq_new_tcp(NULL, NULL);
 	ducq_state actual_state = ducq_recv(ducq, actual_msg, &size);
 	
 	// audit
@@ -658,7 +664,7 @@ void tcp_emit_param_received(void **state) {
 	will_return(writen, packetsize);
 
 	// act
-	ducq_i *ducq = ducq_new_tcp(-1, NULL, NULL);
+	ducq_i *ducq = ducq_new_tcp(NULL, NULL);
 	ducq_state actual_state  = ducq_emit(ducq, command, route, payload, payload_size, false);
 
 	// audit
@@ -692,7 +698,7 @@ void tcp_emit_shutdown_called(void **state) {
 	will_return(inet_shutdown_write, 0);
 
 	// act
-	ducq_i *ducq = ducq_new_tcp(-1, NULL, NULL);
+	ducq_i *ducq = ducq_new_tcp(NULL, NULL);
 	ducq_state actual_state  = ducq_emit(ducq, command, route, payload, payload_size, true);
 
 	// audit
@@ -713,7 +719,7 @@ void tcp_emit_msg_too_big(void **state) {
 	ducq_state expected_state = DUCQ_EMSGSIZE;
 
 	// act
-	ducq_i *ducq = ducq_new_tcp(-1, NULL, NULL);
+	ducq_i *ducq = ducq_new_tcp(NULL, NULL);
 	ducq_state actual_state  = ducq_emit(ducq, command, route, payload, payload_size, true);
 
 	// audit
