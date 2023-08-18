@@ -5,7 +5,7 @@
 #include <cmocka.h>
 
 #include "../../src/ducq.h"
-#include "../../src/ducq_srv_int.h"
+#include "../../src/ducq_srv.h"
 
 
 ducq_state mock_command_a(struct ducq_srv *srv, ducq_i *ducq, char *buffer, size_t size) {

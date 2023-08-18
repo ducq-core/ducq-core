@@ -27,10 +27,33 @@ return fix_free(fix);
 }
 
 
+struct sub_check_ctx {
+	ducq_i *ducq;
+	char *route;
+	int count;
+	int match;
+};
+ducq_loop_t _check_sub_added(ducq_i *ducq, char *actual_route, void *ctx) {
+	struct sub_check_ctx *expected = (struct sub_check_ctx*) ctx;
+
+	assert_non_null(ducq);
+	assert_non_null(ducq_id(ducq));
+
+	if( expected->ducq && ducq_eq(ducq, expected->ducq) ) {
+		assert_ptr_not_equal(ducq, expected->ducq);
+		assert_string_equal(actual_route, expected->route);
+		assert_string_equal( ducq_id(ducq), ducq_id(expected->ducq) );
+		expected->match++;
+	}
+
+	expected->count++;
+	return DUCQ_LOOP_CONTINUE;
+}
+
 
 void subscribe_msg_invalide_if_cant_parse_route(void **state) {
-//arrange
-	command_f subscribe = get_command(state);
+	//arrange
+	ducq_command_f subscribe = get_command(state);
 	
 	ducq_state expected_state = DUCQ_EMSGINV;
 
@@ -63,9 +86,10 @@ void subscribe_msg_invalide_if_cant_parse_route(void **state) {
 }
 
 
+
 void subscribe_add_subscriber_to_srv_subs(void **state) {
-//arrange
-	command_f subscribe = get_command(state);
+	//arrange
+	ducq_command_f subscribe = get_command(state);
 
 	ducq_srv *srv = ducq_srv_new();
 	const char *expected_id = "id";
@@ -81,19 +105,23 @@ void subscribe_add_subscriber_to_srv_subs(void **state) {
 	will_return(_send, DUCQ_OK);
 
 	ducq_state expected_state = DUCQ_OK;
-	char  expected_route[] = "ROUTE";
+	int expected_count = 1;
+	int expected_match = 1;
 
 	// act
 	ducq_state actual_state = subscribe(srv, subscriber, buffer, size);
-	ducq_sub *sub = srv->subs;
-	char *actual_route = sub->route;
-	const char *actual_id = sub->id;
-
+	
 	//audit
 	assert_int_equal(expected_state, actual_state);
-	assert_ptr_not_equal(sub->ducq, subscriber);
-	assert_string_equal(actual_route, expected_route);
-	assert_string_equal(expected_id, actual_id);
+	struct sub_check_ctx ctx = {
+		.ducq =  subscriber,
+		.route = "ROUTE",
+		.count = 0,
+		.match = 0
+	};
+	ducq_srv_loop(srv, _check_sub_added, &ctx);
+	assert_int_equal(expected_count, ctx.count);
+	assert_int_equal(expected_match, ctx.match);
 
 	//teardown
 	ducq_free(subscriber);
@@ -106,7 +134,7 @@ void subscribe_add_subscriber_to_srv_subs(void **state) {
 
 void subscribe_add_second_subscriber_to_srv_subs(void **state) {
 //arrange
-	command_f subscribe = get_command(state);
+	ducq_command_f subscribe = get_command(state);
 
 	ducq_srv *srv = ducq_srv_new();
 	const char *expected_id1 = "id1";
@@ -125,26 +153,34 @@ void subscribe_add_second_subscriber_to_srv_subs(void **state) {
 	expect_any_count(_send, *count, 2);
 	will_return_count(_send, DUCQ_OK, 2);
 
+	
 	ducq_state expected_state = DUCQ_OK;
-	char  expected_route[] = "ROUTE";
+	int expected_count = 2;
+	int expected_match = 1;
 
 	// act
 	ducq_state actual_state1 = subscribe(srv, subscriber1, buffer, size);
 	ducq_state actual_state2 = subscribe(srv, subscriber2, buffer, size);
-	ducq_sub *sub2 = srv->subs;
-	ducq_sub *sub1 = sub2->next;
-	char *actual_route1 = sub1->route;
-	char *actual_route2 = sub2->route;
-	const char *actual_id1 = sub1->id;
-	const char *actual_id2 = sub2->id;
-
+	
 	//audit
 	assert_int_equal(expected_state, actual_state1);
 	assert_int_equal(expected_state, actual_state2);
-	assert_string_equal(actual_route1, expected_route);
-	assert_string_equal(actual_route2, expected_route);
-	assert_string_equal(expected_id1, actual_id1);
-	assert_string_equal(expected_id2, actual_id2);
+	struct sub_check_ctx ctx = {
+		.ducq  = subscriber1,
+		.route = "ROUTE",
+		.count = 0,
+		.match = 0
+	};
+	ducq_srv_loop(srv, _check_sub_added, &ctx);
+	assert_int_equal(expected_count, ctx.count);
+	assert_int_equal(expected_match, ctx.match);
+	ctx.ducq = subscriber2;
+	ctx.route = "ROUTE";
+	ctx.count = 0;
+	ctx.match = 0;
+	ducq_srv_loop(srv, _check_sub_added, &ctx);
+	assert_int_equal(expected_count, ctx.count);
+	assert_int_equal(expected_match, ctx.match);
 
 	//teardown
 	ducq_free(subscriber1);
@@ -156,8 +192,8 @@ void subscribe_add_second_subscriber_to_srv_subs(void **state) {
 
 
 void subscribe_add_second_subscriber_makes_copy(void **state) {
-//arrange
-	command_f subscribe = get_command(state);
+	//arrange
+	ducq_command_f subscribe = get_command(state);
 
 	ducq_srv *srv = ducq_srv_new();
 	const char *expected_id1 = "id1";
@@ -176,28 +212,33 @@ void subscribe_add_second_subscriber_makes_copy(void **state) {
 	expect_any_count(_send, *count, 2);
 	will_return_count(_send, DUCQ_OK, 2);
 
+	
 	ducq_state expected_state = DUCQ_OK;
-	char  expected_route[] = "ROUTE";
+	int expected_count = 2;
+	int expected_match = 0;
 
 	// act
 	ducq_state actual_state1 = subscribe(srv, subscriber1, buffer, size);
-	ducq_free(subscriber1);
 	ducq_state actual_state2 = subscribe(srv, subscriber2, buffer, size);
+	ducq_free(subscriber1);
 	ducq_free(subscriber2);
-	ducq_sub *sub2 = srv->subs;
-	ducq_sub *sub1 = sub2->next;
-	char *actual_route1 = sub1->route;
-	char *actual_route2 = sub2->route;
-	const char *actual_id1 = sub1->id;
-	const char *actual_id2 = sub2->id;
 
 	//audit
 	assert_int_equal(expected_state, actual_state1);
 	assert_int_equal(expected_state, actual_state2);
-	assert_string_equal(actual_route1, expected_route);
-	assert_string_equal(actual_route2, expected_route);
-	assert_string_equal(expected_id1, actual_id1);
-	assert_string_equal(expected_id2, actual_id2);
+	struct sub_check_ctx ctx = {
+		.ducq  = NULL,
+		.route = "ROUTE",
+		.count = 0,
+		.match = 0
+	};
+	ducq_srv_loop(srv, _check_sub_added, &ctx);
+	assert_int_equal(expected_count, ctx.count);
+	ctx.count = 0;
+	ctx.match = 0;
+	ducq_srv_loop(srv, _check_sub_added, &ctx);
+	assert_int_equal(expected_count, ctx.count);
+	assert_int_equal(expected_match, ctx.match);
 
 	//teardown
 	// ducq_free(subscriber1);
@@ -209,8 +250,8 @@ void subscribe_add_second_subscriber_makes_copy(void **state) {
 
 
 void subscribe_mem_error_cleans_up(void **state) {
-//arrange
-	command_f subscribe = get_command(state);
+	//arrange
+	ducq_command_f subscribe = get_command(state);
 
 	ducq_srv *srv = ducq_srv_new();
 	ducq_srv_set_log(srv, NULL, mock_log);
@@ -229,16 +270,27 @@ void subscribe_mem_error_cleans_up(void **state) {
 	will_return(_send, DUCQ_OK);
 
 	expect_string(mock_log, function_name, "subscribe");
-	expect_value(mock_log, level, DUCQ_LOG_ERROR);
+	expect_value(mock_log, level, DUCQ_LOG_ERROR); // mem fail
+	expect_string(mock_log, function_name, "subscribe");
+	expect_value(mock_log, level, DUCQ_LOG_INFO );
 
 	ducq_state expected_state = DUCQ_EMEMFAIL;
+	int expected_count = 0;
+	int expected_match = 0;
 
 	// act
 	ducq_state actual_state = subscribe(srv, subscriber, buffer, size);
 	
 	//audit
 	assert_int_equal(expected_state, actual_state);
-	assert_null(srv->subs);
+	struct sub_check_ctx ctx = {
+		.ducq  = NULL,
+		.count = 0,
+		.match = 0
+	};
+	ducq_srv_loop(srv, _check_sub_added, &ctx);
+	assert_int_equal(expected_count, ctx.count);
+	assert_int_equal(expected_match, ctx.match);
 
 	//teardown
 	ducq_srv_free(srv);
@@ -250,7 +302,7 @@ void subscribe_mem_error_cleans_up(void **state) {
 
 void subscribe_send_ack_fail_cleans_up(void **state) {
 //arrange
-	command_f subscribe = get_command(state);
+	ducq_command_f subscribe = get_command(state);
 
 	ducq_srv *srv = ducq_srv_new();
 	ducq_srv_set_log(srv, NULL, mock_log);
@@ -259,7 +311,8 @@ void subscribe_send_ack_fail_cleans_up(void **state) {
 	char buffer[] = "subscribe ROUTE\npayload";
 	size_t size = sizeof(buffer);
 
-	will_return(_copy, subscriber);
+	ducq_i *copy = ducq_new_mock(ducq_id(subscriber));
+	will_return(_copy, copy);
 	
 	expect_value(_send, ducq, subscriber);
 	expect_any(_send, buf);
@@ -270,18 +323,29 @@ void subscribe_send_ack_fail_cleans_up(void **state) {
 	expect_value(mock_log, level, DUCQ_LOG_WARN);
 
 
-	expect_value(_close, ducq, subscriber);
+	expect_value(_close, ducq, copy);
 	will_return(_close, DUCQ_OK);
 
 	ducq_state expected_state = DUCQ_EWRITE;
+	int expected_count = 0;
+	int expected_match = 0;
 
 	// act
 	ducq_state actual_state = subscribe(srv, subscriber, buffer, size);
 
 	//audit
 	assert_int_equal(expected_state, actual_state);
-	assert_null(srv->subs);
+	struct sub_check_ctx ctx = {
+		.ducq  = subscriber,
+		.route = "ROUTE",
+		.count = 0,
+		.match = 0
+	};
+	ducq_srv_loop(srv, _check_sub_added, &ctx);
+	assert_int_equal(expected_count, ctx.count);
+	assert_int_equal(expected_match, ctx.match);
 
 	//teardown
 	ducq_srv_free(srv);
+	ducq_free(subscriber);
 }

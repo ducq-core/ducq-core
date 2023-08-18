@@ -7,43 +7,29 @@
 
 
 
-
+#include <stdio.h>
 ducq_state subscribe(struct ducq_srv *srv, ducq_i *ducq, char *buffer, size_t size) {
-	const char *end = NULL;
-	const char *route = ducq_parse_route(buffer, &end);
+	char *end = NULL;
+	const char *route = ducq_parse_route(buffer, (const char**) &end);
 	if(route == NULL) {
-		send_ack(ducq, DUCQ_EMSGINV);
+		ducq_send_ack(ducq, DUCQ_EMSGINV);
 		ducq_log(WARN, "%s", ducq_state_tostr(DUCQ_EMSGINV) );
 		return DUCQ_EMSGINV;
 	}
 
-	ducq_sub *sub = calloc(1, sizeof(ducq_sub));
-	if(!sub) return DUCQ_EMEMFAIL;
+	*end = '\0';
+	ducq_state add_state = ducq_srv_add(srv, ducq, route);
+	if(add_state) ducq_log(ERROR, "%s", ducq_state_tostr(add_state));
+	*end = '\n';
 
-	if( ! (sub->ducq  = ducq_copy(ducq))           ) goto mem_failed;
-	if( ! (sub->route = strndup(route, end-route)) ) goto mem_failed;
-	if( ! (sub->id    = ducq_id(sub->ducq))        ) goto mem_failed;
-
-
-	ducq_state state = send_ack(ducq, DUCQ_OK);
-	if(state != DUCQ_OK) {
-		ducq_log(WARN, "%s,%s,%s", sub->id, sub->route, ducq_state_tostr(state));
-		ducq_sub_free(sub);
-		return state;
+	ducq_state ack_state = ducq_send_ack(ducq, add_state);
+	if(ack_state) {
+		ducq_log(WARN, "%s", ducq_state_tostr(ack_state));
+		ducq_srv_delete(srv, ducq);
 	}
+	else ducq_log(INFO,  "%s", route);
 
-	sub->next = srv->subs;
-	srv->subs = sub;
-
-
-	ducq_log(INFO, "%s", sub->route);
-	return DUCQ_OK;
-
-	mem_failed:
-		ducq_log(ERROR, "%s", ducq_state_tostr(DUCQ_EMEMFAIL));
-		send_ack(ducq, DUCQ_EMEMFAIL);
-		ducq_sub_free(sub);
-		return DUCQ_EMEMFAIL;
+	return add_state ? add_state : ack_state;
 }
 
 

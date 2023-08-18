@@ -35,7 +35,7 @@ void srv_send_ack_ok(void **state) {
 	expect_value(_send, *count,strlen(expected_message));
 
 	// act
-	ducq_state actual_state = send_ack(ducq, DUCQ_OK);
+	ducq_state actual_state = ducq_send_ack(ducq, DUCQ_OK);
 	
 
 	// audit
@@ -56,7 +56,7 @@ void srv_send_ack_returns_send_rc(void **state) {
 	expect_any(_send, *count);
 
 	// act
-	ducq_state actual_state = send_ack(ducq, DUCQ_OK);
+	ducq_state actual_state = ducq_send_ack(ducq, DUCQ_OK);
 	
 
 	// audit
@@ -79,7 +79,7 @@ void srv_send_nack_ok(void **state) {
 
 
 	// act
-	ducq_state actual_state = send_ack(ducq, DUCQ_EMSGSIZE);
+	ducq_state actual_state = ducq_send_ack(ducq, DUCQ_EMSGSIZE);
 	
 
 	// audit
@@ -100,7 +100,7 @@ void srv_send_nack_returns_send_rc(void **state) {
 	expect_any(_send, *count);
 
 	// act
-	ducq_state actual_state = send_ack(ducq, DUCQ_EMSGSIZE);
+	ducq_state actual_state = ducq_send_ack(ducq, DUCQ_EMSGSIZE);
 
 	// audit
 	assert_int_equal(expected_state, actual_state);

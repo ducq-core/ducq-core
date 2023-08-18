@@ -35,10 +35,10 @@ int main(int argc, char** argv){
 	cmocka_run_group_tests(publish_command, publish_tests_setup, publish_tests_teardown);
 		printf("\n\n");
 	cmocka_run_group_tests(subscribe_command, subscribe_tests_setup, subscribe_tests_teardown);
-	printf("\n\n");
+		printf("\n\n");
 		cmocka_run_group_tests(list_subscriptions_command, list_subscriptions_tests_setup, list_subscriptions_tests_teardown);
-	printf("\n\n");
-		cmocka_run_group_tests(list_commands_command, list_commands_tests_setup, list_commands_tests_teardown);
+		printf("\n\n");
+		cmocka_run_group_tests(list_commands_command, NULL, NULL);
 
 	return 0;
 }

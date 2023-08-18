@@ -1,11 +1,11 @@
 #ifndef _UNIT_TEST_CMD_HEADER_
 #define _UNIT_TEST_CMD_HEADER_
 
-#include "../src/ducq_srv_int.h"
+#include "../src/ducq_srv.h"
 
 struct fixture {
 	void *handle;
-	command_f command;
+	ducq_command_f command;
 };
 
 #define get_command(state) ((struct fixture*)*state)->command

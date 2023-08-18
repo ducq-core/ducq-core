@@ -7,12 +7,11 @@ int sub_setup(void **state);
 int sub_teardown(void **state);
 
 #define foreach_sub_tests(apply) \
-	apply(srv_free_sub_no_leak) \
 	apply(srv_dtor_free_its_sub) \
 	apply(srv_unsubscribe_remove_first_sub) \
 	apply(srv_unsubscribe_remove_middle_sub) \
 	apply(srv_unsubscribe_remove_last_sub) \
-	apply(srv_unsubscribe_inexistant_return_false) \
+	apply(srv_unsubscribe_remove_inexistant_sub) \
 	apply(srv_unsubscribe_ignore_close_connection_error)
 	
 foreach_sub_tests(build_forward_declarations) 

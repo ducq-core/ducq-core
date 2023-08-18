@@ -27,9 +27,12 @@ return fix_free(fix);
 }
 
 
+
+
+
 void publish_send_msg_invalide_if_cant_parse_route(void **state) {
 	//arrange
-	command_f publish = get_command(state);
+	ducq_command_f publish = get_command(state);
 	
 	ducq_state expected_state = DUCQ_EMSGINV;
 
@@ -69,7 +72,7 @@ void publish_send_msg_invalide_if_cant_parse_route(void **state) {
 
 void publish_subscribers_has_ducq_send_called(void **state) {
 	//arrange
-	command_f publish = get_command(state);
+	ducq_command_f publish = get_command(state);
 	
 	ducq_state expected_state = DUCQ_OK;
 
@@ -80,23 +83,16 @@ void publish_subscribers_has_ducq_send_called(void **state) {
 	char buffer[] = "publish route\npayload";
 	size_t size = sizeof(buffer);
 
-	ducq_sub *sub1 = malloc(sizeof(ducq_sub));
-	ducq_sub *sub2 = malloc(sizeof(ducq_sub));
-	ducq_sub *sub3 = malloc(sizeof(ducq_sub));
-	sub1->ducq     = ducq_new_mock(NULL);
-	sub2->ducq     = ducq_new_mock(NULL);
-	sub3->ducq     = ducq_new_mock(NULL);
-	sub1->route    = strdup("route");
-	sub2->route    = strdup("not same route");
-	sub3->route    = strdup("route");
-	sub1->id       = ducq_id(sub1->ducq);
-	sub2->id       = ducq_id(sub2->ducq);
-	sub3->id       = ducq_id(sub3->ducq);
-	sub1->next     = NULL;
-	sub2->next     = sub1;
-	sub3->next     = sub2;
 
-	srv->subs = sub3;
+	ducq_i *ducq1 = ducq_new_mock(NULL);
+	ducq_i *ducq2 = ducq_new_mock(NULL);
+	ducq_i *ducq3 = ducq_new_mock(NULL);
+	will_return(_copy, ducq1);
+	will_return(_copy, ducq2);
+	will_return(_copy, ducq3);
+	ducq_srv_add(srv, ducq1, "route");
+	ducq_srv_add(srv, ducq2, "not same route");
+	ducq_srv_add(srv, ducq3, "route");
 
 	expect_value(_send, ducq, publisher);
 	char ack_msg[] = "ACK *\n0\nok";
@@ -104,8 +100,8 @@ void publish_subscribers_has_ducq_send_called(void **state) {
 	expect_value(_send, *count, sizeof(ack_msg)-1);
 	will_return(_send, DUCQ_OK);
 
-	expect_value(_send, ducq, sub3->ducq);
-	expect_value(_send, ducq, sub1->ducq);
+	expect_value(_send, ducq, ducq3);
+	expect_value(_send, ducq, ducq1);
 	expect_string_count(_send, buf, buffer, 2);
 	expect_value_count(_send, *count, sizeof(buffer), 2);
 	will_return_count(_send, DUCQ_OK, 2);
@@ -131,9 +127,23 @@ void publish_subscribers_has_ducq_send_called(void **state) {
 }
 
 
+struct sub_check_ctx {
+	int count;
+	int match;
+};
+static
+ducq_loop_t _check_sub_deleted(ducq_i *ducq, char *actual_route, void *ctx) {
+	struct sub_check_ctx *expected = (struct sub_check_ctx*) ctx;
+	if( strcmp(ducq_id(ducq), "A") || strcmp(ducq_id(ducq), "C") ) {
+		expected->match++;
+	}
+
+	expected->count++;
+	return DUCQ_LOOP_CONTINUE;
+}
 void publish_unsubcribe_sub_on_write_error(void **state) {
 	//arrange
-	command_f publish = get_command(state);
+	ducq_command_f publish = get_command(state);
 	
 	ducq_state expected_state = DUCQ_OK;
 
@@ -142,23 +152,16 @@ void publish_unsubcribe_sub_on_write_error(void **state) {
 	char buffer[] = "publish route\npayload";
 	size_t size = strlen(buffer);
 
-	ducq_sub *sub1 = malloc(sizeof(ducq_sub));
-	ducq_sub *sub2 = malloc(sizeof(ducq_sub));
-	ducq_sub *sub3 = malloc(sizeof(ducq_sub));
-	sub1->ducq     = ducq_new_mock(NULL);
-	sub2->ducq     = ducq_new_mock(NULL);
-	sub3->ducq     = ducq_new_mock(NULL);
-	sub1->route    = strdup("route");
-	sub2->route    = strdup("route");
-	sub3->route    = strdup("route");
-	sub1->id       = ducq_id(sub1->ducq);
-	sub2->id       = ducq_id(sub2->ducq);
-	sub3->id       = ducq_id(sub3->ducq);
-	sub1->next     = NULL;
-	sub2->next     = sub1;
-	sub3->next     = sub2;
+	ducq_i *ducq1 =  ducq_new_mock("A");
+	ducq_i *ducq2 =  ducq_new_mock("B");
+	ducq_i *ducq3 =  ducq_new_mock("C");
+	will_return(_copy, ducq1);
+	will_return(_copy, ducq2);
+	will_return(_copy, ducq3);
+	ducq_srv_add(srv, ducq1, "route");
+	ducq_srv_add(srv, ducq2, "route");
+	ducq_srv_add(srv, ducq3, "route");
 
-	srv->subs = sub3;
 
 	expect_value(_send, ducq, publisher);
 	char ack_msg[] = "ACK *\n0\nok";
@@ -166,28 +169,36 @@ void publish_unsubcribe_sub_on_write_error(void **state) {
 	expect_value(_send, *count, sizeof(ack_msg)-1);
 	will_return(_send, DUCQ_OK);
 	
-	expect_value(_send, ducq, sub3->ducq);
-	expect_value(_send, ducq, sub2->ducq);
-	expect_value(_send, ducq, sub1->ducq);
+	expect_value(_send, ducq, ducq3);
+	expect_value(_send, ducq, ducq2);
+	expect_value(_send, ducq, ducq1);
 	expect_string_count(_send, buf, buffer, 3);
 	expect_value_count(_send, *count, size, 3);
 	will_return(_send, DUCQ_OK);
 	will_return(_send, DUCQ_EWRITE);
 	will_return(_send, DUCQ_OK);
 
-	expect_value(_close, ducq, sub2->ducq);
+	expect_value(_close, ducq, ducq2);
 	expect_value(_close, ducq, publisher);
 	will_return_count(_close, DUCQ_OK, 2);
-	
+
+	int expected_count = 2;
+	int expected_match = 2;
+
+
 	// act
 	ducq_state actual_state = publish(srv, publisher, buffer, size);
 
 	//audit
+	struct sub_check_ctx ctx = {
+		.count = 0,
+		.match = 0
+	};
 	assert_int_equal(expected_state, actual_state);
-	ducq_sub *first  = srv->subs;
-	ducq_sub *second = first->next;
-	assert_ptr_equal(first, sub3);
-	assert_ptr_equal(second, sub1);
+	ducq_srv_loop(srv, _check_sub_deleted, &ctx);
+	assert_int_equal(expected_count, ctx.count);
+	assert_int_equal(expected_match, ctx.match);
+
 
 	//teardown
 	ducq_free(publisher);

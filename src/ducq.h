@@ -56,6 +56,7 @@ void        ducq_free (ducq_i *ducq);
 typedef ducq_state (*ducq_apply_f)(void* ctx, ducq_i* ducq);
 typedef int (*ducq_on_msg_f)(char *payload, size_t size, void *ctx);
 
+ducq_state ducq_send_ack(ducq_i *ducq, ducq_state state);
 ducq_state ducq_subscribe(ducq_i *ducq, const char *route, ducq_on_msg_f on_msg, void *ctx);
 ducq_state ducq_publish(ducq_i *ducq, char *route, char *payload, size_t size);
 

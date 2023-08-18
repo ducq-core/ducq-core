@@ -17,7 +17,7 @@ $(BUILDDIR)/%.o: $(SRCDIR)/%.c
 $(BUILDDIR)/commands/%.o: %.c
 	$(CC) -g -c -fPIC -Wall -c $< -o $@ $(HEADERS)
 
-$(BUILDDIR)/commands/%.so: $(BUILDDIR)/commands/%.o $(BUILDDIR)/ducq.o $(BUILDDIR)/ducq_srv.o
+$(BUILDDIR)/commands/%.so: $(BUILDDIR)/commands/%.o $(BUILDDIR)/ducq.o $(BUILDDIR)/ducq_srv.o $(BUILDDIR)/ducq_dispatcher.o
 	$(CC) -g -shared -Wl,-Bsymbolic $^ -o $@
 
 mock_commands = \
@@ -29,9 +29,10 @@ core_test_objs= \
 	${SRCDIR}/ducq.c \
 	${SRCDIR}/ducq_tcp.c \
 	${SRCDIR}/ducq_srv.c \
+	${SRCDIR}/ducq_dispatcher.c \
 	${TESTDIR}/mock_ducq_client.c \
 	mock_inet.c \
-	tests_srv_cmd.c \
+	tests_dispatcher.c \
 	tests_srv_sub.c \
 	tests_srv_ack.c \
 	tests_srv_log.c \

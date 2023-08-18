@@ -69,6 +69,18 @@ void ducq_free(ducq_i *ducq) {
 }
 
 
+
+
+ducq_state ducq_send_ack(ducq_i *ducq, ducq_state state) {
+	char msg[128];
+	size_t size = snprintf(msg, 128, "%s *\n%d\n%s",
+		state == DUCQ_OK ? "ACK" : "NACK",
+		state,
+		ducq_state_tostr(state)
+	);
+	return ducq_send(ducq, msg, &size);
+}
+
 ducq_state ducq_subscribe(ducq_i *ducq, const char *route, ducq_on_msg_f on_msg, void *ctx) {
 	char recvbuf[DUCQ_MSGSZ] = "";
 	size_t len = DUCQ_MSGSZ;

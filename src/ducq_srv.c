@@ -9,63 +9,96 @@
 
 #include "ducq.h"
 #include "ducq_srv.h"
-#include "ducq_srv_int.h"
+#include "ducq_dispatcher.h"
 
-#ifndef __linux__
-	#warning "as of now, ducq server is supported on linux only"
-#else
-	#include <dirent.h>
-	#include <dlfcn.h>
-	#include <linux/limits.h> // PATH_MAX
+typedef struct ducq_sub ducq_sub;
+typedef struct ducq_sub {
+	ducq_i     *ducq; // first: extends ducq_i
+	const char *id;   // unused ?
+	int         fd;
+	char       *route;
+	ducq_sub   *next;
+} ducq_sub;
+
+struct ducq_srv {
+	ducq_sub *subs;
+	ducq_dispatcher *dispatcher;
+	bool allow_monitor_route;
+	ducq_log_f log;
+	void *log_ctx;
+};
 
 
-
-ducq_state send_ack(ducq_i *ducq, ducq_state state) {
-	char msg[128];
-	size_t size = snprintf(msg, 128, "%s *\n%d\n%s",
-		state == DUCQ_OK ? "ACK" : "NACK",
-		state,
-		ducq_state_tostr(state)
-	);
-	return ducq_send(ducq, msg, &size);
+//
+//			C O N S T U C T O R   /   D E S T R U C T O R
+//
+static
+int _no_log(void *ctx, enum ducq_log_level level, const char *function_name, const char *sender_id, const char *fmt, va_list args) {
+	return 0;
 }
+ducq_srv *ducq_srv_new() {
+	if(signal(SIGPIPE, SIG_IGN) == SIG_ERR)
+		return NULL;
+		
+	ducq_srv* srv = malloc(sizeof(ducq_srv));
+	if(!srv) return NULL;
 
-
-
-bool ducq_srv_unsubscribe(ducq_srv *srv, ducq_i *ducq) {
-	ducq_sub *prev = NULL;
-	ducq_sub *curr = srv->subs;
-	ducq_sub *next = NULL;
-
-	while(curr) {
-		next = curr->next;
-
-		if( ducq_eq(ducq, curr->ducq) ) {
-			ducq_sub_free(curr);
-			
-			if(curr == srv->subs)
-				srv->subs = next;
-			else
-				prev->next = next;
-			
-			return true;
-		}
-
-		prev = curr;
-		curr = next;
+	srv->dispatcher = ducq_dispatcher_new(srv);
+	if( !srv->dispatcher) {
+		free(srv);
+		return NULL;
 	}
+	srv->subs = NULL;
 
-	return false;
+	srv->allow_monitor_route = true;
+	srv->log_ctx = NULL;
+	srv->log     = _no_log;
+	return srv;
+}
+
+
+
+
+void ducq_sub_free(ducq_sub *sub) {
+	if(!sub) return;
+	if(sub->route) free(sub->route);
+	if(sub->ducq) {
+		ducq_close(sub->ducq);
+		ducq_free(sub->ducq);
+	}
+	free(sub);
+}
+
+void ducq_srv_free(ducq_srv* srv) {
+	if(!srv) return;
+
+	ducq_sub *sub = srv->subs;
+	while(sub) {
+		ducq_sub *next = sub->next;
+		ducq_sub_free(sub);
+		sub = next;
+	}
+	ducq_dispatcher_free(srv->dispatcher);
+	free(srv);
+}
+
+
+
+ducq_dispatcher *ducq_srv_get_dispatcher(ducq_srv * srv) {
+	return srv->dispatcher;
 }
 
 
 
 
 
+//
+//			H E L P E R S
+//
 
-//
-//			D I S P A T C H
-//
+
+
+
 
 ducq_state _recv_msg(ducq_i *ducq, char *buffer, size_t *size) {
 	size_t max_size = *size;
@@ -80,135 +113,71 @@ ducq_state _recv_msg(ducq_i *ducq, char *buffer, size_t *size) {
 
 	return DUCQ_OK;
 }
-ducq_state unknown(ducq_srv *srv, ducq_i *ducq, char *buffer, size_t size) {
-	struct ducq_msg msg = ducq_parse_msg(buffer);
-	ducq_log(WARN, "%s,%s", msg.command, msg.route);
-
-	send_ack(ducq, DUCQ_ENOCMD);
-	ducq_close(ducq);
-	return DUCQ_ENOCMD;
-}
-command_f _find_command(ducq_srv* srv, const char *buffer) {
-	command_f command = unknown;
-
-	char *end = NULL;
-	const char *name = ducq_parse_command(buffer, (const char**) &end);
-	if ( !name) return command;
-	*end = '\0';
-
-	for(int i = 0; i < srv->ncmd ; i++) {
-		if(strcmp(name, srv->cmds[i]->name) == 0) {
-			command = srv->cmds[i]->exec;
-			break;
-		}
-	}
-
-	*end = ' ';
-	
-	return command;
-}
-ducq_state ducq_srv_dispatch(ducq_srv *srv, ducq_i *ducq) {
-	char buffer[BUFSIZ] = "";
-	size_t size = sizeof(buffer);
-
-	ducq_state recv_state = _recv_msg(ducq, buffer, &size);
-	if(recv_state != DUCQ_OK) return recv_state;
-
-	command_f command     = _find_command(srv, buffer);
-	ducq_state cmd_rc     = command(srv, ducq, buffer, size);
-
-	return cmd_rc;
-}
-
-
 
 
 
 
 //
-//			C O M M A N D S   L O A D I N G
+//			S U B S C R I B E R S
 //
 
-static
-int _count_commands(const char *path) {
-	int count = 0;
+ducq_state ducq_srv_add(ducq_srv *srv, ducq_i *ducq, const char *route) {
+	ducq_sub *sub = calloc(1, sizeof(ducq_sub));
+	if(!sub) return DUCQ_EMEMFAIL;
 
-	DIR *dirp = opendir(path);
-	if(dirp == NULL)
-		return DUCQ_EFILE;
+	if (! ( sub->ducq  = ducq_copy(ducq)    )) goto mem_failed;
+	if (! ( sub->route = strdup(route)      )) goto mem_failed;
+	if (! ( sub->id    = ducq_id(sub->ducq) )) goto mem_failed; // TODO: remove id field?
 
-	struct dirent *dp;
-	while( (dp = readdir(dirp)) ) {
-		char *ext = strrchr(dp->d_name, '.');
-		if(strcmp(ext, ".so") == 0)
-			count++;
-	}
-
-	if(closedir(dirp) == -1)
-		return DUCQ_EFILE;
-	
-	return count;
-}
-static
-void _load_command(ducq_srv* srv, const char *path, struct dirent *dp) {
-	char fullpath[PATH_MAX];
-	char *name = dp->d_name;
-	char *ext  = strrchr(name, '.');
-	if(strcmp(ext, ".so") != 0)
-		return;
-	snprintf(fullpath, PATH_MAX, "%s/%s", path, name);
-
-	void *handle = dlopen(fullpath, RTLD_NOW | RTLD_LOCAL);
-	if(!handle) {
-		ducq_srv_log(srv, DUCQ_LOG_ERROR, __func__, "server", "dlopen() failed for: %s", dlerror());
-		return;
-	}
-	
-	(void)dlerror(); // clear
-	struct ducq_cmd_t *cmd = dlsym(handle, "command");
-	char *err = dlerror();
-	if(!cmd || err) {
-		ducq_srv_log(srv, DUCQ_LOG_ERROR, __func__, "server", "dlsym() failed for %s: %s\n", name, err);
-		dlclose(handle);
-		return;
-	}
-	
-	*(srv->cmds + srv->ncmd) = cmd;
-	*(srv->hdls + srv->ncmd) = handle;
-
-	srv->ncmd++;
-}
-ducq_state ducq_srv_load_commands_path(ducq_srv* srv, const char *path) {
-	if(path == NULL)
-		 path = "/usr/local/lib/ducq_commands";
-
-	int ncmd = _count_commands(path);
-	if( ncmd < 0 ) return ncmd;
-
-	void *mem = malloc( sizeof(void*) * ncmd * 2 );
-	if(!mem) return DUCQ_EMEMFAIL;
-	srv->cmds = mem;
-	srv->hdls = mem + (sizeof(void*) * ncmd);
-	srv->ncmd = 0;
-
-
-	DIR *dirp = opendir(path);
-	if(dirp == NULL) return DUCQ_EFILE;
-
-	struct dirent *dp;
-	while( (dp = readdir(dirp)) && srv->ncmd < ncmd )
-		_load_command(srv, path, dp);
-
-	if(closedir(dirp) == -1) return DUCQ_EFILE;
-
+	sub->next = srv->subs;
+	srv->subs = sub;
 
 	return DUCQ_OK;
+
+mem_failed: // must stop as soon as an error occur
+	ducq_sub_free(sub);
+	return DUCQ_EMEMFAIL;
+
 }
 
 
+ducq_loop_t ducq_srv_loop(ducq_srv *srv, ducq_loop_f apply, void *ctx) {
+	ducq_loop_t control = DUCQ_LOOP_CONTINUE;
 
+	ducq_sub *prev = NULL;
+	ducq_sub *iter = NULL;
+	ducq_sub *next = srv->subs;
 
+	while(prev = iter, iter = next)  {
+		next = iter->next;
+		control = apply(iter->ducq, iter->route, ctx);
 
+		if (control & DUCQ_LOOP_DELETE) {
+			if(prev) prev->next = iter->next;
+			ducq_sub_free(iter);
+			if(iter == srv->subs && next == NULL)
+				srv->subs = NULL;	
+			iter = prev;
+		}
+		if (control & DUCQ_LOOP_BREAK)
+			break;
+	}
+
+	return control;
+}
+
+static
+ducq_loop_t _delete(ducq_i *ducq, char *route, void *ctx) {
+	return ducq_eq(ducq, (ducq_i*) ctx)
+		? (DUCQ_LOOP_DELETE   | DUCQ_LOOP_BREAK)
+		:  DUCQ_LOOP_CONTINUE;
+}
+bool ducq_srv_delete(ducq_srv *srv, ducq_i *ducq) {
+	if(!ducq) return false;
+
+	ducq_loop_t control = ducq_srv_loop(srv, _delete, ducq);
+	return (control & DUCQ_LOOP_DELETE);
+}
 
 //
 //			L O G
@@ -237,10 +206,7 @@ void ducq_srv_set_log(ducq_srv *srv, void* ctx, ducq_log_f log) {
 }
 
 
-static
-int _no_log(void *ctx, enum ducq_log_level level, const char *function_name, const char *sender_id, const char *fmt, va_list args) {
-	return 0;
-}
+
 
 int ducq_color_console_log(void *ctx, enum ducq_log_level level, const char *function_name, const char *sender_id, const char *fmt, va_list args) {
 	(void) ctx; // unused
@@ -269,6 +235,26 @@ void ducq_srv_set_default_log(ducq_srv *srv) {
 
 
 // LEVEL,funcname,id,msg
+struct pub_ctx {
+	char *route;
+	char *buffer;
+	size_t size;
+	int count;
+};
+ducq_loop_t _do_send_to_monitor_routes(ducq_i *ducq, char *route, void *ctx) {
+	struct pub_ctx *msg = (struct pub_ctx*) ctx;
+
+	ducq_loop_t loop = DUCQ_LOOP_CONTINUE;
+
+	if( strcmp(route, DUCQ_MONITOR_ROUTE) == 0 ) { // exact match: don't send to * routes
+		size_t size = msg->size;
+		if( ducq_send(ducq, msg->buffer, &size) != DUCQ_OK)
+			loop |= DUCQ_LOOP_DELETE;
+	}
+
+	return loop;
+
+}
 int ducq_srv_log(ducq_srv *srv, enum ducq_log_level level, const char *function_name, const char *sender_id, const char *fmt, ...) {
 	va_list args;
 
@@ -280,23 +266,21 @@ int ducq_srv_log(ducq_srv *srv, enum ducq_log_level level, const char *function_
 	if(! srv->allow_monitor_route)
 		return rc;
 
+
 	va_start(args, fmt);
 		char buffer[DUCQ_MSGSZ] = "";
-		size_t len = 0;
-		len +=  snprintf(buffer    , DUCQ_MSGSZ    , "%s,%s,%s,", ducq_loglevel_tostring(level), function_name, sender_id);
-		len += vsnprintf(buffer+len, DUCQ_MSGSZ-len, fmt    , args);
+		size_t size = 0;
+		size +=  snprintf(buffer    , DUCQ_MSGSZ    , "%s,%s,%s,", ducq_loglevel_tostring(level), function_name, sender_id);
+		size += vsnprintf(buffer+size, DUCQ_MSGSZ-size, fmt    , args);
 	va_end(args);
-
-	ducq_sub *next = NULL;
-	for(ducq_sub *sub = srv->subs; sub; sub = next) {
-		next = sub->next;
-		size_t size = len;
-
-		if( strcmp(sub->route, DUCQ_MONITOR_ROUTE) == 0 ) { // exact match: don't send to * routes
-			if( ducq_send(sub->ducq, buffer, &size) != DUCQ_OK)
-				ducq_srv_unsubscribe(srv, sub->ducq);
-		}
-	}
+	
+	struct pub_ctx msg = {
+		.route  = NULL,
+		.buffer = buffer,
+		.size   = size,
+		.count  = 0
+	};
+	ducq_srv_loop(srv, _do_send_to_monitor_routes, &msg);
 
 	return rc;
 }
@@ -306,63 +290,3 @@ int ducq_srv_log(ducq_srv *srv, enum ducq_log_level level, const char *function_
 
 
 
-//
-//			C O N S T U C T O R   /   D E S T R U C T O R
-//
-
-ducq_srv *ducq_srv_new() {
-	if(signal(SIGPIPE, SIG_IGN) == SIG_ERR)
-		return NULL;
-		
-	ducq_srv* srv = malloc(sizeof(ducq_srv));
-	if(!srv) return NULL;
-
-	srv->subs = NULL;
-	srv->cmds = NULL;
-	srv->hdls = NULL;
-	srv->ncmd = 0;
-
-	srv->allow_monitor_route = true;
-	srv->log_ctx = NULL;
-	srv->log     = _no_log;
-	return srv;
-}
-
-
-
-
-void ducq_sub_free(ducq_sub *sub) {
-	if(!sub) return;
-	if(sub->route) free(sub->route);
-	if(sub->ducq) {
-		ducq_close(sub->ducq);
-		ducq_free(sub->ducq);
-	}
-	free(sub);
-}
-
-void ducq_srv_free(ducq_srv* srv) {
-	if(!srv) return;
-
-	if(srv->hdls) {
-		for(int i = 0; i < srv->ncmd; i++)
-			dlclose(srv->hdls[i]);
-	}
-
-	if(srv->cmds)
-		free(srv->cmds);
-
-	ducq_sub *sub = srv->subs;
-	while(sub) {
-		ducq_sub *next = sub->next;
-		ducq_sub_free(sub);
-		sub = next;
-	}
-
-	free(srv);
-}
-
-
-
-
-#endif // #ifndef __linux__

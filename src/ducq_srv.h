@@ -2,22 +2,49 @@
 #define _DUCQ_SRV_HEADER_
 
 #include <stdarg.h>
-
 #include "ducq.h"
 
 
 typedef struct ducq_srv ducq_srv;
 
-
 ducq_srv *ducq_srv_new();
 void ducq_srv_free(ducq_srv* srv);
 
-bool ducq_srv_unsubscribe(ducq_srv *srv, ducq_i *ducq);
 
-ducq_state ducq_srv_load_commands_path(ducq_srv* srv, const char *path);
-#define ducq_srv_load_commands(srv) ducq_srv_load_commands_path(srv, "./commands");
+ducq_state ducq_srv_send_ack(ducq_i *ducq, ducq_state state);
 
-ducq_state ducq_srv_dispatch(ducq_srv *srv, ducq_i *ducq);
+
+// iteration
+ducq_state ducq_srv_add(ducq_srv *srv, ducq_i *ducq, const char *route);
+bool ducq_srv_delete(ducq_srv *srv, ducq_i *ducq);
+typedef enum {
+	DUCQ_LOOP_CONTINUE = 0x00,
+	DUCQ_LOOP_BREAK    = 0x01,
+	DUCQ_LOOP_DELETE   = 0x02
+} ducq_loop_t;
+typedef ducq_loop_t (*ducq_loop_f)(ducq_i *ducq, char *route, void *ctx);
+ducq_loop_t ducq_srv_loop(ducq_srv *srv, ducq_loop_f apply, void *ctx);
+
+
+// commands
+typedef struct ducq_dispatcher ducq_dispatcher;
+ducq_dispatcher *ducq_srv_get_dispatcher(ducq_srv * srv);
+typedef ducq_state (*ducq_command_f)(ducq_srv*, ducq_i*, char *, size_t);
+
+struct ducq_cmd_t {
+	char *name;
+	char *doc;
+	ducq_command_f exec;
+};
+
+
+struct ducq_cmd_paramt {
+	char *name;
+	char *doc;
+	ducq_command_f exec;
+};
+
+
 
 
 

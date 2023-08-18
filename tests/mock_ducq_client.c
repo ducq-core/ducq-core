@@ -89,7 +89,7 @@ bool _eq(ducq_i *a, ducq_i *b) {
 	mock_ducq_client *mock_ducq_b = (mock_ducq_client *)b;
 
 	return mock_ducq_a->tbl == mock_ducq_b->tbl
-			&& mock_ducq_a->id  == mock_ducq_b->id;
+			&& 0 == strcmp(mock_ducq_a->id, mock_ducq_b->id);
 }
 
 static
@@ -129,7 +129,7 @@ ducq_i *ducq_new_mock(const char *id) {
 	};
 
 	if(id)
-		memcpy(cli->id, id, strlen(id));
+		strncpy(cli->id, id, MAX_ID);
 	else
 		snprintf(cli->id, MAX_ID, "%d", next_id++);
 
