@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "../ducq_srv.h"
+#include "../ducq_reactor.h"
 
 
 struct list_ctx {
@@ -12,7 +12,11 @@ static
 ducq_loop_t _list(ducq_i *ducq, char *route, void *ctx) {
 	struct list_ctx *list = (struct list_ctx*) ctx;
 
-	size_t len = snprintf(list->buffer, list->left, "%s,%s\n", ducq_id(ducq), route);
+	size_t len = snprintf(list->buffer, list->left, "%s%s%s\n", 
+		ducq_id(ducq),
+		route ? ","   : "",
+		route ? route : ""
+	);
 
 	list->buffer += len;
 	list->left   -= len;
@@ -20,7 +24,7 @@ ducq_loop_t _list(ducq_i *ducq, char *route, void *ctx) {
 	return list->left > 0 ? DUCQ_LOOP_CONTINUE : DUCQ_LOOP_BREAK;
 }
 
-ducq_state list_subscriptions(struct ducq_srv *srv, ducq_i *ducq, char *message, size_t size) {
+ducq_state list_subscriptions(struct ducq_reactor *reactor, ducq_i *ducq, char *message, size_t size) {
 	(void) message;
 	(void) size;
 
@@ -31,11 +35,11 @@ ducq_state list_subscriptions(struct ducq_srv *srv, ducq_i *ducq, char *message,
 		.buffer = payload,
 		.left = DUCQ_MSGSZ
 	};
-	ducq_srv_loop(srv, _list, &list);
+	ducq_reactor_loop(reactor, _list, &list);
 	size_t len = DUCQ_MSGSZ - list.left;
 
 	ducq_send(ducq, payload, &len);
-	return ducq_close(ducq);
+	return DUCQ_OK;
 }
 
 

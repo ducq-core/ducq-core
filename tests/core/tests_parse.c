@@ -194,6 +194,31 @@ void route_cmp_not_identical_ok(void **state) {
 	assert_int_equal(expected_result, actual_result);
 }
 
+void route_cmp_null_sub_is_false(void **state) {
+	// arange
+	char *sub_route = NULL;
+	char *pub_route = "route/subroute";
+	bool expected_result = false;
+
+	// act
+	bool actual_result = ducq_route_cmp(sub_route, pub_route);
+
+	// audit
+	assert_int_equal(expected_result, actual_result);
+}
+void route_cmp_null_pub_is_false(void **state) {
+	// arange
+	char *sub_route = "route/subroute";
+	char *pub_route = NULL;
+	bool expected_result = false;
+
+	// act
+	bool actual_result = ducq_route_cmp(sub_route, pub_route);
+
+	// audit
+	assert_int_equal(expected_result, actual_result);
+}
+
 void route_cmp_wildcard_at_end_ok(void **state) {
 	// arange
 	char sub_route[] = "route/*";

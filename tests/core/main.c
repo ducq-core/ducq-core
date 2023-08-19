@@ -12,9 +12,9 @@
 #include "tests_tcp.h"
 #include "tests_parse.h"
 #include "tests_dispatcher.h"
-#include "tests_srv_ack.h"
-#include "tests_srv_log.h"
-#include "tests_srv_sub.h"
+#include "tests_ack.h"
+#include "tests_log.h"
+#include "tests_connections.h"
 #include "tests_cli_publish.h"
 #include "tests_cli_subscribe.h"
 
@@ -32,8 +32,8 @@ const struct CMUnitTest parse[] = {
 const struct CMUnitTest ack[] = { 
 	build_ack_tests()
 };
-const struct CMUnitTest sub[] = {
-	build_sub_tests()
+const struct CMUnitTest connections[] = {
+	build_connections_tests()
 };
 const struct CMUnitTest dispatcher[] = {
 	build_dispatcher_tests()
@@ -60,8 +60,8 @@ int main(int argc, char** argv){
 		printf("\n\n");
 	cmocka_run_group_tests(ack, NULL, NULL);
 		printf("\n\n");
-//	cmocka_run_group_tests(sub, NULL, NULL);
-//		printf("\n\n");
+	cmocka_run_group_tests(connections, NULL, NULL);
+		printf("\n\n");
 	cmocka_run_group_tests(dispatcher, NULL, NULL);
 		printf("\n\n");
 	cmocka_run_group_tests(log_func, NULL, NULL);

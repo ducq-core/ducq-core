@@ -10,6 +10,7 @@
 
 
 #define _foreach_state(apply) \
+	apply(DUCQ_PROTOCOL,    "protocol-layer message (not an error)") \
 	apply(DUCQ_ESTDC,       "std c lib error") \
 	apply(DUCQ_EMEMFAIL,    "os memory allocation failed") \
 	apply(DUCQ_EFILE,       "os file io error") \
@@ -22,8 +23,8 @@
 	apply(DUCQ_EMSGINV,     "message invalid") \
 	apply(DUCQ_EMSGSIZE,    "message too big") \
 	apply(DUCQ_ENOCMD,      "command unknown") \
-	apply(DUCQ_EACK,        "no ack received")
-
+	apply(DUCQ_EACK,        "no ack received") \
+	apply(DUCQ_ENOTFOUND,	"connection not found")
 
 typedef enum ducq_state {
 	DUCQ_OK = 0,

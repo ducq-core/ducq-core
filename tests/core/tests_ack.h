@@ -4,10 +4,10 @@
 #include "unit_tests.h"
 
 #define foreach_ack_tests(apply) \
-	apply(srv_send_ack_ok) \
-	apply(srv_send_ack_returns_send_rc) \
-	apply(srv_send_nack_ok) \
-	apply(srv_send_nack_returns_send_rc) \
+	apply(send_ack_ok) \
+	apply(send_ack_returns_send_rc) \
+	apply(send_nack_ok) \
+	apply(send_nack_returns_send_rc) 
 
 foreach_ack_tests(build_forward_declarations) 
 

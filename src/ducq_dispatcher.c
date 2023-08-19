@@ -12,12 +12,12 @@
 
 
 #include "ducq.h"
-#include "ducq_srv.h"
+#include "ducq_reactor.h"
 #include "ducq_dispatcher.h"
 
 
 struct ducq_dispatcher {
-	ducq_srv *srv;
+	ducq_reactor *reactor;
 	struct ducq_cmd_t **cmds;
 	void **hdls;
 	int ncmd;
@@ -29,11 +29,11 @@ struct ducq_dispatcher {
 //			C O N S T U C T O R   /   D E S T R U C T O R
 //
 
-ducq_dispatcher *ducq_dispatcher_new(ducq_srv *srv) {
+ducq_dispatcher *ducq_dispatcher_new(ducq_reactor *reactor) {
 	ducq_dispatcher* dispatcher = malloc(sizeof(ducq_dispatcher));
 	if(!dispatcher) return NULL;
 
-	dispatcher->srv  = srv;
+	dispatcher->reactor  = reactor;
 	dispatcher->cmds = NULL;
 	dispatcher->hdls = NULL;
 	dispatcher->ncmd = 0;
@@ -95,7 +95,7 @@ void _load_command(ducq_dispatcher* dispatcher, const char *path, struct dirent 
 
 	void *handle = dlopen(fullpath, RTLD_NOW | RTLD_LOCAL);
 	if(!handle) {
-		ducq_srv_log(dispatcher->srv, DUCQ_LOG_ERROR, __func__, "server", "dlopen() failed for: %s", dlerror());
+		ducq_reactor_log(dispatcher->reactor, DUCQ_LOG_ERROR, __func__, "server", "dlopen() failed for: %s", dlerror());
 		return;
 	}
 	
@@ -103,7 +103,7 @@ void _load_command(ducq_dispatcher* dispatcher, const char *path, struct dirent 
 	struct ducq_cmd_t *cmd = dlsym(handle, "command");
 	char *err = dlerror();
 	if(!cmd || err) {
-		ducq_srv_log(dispatcher->srv, DUCQ_LOG_ERROR, __func__, "server", "dlsym() failed for %s: %s\n", name, err);
+		ducq_reactor_log(dispatcher->reactor, DUCQ_LOG_ERROR, __func__, "server", "dlsym() failed for %s: %s\n", name, err);
 		dlclose(handle);
 		return;
 	}
@@ -147,7 +147,7 @@ ducq_state ducq_dispatcher_load_commands_path(ducq_dispatcher *dispatcher, const
 //
 
 
-ducq_state unknown(ducq_srv *srv, ducq_i *ducq, char *buffer, size_t size) {
+ducq_state unknown(ducq_reactor *reactor, ducq_i *ducq, char *buffer, size_t size) {
 	struct ducq_msg msg = ducq_parse_msg(buffer);
 	ducq_log(WARN, "%s,%s", msg.command, msg.route);
 
@@ -155,12 +155,12 @@ ducq_state unknown(ducq_srv *srv, ducq_i *ducq, char *buffer, size_t size) {
 	ducq_close(ducq);
 	return DUCQ_ENOCMD;
 }
-ducq_state list_commands(ducq_srv *srv, ducq_i *ducq, char *buffer, size_t size) {
+ducq_state list_commands(ducq_reactor *reactor, ducq_i *ducq, char *buffer, size_t size) {
 	(void) buffer;
 	(void) size;
 	ducq_log(INFO, "");
 
-	struct ducq_dispatcher *dispatcher = ducq_srv_get_dispatcher(srv);
+	struct ducq_dispatcher *dispatcher = ducq_reactor_get_dispatcher(reactor);
 
 	char payload[DUCQ_MSGSZ] =
 		"list_commands,list all loaded commands as csv: <name>,<doc>\n";
@@ -205,9 +205,9 @@ ducq_command_f _find_command(ducq_dispatcher *dispatcher, const char *msg) {
 	*end = ' ';
 	return command;
 }
-ducq_state ducq_dispatcher_dispatch(ducq_dispatcher *dispatcher, ducq_i *ducq, char *msg, size_t size) {
+ducq_state ducq_dispatch(ducq_dispatcher *dispatcher, ducq_i *ducq, char *msg, size_t size) {
 	ducq_command_f command = _find_command(dispatcher, msg);
-	return command(dispatcher->srv, ducq, msg, size);
+	return command(dispatcher->reactor, ducq, msg, size);
 }
 
 

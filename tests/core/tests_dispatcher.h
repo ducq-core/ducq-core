@@ -7,7 +7,7 @@
 #define foreach_dispatcher_tests(apply) \
 	apply(dispatcher_can_load_a_command) \
 	apply(dispatcher_correct_number_of_commands) \
-	apply(dispatcher_commands_have_expected_name) \
+	apply(dispatcher_commands_receive_parameters) \
 	apply(dispatcher_sender_receive_nack_if_command_unknown) \
 	apply(dispatcher_returns_command_state)
 	

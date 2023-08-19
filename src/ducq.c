@@ -176,6 +176,8 @@ const char *strchrnull(const char *str, char c) {
 }
 
 bool ducq_route_cmp(const char *sub, const char *pub) {
+	if(!sub || !pub) return false;
+
 	while(*sub && *pub) {
 
 		if(*sub == '*') {

@@ -1,7 +1,7 @@
 #ifndef _UNIT_TEST_CMD_HEADER_
 #define _UNIT_TEST_CMD_HEADER_
 
-#include "../src/ducq_srv.h"
+#include "../src/ducq_reactor.h"
 
 struct fixture {
 	void *handle;

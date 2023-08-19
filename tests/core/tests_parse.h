@@ -17,6 +17,8 @@
 	apply(parse_nack_invalid) \
 	apply(route_cmp_identical_ok) \
 	apply(route_cmp_not_identical_ok) \
+	apply(route_cmp_null_sub_is_false) \
+	apply(route_cmp_null_pub_is_false) \
 	apply(route_cmp_wildcard_at_end_ok) \
 	apply(route_cmp_wildcard_not_at_end_ok) \
 	apply(route_cmp_wildcard_in_middle_ok) \

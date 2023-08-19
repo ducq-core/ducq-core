@@ -13,7 +13,7 @@
 #include "unit_tests_cmd.h"
 
 #include "../src/ducq.h"
-#include "../src/ducq_srv.h"
+#include "../src/ducq_reactor.h"
 #include "../src/ducq_dispatcher.h"
 
 
@@ -56,10 +56,10 @@ int _check_function(const LargestIntegralType param, LargestIntegralType check_d
 }
 void list_commands_list_all_commands(void **state) {
 	//arrange
-	ducq_srv *srv = ducq_srv_new();
-	ducq_srv_set_log(srv, NULL, mock_log);
+	ducq_reactor *reactor = ducq_reactor_new();
+	ducq_reactor_set_log(reactor, NULL, mock_log);
 
-	ducq_dispatcher *dispatcher = ducq_srv_get_dispatcher(srv);
+	ducq_dispatcher *dispatcher = ducq_reactor_get_dispatcher(reactor);
 
 	
 	char expected_msg[] = "";
@@ -83,7 +83,7 @@ void list_commands_list_all_commands(void **state) {
 	size_t req_size = sizeof(request);
 
 	ducq_dispatcher_load_commands_path(dispatcher, "./commands");
-	ducq_state actual_state = ducq_dispatcher_dispatch(dispatcher, emitter, request, req_size);
+	ducq_state actual_state = ducq_dispatch(dispatcher, emitter, request, req_size);
 
 
 	//audit
@@ -91,6 +91,6 @@ void list_commands_list_all_commands(void **state) {
 
 	
 	//teardown
-	ducq_srv_free(srv);
+	ducq_reactor_free(reactor);
 	ducq_free(emitter);
 }

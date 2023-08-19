@@ -4,10 +4,10 @@
 #include "unit_tests.h"
 
 #define foreach_log_tests(apply) \
-	apply(srv_log_calls_log_callback) \
-	apply(srv_log_sent_to_monitor_route) \
-	apply(srv_log_dont_sent_to_monitor_route_if_not_set) \
-	apply(srv_log_warn_macro)
+	apply(log_calls_log_callback) \
+	apply(log_sent_to_monitor_route) \
+	apply(log_dont_sent_to_monitor_route_if_not_set) \
+	apply(log_warn_macro)
 
 foreach_log_tests(build_forward_declarations) 
 

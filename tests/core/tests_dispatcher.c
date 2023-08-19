@@ -24,8 +24,8 @@ extern unsigned MOCK_CLIENT_RECV_BUFFER_LEN;
 
 void dispatcher_can_load_a_command(void **state) {
 	//arrange
-	ducq_srv *srv = ducq_srv_new();
-	ducq_dispatcher *dispatcher = ducq_srv_get_dispatcher(srv);
+	ducq_reactor *reactor = ducq_reactor_new();
+	ducq_dispatcher *dispatcher = ducq_reactor_get_dispatcher(reactor);
 	ducq_state expected_state = DUCQ_OK;
 
 	// act
@@ -35,13 +35,13 @@ void dispatcher_can_load_a_command(void **state) {
 	assert_int_equal(expected_state, actual_state);
 
 	//teardown
-	ducq_srv_free(srv);
+	ducq_reactor_free(reactor);
 }
 
 void dispatcher_correct_number_of_commands(void **state) {
 	//arrange
-	ducq_srv *srv = ducq_srv_new();
-	ducq_dispatcher *dispatcher = ducq_srv_get_dispatcher(srv);
+	ducq_reactor *reactor = ducq_reactor_new();
+	ducq_dispatcher *dispatcher = ducq_reactor_get_dispatcher(reactor);
 
 	
 	ducq_state expected_state = DUCQ_OK;
@@ -56,16 +56,16 @@ void dispatcher_correct_number_of_commands(void **state) {
 	assert_int_equal(expected_number_of_commands, actual_number_of_commands);
 
 	//teardown
-	ducq_srv_free(srv);
+	ducq_reactor_free(reactor);
 }
  
  
 
 
-void dispatcher_commands_have_expected_name(void **state) {
+void dispatcher_commands_receive_parameters(void **state) {
 	//arrange
-	ducq_srv *srv = ducq_srv_new();
-	ducq_dispatcher *dispatcher = ducq_srv_get_dispatcher(srv);
+	ducq_reactor *reactor = ducq_reactor_new();
+	ducq_dispatcher *dispatcher = ducq_reactor_get_dispatcher(reactor);
 	ducq_dispatcher_load_commands_path(dispatcher, "./commands");
 
 	ducq_i *ducq = ducq_new_mock(NULL);
@@ -77,36 +77,36 @@ void dispatcher_commands_have_expected_name(void **state) {
 
 	size = snprintf(msg, DUCQ_MSGSZ, "mock_command_a *\n");
 
-	expect_value    (mock_command_a, srv, srv);
+	expect_value    (mock_command_a, reactor, reactor);
  	expect_value	(mock_command_a, ducq, ducq);
  	expect_string   (mock_command_a, buffer, msg);
  	expect_value    (mock_command_a, size, size);
  	will_return     (mock_command_a, DUCQ_OK);
 
-	ducq_dispatcher_dispatch(dispatcher, ducq, msg, size);
+	ducq_dispatch(dispatcher, ducq, msg, size);
 
 	size = snprintf(msg, DUCQ_MSGSZ, "mock_command_b *\n");
 
-	expect_value    (mock_command_b, srv, srv);
+	expect_value    (mock_command_b, reactor, reactor);
  	expect_value	(mock_command_b, ducq, ducq);
  	expect_string   (mock_command_b, buffer, msg);
  	expect_value    (mock_command_b, size, size);
  	will_return     (mock_command_b, DUCQ_OK);
 
-	ducq_dispatcher_dispatch(dispatcher, ducq, msg, size);
+	ducq_dispatch(dispatcher, ducq, msg, size);
 
 	size = snprintf(msg, DUCQ_MSGSZ, "mock_command_c *\n");
 
-	expect_value    (mock_command_c, srv, srv);
+	expect_value    (mock_command_c, reactor, reactor);
  	expect_value	(mock_command_c, ducq, ducq);
  	expect_string   (mock_command_c, buffer, msg);
  	expect_value    (mock_command_c, size, size);
  	will_return     (mock_command_c, DUCQ_OK);
 
-	ducq_dispatcher_dispatch(dispatcher, ducq, msg, size);
+	ducq_dispatch(dispatcher, ducq, msg, size);
 
 	//teardown
-	ducq_srv_free(srv);
+	ducq_reactor_free(reactor);
 	ducq_free(ducq);
 }
 
@@ -120,8 +120,8 @@ void dispatcher_commands_have_expected_name(void **state) {
  
 void dispatcher_sender_receive_nack_if_command_unknown(void **state) {
 	// arange
-	ducq_srv *srv = ducq_srv_new();
-	ducq_dispatcher *dispatcher = ducq_srv_get_dispatcher(srv);
+	ducq_reactor *reactor = ducq_reactor_new();
+	ducq_dispatcher *dispatcher = ducq_reactor_get_dispatcher(reactor);
 	ducq_dispatcher_load_commands_path(dispatcher, "./commands");
 
 	ducq_i *ducq = ducq_new_mock(NULL);
@@ -142,13 +142,13 @@ void dispatcher_sender_receive_nack_if_command_unknown(void **state) {
 
 	// act
 	char request[] = "UNKNOWN_COMMAND route/\npayload";
-	ducq_state actual_state = ducq_dispatcher_dispatch(dispatcher, ducq, request, sizeof(request));
+	ducq_state actual_state = ducq_dispatch(dispatcher, ducq, request, sizeof(request));
 
 	// audit
 	assert_int_equal(expected_state, actual_state);
 
 	// teardown
-	ducq_srv_free(srv);
+	ducq_reactor_free(reactor);
 	ducq_free(ducq);
 }
 
@@ -158,8 +158,8 @@ void dispatcher_sender_receive_nack_if_command_unknown(void **state) {
 
 void dispatcher_returns_command_state(void **state) {
 	// arange
-	ducq_srv *srv = ducq_srv_new();
-	ducq_dispatcher *dispatcher = ducq_srv_get_dispatcher(srv);
+	ducq_reactor *reactor = ducq_reactor_new();
+	ducq_dispatcher *dispatcher = ducq_reactor_get_dispatcher(reactor);
 	ducq_dispatcher_load_commands_path(dispatcher, "./commands");
 
 	ducq_i *ducq = ducq_new_mock(NULL);
@@ -172,18 +172,18 @@ void dispatcher_returns_command_state(void **state) {
 
 	size = snprintf(msg, DUCQ_MSGSZ, "mock_command_a *\n");
 
-	expect_any	(mock_command_a, srv);
+	expect_any	(mock_command_a, reactor);
  	expect_any	(mock_command_a, ducq);
  	expect_any	(mock_command_a, buffer);
  	expect_any	(mock_command_a, size);
  	will_return	(mock_command_a, expected_state);
 
-	ducq_state actual_state = ducq_dispatcher_dispatch(dispatcher, ducq, msg, size);
+	ducq_state actual_state = ducq_dispatch(dispatcher, ducq, msg, size);
 
 	// audit
 	assert_int_equal(expected_state, actual_state);
 
 	// teardown
-	ducq_srv_free(srv);
+	ducq_reactor_free(reactor);
 	ducq_free(ducq);
 }

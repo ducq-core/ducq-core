@@ -17,7 +17,7 @@ cmd_test_objs= \
 	$(BUILDDIR)/commands/subscribe.so \
 	$(BUILDDIR)/commands/list_subscriptions.so \
 	${SRCDIR}/ducq.c \
-	${SRCDIR}/ducq_srv.c \
+	${SRCDIR}/ducq_reactor.c \
 	${SRCDIR}/ducq_dispatcher.c \
 	${TESTDIR}/*.c \
 	*.c
@@ -34,7 +34,7 @@ $(BUILDDIR)/%.o: $(SRCDIR)/%.c
 $(BUILDDIR)/commands/%.o: $(SRC_CMDDIR)/%.c
 	$(CC) -g -c -fPIC -Wall -c $< -o $@
 
-$(BUILDDIR)/commands/%.so: $(BUILDDIR)/commands/%.o $(BUILDDIR)/ducq.o $(BUILDDIR)/ducq_srv.o $(BUILDDIR)/ducq_dispatcher.o
+$(BUILDDIR)/commands/%.so: $(BUILDDIR)/commands/%.o $(BUILDDIR)/ducq.o $(BUILDDIR)/ducq_reactor.o $(BUILDDIR)/ducq_dispatcher.o
 	$(CC) -g -shared -Wl,-Bsymbolic $^ -o $@
 
 

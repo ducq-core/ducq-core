@@ -8,22 +8,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "tests_srv_ack.h"
+#include "tests_ack.h"
 
 
-#include "../src/ducq_srv.h"
-#include "../src/ducq_srv_int.h"
 #include "mock_ducq_client.h"
 
 
-void srv_ctor_dtor_no_leak(void **state) {
-	ducq_srv *srv = ducq_srv_new();
-	ducq_srv_free(srv);
-}
 
 
-
-void srv_send_ack_ok(void **state) {
+void send_ack_ok(void **state) {
 	// arange
 	char expected_message[] = "ACK *\n0\nok";
 	ducq_i *ducq = ducq_new_mock(NULL);
@@ -45,7 +38,7 @@ void srv_send_ack_ok(void **state) {
 	ducq_free(ducq);
 }
 
-void srv_send_ack_returns_send_rc(void **state) {
+void send_ack_returns_send_rc(void **state) {
 	// arange
 	ducq_state expected_state = DUCQ_EWRITE;
 	ducq_i *ducq = ducq_new_mock(NULL);
@@ -66,9 +59,9 @@ void srv_send_ack_returns_send_rc(void **state) {
 	ducq_free(ducq);
 }
 
-void srv_send_nack_ok(void **state) {
+void send_nack_ok(void **state) {
 	// arange
-	char expected_message[] = "NACK *\n11\nmessage too big";
+	char expected_message[] = "NACK *\n12\nmessage too big";
 	ducq_i *ducq = ducq_new_mock(NULL);
 	ducq_state expected_state = DUCQ_OK;
 
@@ -89,7 +82,7 @@ void srv_send_nack_ok(void **state) {
 	ducq_free(ducq);
 }
 
-void srv_send_nack_returns_send_rc(void **state) {
+void send_nack_returns_send_rc(void **state) {
 	// arange
 	ducq_state expected_state = DUCQ_EWRITE;
 	ducq_i *ducq = ducq_new_mock(NULL);

@@ -4,7 +4,7 @@
 
 
 #include "../ducq.h"
-#include "../ducq_srv_int.h"
+#include "../ducq_reactor.h"
 
 struct pub_ctx {
 	char *route;
@@ -27,7 +27,7 @@ ducq_loop_t _publish(ducq_i *ducq, char *route, void *ctx) {
 	return DUCQ_LOOP_CONTINUE;	
 }
 
-ducq_state publish(struct ducq_srv *srv, ducq_i *ducq, char *buffer, size_t size) {
+ducq_state publish(struct ducq_reactor *reactor, ducq_i *ducq, char *buffer, size_t size) {
 	struct pub_ctx msg = {
 		.route  = NULL,
 		.buffer = buffer,
@@ -40,7 +40,8 @@ ducq_state publish(struct ducq_srv *srv, ducq_i *ducq, char *buffer, size_t size
 		! route                                   ? DUCQ_EMSGINV  :
 		! (msg.route = strndup(route, end-route)) ? DUCQ_EMEMFAIL : DUCQ_OK;
 
-	ducq_send_ack(ducq, state);
+	if(! ducq_send_ack(ducq, state)) 
+		ducq_reactor_delete(reactor, ducq);
 	if(state) {
 		ducq_log(WARN, "%s,%s", route, ducq_state_tostr(state));
 		ducq_close(ducq);
@@ -48,12 +49,12 @@ ducq_state publish(struct ducq_srv *srv, ducq_i *ducq, char *buffer, size_t size
 	}
 
 
-	ducq_srv_loop(srv, _publish, &msg);
+	ducq_reactor_loop(reactor, _publish, &msg);
 
 	ducq_log(INFO, "%s,%d notified", route, msg.count);
 
 	free( msg.route ); // discard const
-	return ducq_close(ducq);
+	return state;
 }
 
 

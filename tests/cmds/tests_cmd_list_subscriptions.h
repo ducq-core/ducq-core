@@ -5,7 +5,8 @@
 
 
 #define foreach_list_subscriptions_tests(apply) \
-	apply(list_subscriptions_list_all_subscribers_id)
+	apply(list_subscriptions_list_all_subscribers_id) \
+	apply(list_subscriptions_list_all_non_subscribers)
 
 foreach_list_subscriptions_tests(build_forward_declarations)
 
