@@ -11,6 +11,7 @@
 
 #define _foreach_state(apply) \
 	apply(DUCQ_PROTOCOL,    "protocol-layer message (not an error)") \
+	apply(DUCQ_ENULL,       "null parameter") \
 	apply(DUCQ_ESTDC,       "std c lib error") \
 	apply(DUCQ_EMEMFAIL,    "os memory allocation failed") \
 	apply(DUCQ_EFILE,       "os file io error") \

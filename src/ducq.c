@@ -38,34 +38,44 @@ typedef struct ducq_i {
 } ducq_i;
 
 ducq_state  ducq_emit(ducq_i *ducq, const char *command, const char *route, const char *payload, size_t payload_size, bool close) {
+	if(!ducq) return DUCQ_ENULL;
 	return ducq->tbl->emit(ducq, command, route, payload, payload_size, close);
 }
 ducq_state  ducq_conn(ducq_i *ducq) {
+	if(!ducq) return DUCQ_ENULL;
 	return ducq->tbl->conn(ducq);
 }
 ducq_state  ducq_send(ducq_i *ducq, const void *buf, size_t *size) {
+	if(!ducq) return DUCQ_ENULL;
 	return ducq->tbl->send(ducq, buf, size);
 }
 ducq_state  ducq_recv(ducq_i *ducq, void *buf, size_t *size) {
+	if(!ducq) return DUCQ_ENULL;
 	return ducq->tbl->recv(ducq, buf, size);
 }
 const char *ducq_id(ducq_i *ducq) {
+	if(!ducq) return NULL;
 	return ducq->tbl->id(ducq);
 }
 ducq_i *ducq_copy(ducq_i *ducq) {
+	if(!ducq) return DUCQ_ENULL;
 	return ducq->tbl->copy(ducq);
 }
 bool ducq_eq(ducq_i *a, ducq_i *b) {
+	if(!a) return false;
 	return a->tbl->eq(a, b);
 }
 ducq_state  ducq_timeout(ducq_i *ducq, int timeout) {
+	if(!ducq) return DUCQ_ENULL;
 	return ducq->tbl->timeout(ducq, timeout);
 }
 ducq_state ducq_close(ducq_i *ducq) {
+	if(!ducq) return DUCQ_ENULL;
 	return ducq->tbl->close(ducq);
 }
 void ducq_free(ducq_i *ducq) {
-	return ducq->tbl->free(ducq);
+	if(!ducq) return;
+	ducq->tbl->free(ducq);
 }
 
 
