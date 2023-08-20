@@ -12,7 +12,8 @@
 #include "tests_inet.h"
 #include "tests_http.h"
 #include "tests_base64.h"
-
+#include "tests_ws_handshake.h"
+#include "tests_ws_header.h"
 
 
 const struct CMUnitTest inet[] = {
@@ -24,7 +25,12 @@ const struct CMUnitTest http[] = {
 const struct CMUnitTest base64[] = {
 	build_base64_tests()
 };
-
+const struct CMUnitTest ws_header[] = {
+	build_websocket_header_tests()
+};
+const struct CMUnitTest ws_handshake[] = {
+	build_websocket_handshake_tests()
+};
 
 int main(int argc, char** argv){
 
@@ -36,6 +42,12 @@ int main(int argc, char** argv){
 
 		printf("\n\n");
 	cmocka_run_group_tests(base64, NULL, NULL);
+		
+		printf("\n\n");
+	cmocka_run_group_tests(ws_header, NULL, NULL);
 
+		printf("\n\n");
+	cmocka_run_group_tests(ws_handshake, NULL, NULL);
+		
 	return 0;
 }

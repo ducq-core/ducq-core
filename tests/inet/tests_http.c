@@ -10,7 +10,7 @@
 #include "string.h"
 #include "stdbool.h"
 
-#include "../src/inet_http.h"
+#include "inet_http.h"
 
 #include "tests_http.h"
 
