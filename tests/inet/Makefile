@@ -11,6 +11,7 @@ LINK_TEST_LIB = -lcmocka
 inet_test_objs = \
 	$(SRCDIR)/inet_socket.c \
 	$(SRCDIR)/inet_http.c \
+	$(SRCDIR)/base64.c \
 	*.c
 
 .PHONY: test

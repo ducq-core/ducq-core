@@ -1,5 +1,5 @@
-#ifndef __TESTS_HTTP_HEADER__HTTP_HEADER__
-#define __TESTS_HTTP_HEADER__HTTP_HEADER__
+#ifndef __TESTS_HTTP_HEADER__
+#define __TESTS_HTTP_HEADER__
 
 
 #include "unit_tests.h"
@@ -16,4 +16,4 @@ foreach_http_tests(build_forward_declarations)
 
 
 
-#endif // __TESTS_HTTP_HEADER__HTTP_HEADER__
+#endif // __TESTS_HTTP_HEADER__
