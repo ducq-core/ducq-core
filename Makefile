@@ -19,5 +19,4 @@ install_commands:
 	$(CC) -g -fPIC -Wall ./src/commands/publish.c   -shared -o $(prefix)/lib/$(cmddir)/publish.so
 	$(CC) -g -fPIC -Wall ./src/commands/subscribe.c -shared -o $(prefix)/lib/$(cmddir)/subscribe.so
 	$(CC) -g -fPIC -Wall ./src/commands/list_subscriptions.c -shared -o $(prefix)/lib/$(cmddir)/list_subscriptions.so
-	$(CC) -g -fPIC -Wall ./src/commands/list_commands.c -shared -o $(prefix)/lib/$(cmddir)/list_commands.so
 	sudo ldconfig

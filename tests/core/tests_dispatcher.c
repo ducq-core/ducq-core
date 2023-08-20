@@ -125,6 +125,7 @@ void dispatcher_sender_receive_nack_if_command_unknown(void **state) {
 	ducq_dispatcher_load_commands_path(dispatcher, "./commands");
 
 	ducq_i *ducq = ducq_new_mock(NULL);
+	ducq_reactor_add_client(reactor, 11, ducq);
 
 	ducq_state expected_state = DUCQ_ENOCMD;
 	char expected_nack_msg[100] = "";
@@ -137,9 +138,6 @@ void dispatcher_sender_receive_nack_if_command_unknown(void **state) {
 	expect_value(_send, *count, expected_count);
 	will_return  (_send, DUCQ_OK);
 
-	expect_value (_close, ducq, ducq);
-	will_return  (_close, DUCQ_OK);
-
 	// act
 	char request[] = "UNKNOWN_COMMAND route/\npayload";
 	ducq_state actual_state = ducq_dispatch(dispatcher, ducq, request, sizeof(request));
@@ -148,8 +146,9 @@ void dispatcher_sender_receive_nack_if_command_unknown(void **state) {
 	assert_int_equal(expected_state, actual_state);
 
 	// teardown
+	expect_any_count(_close, ducq, 1);
+	will_return_count(_close, DUCQ_OK, 1);
 	ducq_reactor_free(reactor);
-	ducq_free(ducq);
 }
 
 

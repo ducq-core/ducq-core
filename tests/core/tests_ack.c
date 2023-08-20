@@ -61,7 +61,10 @@ void send_ack_returns_send_rc(void **state) {
 
 void send_nack_ok(void **state) {
 	// arange
-	char expected_message[] = "NACK *\n12\nmessage too big";
+	ducq_state error = DUCQ_EMSGSIZE;
+	char expected_message[256] = "";
+	snprintf(expected_message, 256, "NACK *\n%d\n%s", error, ducq_state_tostr(error));
+
 	ducq_i *ducq = ducq_new_mock(NULL);
 	ducq_state expected_state = DUCQ_OK;
 
@@ -70,10 +73,8 @@ void send_nack_ok(void **state) {
 	expect_string(_send, buf, expected_message);
 	expect_value(_send, *count,strlen(expected_message));
 
-
 	// act
-	ducq_state actual_state = ducq_send_ack(ducq, DUCQ_EMSGSIZE);
-	
+	ducq_state actual_state = ducq_send_ack(ducq, error);
 
 	// audit
 	assert_int_equal(expected_state, actual_state);

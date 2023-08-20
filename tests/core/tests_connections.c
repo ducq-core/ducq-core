@@ -191,6 +191,45 @@ void reactor_unsubscribe_remove_last_with_a_server(void **state) {
 }
 
 
+struct get_sub_ctx {
+	char *id;
+	ducq_i *ducq;
+};
+static
+ducq_loop_t _get_subscriber(ducq_i *ducq, char *route, void *ctx) {
+	struct get_sub_ctx *sub = (struct get_sub_ctx*) ctx;
+
+	if( strcmp(ducq_id(ducq), sub->id) != 0 )
+		return DUCQ_LOOP_CONTINUE;
+
+	sub->ducq = ducq;
+	return DUCQ_LOOP_BREAK;
+}
+void reactor_delete_last_connection(void **state) {
+	// arange
+	ducq_reactor *reactor = *state;
+	ducq_loop_t expected_found   = DUCQ_LOOP_BREAK;
+	bool        expected_deleted = true;
+	int         expected_count   = 2;
+
+	expect_any(_close, ducq);
+	will_return_always(_close, DUCQ_OK);
+
+	// act
+	ducq_reactor_add_server(reactor, 20, _mock_accept, NULL); 
+	struct get_sub_ctx sub = { .id = "C", .ducq = NULL };
+	ducq_loop_t actual_found = ducq_reactor_loop(reactor, _get_subscriber, &sub);
+	ducq_loop_t actual_deleted = ducq_reactor_delete(reactor, sub.ducq);
+
+	// audit
+	assert_int_equal(expected_found, actual_found);
+	assert_int_equal(expected_deleted, actual_deleted);
+	int actual_count = 0;
+	ducq_reactor_loop(reactor, _check_last_removed, &actual_count);
+	assert_int_equal(expected_count, actual_count);
+}
+
+
 
 
 ducq_loop_t _remove_all(ducq_i *ducq, char *route, void *ctx) {
@@ -215,6 +254,44 @@ void reactor_unsubscribe_remove_all_connection(void **state) {
 	assert_int_equal(expected, actual);
 
 	// audit
+	int actual_count = 0;
+	ducq_reactor_loop(reactor, _check_all_removed, &actual_count);
+	assert_int_equal(expected_count, actual_count);
+
+	// teardown
+	ducq_reactor_free(reactor);
+	*state = NULL;
+}
+
+void reactor_delete_all_connection(void **state) {
+	// arange
+	ducq_reactor *reactor = *state;
+	ducq_loop_t expected_found   = DUCQ_LOOP_BREAK;
+	bool        expected_deleted = true;
+	int         expected_count   = 0;
+
+	expect_any_count(_close, ducq, 3);
+	will_return_count(_close, DUCQ_OK, 3);
+
+	// act
+	ducq_reactor_add_server(reactor, 20, _mock_accept, NULL); 
+	struct get_sub_ctx sub = {};
+	sub.id = "A";
+	sub.ducq = NULL;
+	ducq_reactor_loop(reactor, _get_subscriber, &sub);
+	ducq_reactor_delete(reactor, sub.ducq);
+	sub.id = "B";
+	sub.ducq = NULL;
+	ducq_reactor_loop(reactor, _get_subscriber, &sub);
+	ducq_reactor_delete(reactor, sub.ducq);
+	sub.id = "C";
+	sub.ducq = NULL;
+	ducq_loop_t actual_found = ducq_reactor_loop(reactor, _get_subscriber, &sub);
+	ducq_loop_t actual_deleted = ducq_reactor_delete(reactor, sub.ducq);
+
+	// audit
+	assert_int_equal(expected_found, actual_found);
+	assert_int_equal(expected_deleted, actual_deleted);
 	int actual_count = 0;
 	ducq_reactor_loop(reactor, _check_all_removed, &actual_count);
 	assert_int_equal(expected_count, actual_count);

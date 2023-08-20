@@ -15,11 +15,10 @@ ducq_state subscribe(struct ducq_reactor *reactor, ducq_i *ducq, char *buffer, s
 		ducq_log(WARN, "%s", ducq_state_tostr(DUCQ_EMSGINV) );
 		return DUCQ_EMSGINV;
 	}
-
 	*end = '\0';
+
 	ducq_state add_state = ducq_reactor_subscribe(reactor, ducq, route);
 	if(add_state) ducq_log(ERROR, "%s", ducq_state_tostr(add_state));
-	*end = '\n';
 
 	ducq_state ack_state = ducq_send_ack(ducq, add_state);
 	if(ack_state) {
@@ -28,6 +27,7 @@ ducq_state subscribe(struct ducq_reactor *reactor, ducq_i *ducq, char *buffer, s
 	}
 	else ducq_log(INFO,  "%s", route);
 
+	*end = '\n';
 	return add_state ? add_state : ack_state;
 }
 

@@ -12,7 +12,9 @@ int connections_teardown(void **state);
 	apply(reactor_unsubscribe_remove_middle_connection) \
 	apply(reactor_unsubscribe_remove_last_connection) \
 	apply(reactor_unsubscribe_remove_last_with_a_server) \
+	apply(reactor_delete_last_connection) \
 	apply(reactor_unsubscribe_remove_all_connection) \
+	apply(reactor_delete_all_connection) \
 	apply(reactor_unsubscribe_remove_inexistant_connection) \
 	apply(reactor_unsubscribe_ignore_close_connection_error)
 	

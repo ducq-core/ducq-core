@@ -52,12 +52,15 @@ void list_subscriptions_list_all_subscribers_id(void **state) {
 	ducq_reactor_subscribe(reactor, ducq2, "route_2");
 	ducq_reactor_subscribe(reactor, ducq3, "route_3");
 
-	ducq_i *emitter = ducq_new_mock(NULL);
+	ducq_i *emitter = ducq_new_mock("emitter");
+	ducq_reactor_add_client(reactor, 14, emitter);
+
 	char request[] = "list_subscriptions *\n";
 	size_t req_size = sizeof(request);
 	
 	ducq_state expected_state = DUCQ_OK;
 	char expected_msg[] = 
+		"emitter\n"
 		"sub_id_3,route_3\n"
 		"sub_id_2,route_2\n"
 		"sub_id_1,route_1\n"
@@ -80,10 +83,9 @@ void list_subscriptions_list_all_subscribers_id(void **state) {
 	assert_int_equal(expected_state, actual_state);
 
 	//teardown
-	expect_any_always(_close, ducq);
-	will_return_always(_close, DUCQ_OK);
+	expect_any_count(_close, ducq, 4);
+	will_return_count(_close, DUCQ_OK, 4);
 	ducq_reactor_free(reactor);
-	ducq_free(emitter);
 }
 
 void list_subscriptions_list_all_non_subscribers(void **state) {
@@ -104,12 +106,15 @@ void list_subscriptions_list_all_non_subscribers(void **state) {
 //	ducq_reactor_subscribe(reactor, ducq2, "route_2");
 	ducq_reactor_subscribe(reactor, ducq3, "route_3");
 
-	ducq_i *emitter = ducq_new_mock(NULL);
+	ducq_i *emitter = ducq_new_mock("emitter");
+	ducq_reactor_add_client(reactor, 14, emitter);
+
 	char request[] = "list_subscriptions *\n";
 	size_t req_size = sizeof(request);
 	
 	ducq_state expected_state = DUCQ_OK;
 	char expected_msg[] = 
+		"emitter\n"
 		"sub_id_3,route_3\n"
 		"sub_id_2\n"
 		"sub_id_1,route_1\n"
@@ -132,9 +137,8 @@ void list_subscriptions_list_all_non_subscribers(void **state) {
 	assert_int_equal(expected_state, actual_state);
 
 	//teardown
-	expect_any_always(_close, ducq);
-	will_return_always(_close, DUCQ_OK);
+	expect_any_count(_close, ducq, 4);
+	will_return_count(_close, DUCQ_OK, 4);
 	ducq_reactor_free(reactor);
-	ducq_free(emitter);
 }
 

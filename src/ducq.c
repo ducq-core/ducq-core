@@ -58,7 +58,7 @@ const char *ducq_id(ducq_i *ducq) {
 	return ducq->tbl->id(ducq);
 }
 ducq_i *ducq_copy(ducq_i *ducq) {
-	if(!ducq) return DUCQ_ENULL;
+	if(!ducq) return NULL;
 	return ducq->tbl->copy(ducq);
 }
 bool ducq_eq(ducq_i *a, ducq_i *b) {

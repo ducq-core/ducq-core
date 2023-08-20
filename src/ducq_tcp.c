@@ -214,6 +214,19 @@ ducq_i *ducq_new_tcp(const char *host, const char *port) {
 	return (ducq_i *) tcp;
 }
 
+ducq_i *ducq_new_tcp_connection(int fd) {
+	ducq_tcp_t *tcp = malloc(sizeof(ducq_tcp_t));
+	if(!tcp) return NULL;
+
+	tcp->tbl   = &table;
+	tcp->fd    = fd;
+	tcp->host  = NULL;
+	tcp->port  = NULL;
+	tcp->id[0] = '\0';
+
+	return (ducq_i *) tcp;
+}
+
 
 
 

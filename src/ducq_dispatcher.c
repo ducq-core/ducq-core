@@ -152,7 +152,6 @@ ducq_state unknown(ducq_reactor *reactor, ducq_i *ducq, char *buffer, size_t siz
 	ducq_log(WARN, "%s,%s", msg.command, msg.route);
 
 	ducq_send_ack(ducq, DUCQ_ENOCMD);
-	ducq_close(ducq);
 	return DUCQ_ENOCMD;
 }
 ducq_state list_commands(ducq_reactor *reactor, ducq_i *ducq, char *buffer, size_t size) {
@@ -179,7 +178,6 @@ ducq_state list_commands(ducq_reactor *reactor, ducq_i *ducq, char *buffer, size
 
 	len = ptr - payload;
 	ducq_state state = ducq_send(ducq, payload, &len);
-	ducq_close(ducq);
 	return state;
 }
 static
@@ -188,7 +186,6 @@ ducq_command_f _find_command(ducq_dispatcher *dispatcher, const char *msg) {
 	const char *name = ducq_parse_command(msg, (const char**) &end);
 	if (!name) return unknown;
 	*end = '\0';
-
 
 	if(strcmp(name, "list_commands") == 0 || strcmp(name, "help") == 0)
 		return list_commands;

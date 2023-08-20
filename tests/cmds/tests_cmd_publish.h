@@ -5,7 +5,7 @@
 
 
 #define foreach_publish_tests(apply) \
-	apply(publish_send_msg_invalide_if_cant_parse_route) \
+	apply(publish_send_msg_invalid_and_disconnect_if_cant_parse_route) \
 	apply(publish_subscribers_has_ducq_send_called) \
 	apply(publish_unsubcribe_sub_on_write_error)
 	

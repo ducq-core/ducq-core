@@ -29,7 +29,7 @@ return fix_free(fix);
 
 
 
-void publish_send_msg_invalide_if_cant_parse_route(void **state) {
+void publish_send_msg_invalid_and_disconnect_if_cant_parse_route(void **state) {
 	//arrange
 	ducq_command_f publish = get_command(state);
 	
@@ -39,9 +39,10 @@ void publish_send_msg_invalide_if_cant_parse_route(void **state) {
 	ducq_reactor_set_log(reactor, NULL, mock_log);
 
 	ducq_i *publisher = ducq_new_mock(NULL);
+	ducq_reactor_add_client(reactor, 10, publisher);
+
 	char buffer[] = "publishroute\npayload";
 	size_t size = sizeof(buffer);
-
 	char expected_msg[128];
 	snprintf(expected_msg, 128, "NACK *\n%d\n%s",
 		DUCQ_EMSGINV,
@@ -66,7 +67,6 @@ void publish_send_msg_invalide_if_cant_parse_route(void **state) {
 
 	//teardown
 	ducq_reactor_free(reactor);
-	ducq_free(publisher);
 }
 
 void publish_subscribers_has_ducq_send_called(void **state) {
@@ -105,7 +105,9 @@ void publish_subscribers_has_ducq_send_called(void **state) {
 	expect_value_count(_send, *count, sizeof(buffer), 2);
 	will_return_count(_send, DUCQ_OK, 2);
 	
-	expect_string(mock_log, function_name, "publish");
+	expect_string(mock_log, function_name, "publish"); // error
+	expect_value(mock_log, level, DUCQ_LOG_INFO);
+	expect_string(mock_log, function_name, "publish"); // subscriber count
 	expect_value(mock_log, level, DUCQ_LOG_INFO);
 
 

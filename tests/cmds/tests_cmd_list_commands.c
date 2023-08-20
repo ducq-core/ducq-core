@@ -61,10 +61,12 @@ void list_commands_list_all_commands(void **state) {
 
 	ducq_dispatcher *dispatcher = ducq_reactor_get_dispatcher(reactor);
 
-	
+	ducq_i *emitter = ducq_new_mock(NULL);
+	ducq_reactor_add_client(reactor, 14, emitter);
+
+
 	char expected_msg[] = "";
 	ducq_state expected_state = DUCQ_OK;
-	ducq_i *emitter = ducq_new_mock(NULL);
 
 	expect_value_count(_send, ducq, emitter, 1);
 	expect_check(_send, buf, _check_function, NULL);
@@ -74,9 +76,6 @@ void list_commands_list_all_commands(void **state) {
 	expect_string(mock_log, function_name, "list_commands");
 	expect_value(mock_log, level, DUCQ_LOG_INFO);
 	
-	expect_value(_close, ducq, emitter);
-	will_return(_close, DUCQ_OK);
-
 
 	// act
 	char request[] = "list_commands *\n";
@@ -91,6 +90,7 @@ void list_commands_list_all_commands(void **state) {
 
 	
 	//teardown
+	expect_any_count(_close, ducq, 1);
+	will_return_count(_close, DUCQ_OK, 1);
 	ducq_reactor_free(reactor);
-	ducq_free(emitter);
 }

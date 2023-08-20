@@ -150,8 +150,40 @@ ducq_state ducq_reactor_add_client(ducq_reactor *reactor, int fd, ducq_i *ducq) 
 }
 
 //
-//			S U B S C R I B E R S
+//			S U B S C R I P T I O N S
 //
+
+
+typedef ducq_loop_t (*loop_hook_f)(connection_t *connection, void *ctx);
+
+static
+ducq_loop_t connection_loop_template(ducq_reactor *reactor, loop_hook_f hook, void *ctx) {	ducq_loop_t control = DUCQ_LOOP_CONTINUE;
+	connection_t *prev  = NULL;
+	connection_t *iter  = NULL;
+	connection_t *next  = reactor->connections;
+
+	while(prev = iter, iter = next)  {
+		next = iter->next;
+
+
+		control = hook(iter, ctx);
+
+
+		if (control & DUCQ_LOOP_DELETE) {
+			if(prev) prev->next = iter->next;
+			if(iter == reactor->connections)
+				reactor->connections = next;
+			connection_free(iter);
+			iter = prev;
+		}
+		if (control & DUCQ_LOOP_BREAK)
+			break;
+	}
+
+	return control;
+}
+
+
 
 ducq_state ducq_reactor_subscribe(ducq_reactor *reactor, ducq_i *ducq, const char *route) {
 	connection_t *conn = reactor->connections;
@@ -167,32 +199,24 @@ ducq_state ducq_reactor_subscribe(ducq_reactor *reactor, ducq_i *ducq, const cha
 }
 
 
-ducq_loop_t ducq_reactor_loop(ducq_reactor *reactor, ducq_loop_f apply, void *ctx) {
-	ducq_loop_t control = DUCQ_LOOP_CONTINUE;
+struct client_code_closure {
+	ducq_loop_f apply;
+	void *ctx;
+};
+static
+ducq_loop_t loop_through_client(connection_t *conn, void *ctx) {
+	struct client_code_closure *closure = (struct client_code_closure*) ctx;
 
-	connection_t *prev = NULL;
-	connection_t *iter = NULL;
-	connection_t *next = reactor->connections;
+	return conn->type == DUCQ_CONNECTION_CLIENT
+		? closure->apply(conn->as.client.ducq, conn->as.client.route, closure->ctx)
+		: DUCQ_LOOP_CONTINUE;
 
-	while(prev = iter, iter = next)  {
-		next = iter->next;
-		if(iter->type == DUCQ_CONNECTION_SERVER) continue;
-
-		control = apply(iter->as.client.ducq, iter->as.client.route, ctx);
-
-		if (control & DUCQ_LOOP_DELETE) {
-			if(prev) prev->next = iter->next;
-			if(iter == reactor->connections)
-				reactor->connections = next;
-			connection_free(iter);
-			iter = prev;
-		}
-		if (control & DUCQ_LOOP_BREAK)
-			break;
-	}
-
-	return control;
 }
+ducq_loop_t ducq_reactor_loop(ducq_reactor *reactor, ducq_loop_f apply, void *ctx) {
+	struct client_code_closure closure = {.apply = apply, .ctx = ctx};
+	return connection_loop_template(reactor, loop_through_client, &closure);
+}
+
 
 static
 ducq_loop_t _delete(ducq_i *ducq, char *route, void *ctx) {
@@ -216,14 +240,50 @@ bool ducq_reactor_delete(ducq_reactor *reactor, ducq_i *ducq) {
 //
 //			M A I N   L O O P
 //
+struct round_table_ctx {
+	ducq_reactor *reactor;
+	fd_set       *fds;
+	char         *buffer;
+	int           nready;
+};
+static
+ducq_loop_t round_table(connection_t *conn, void *vctx) {
+	struct round_table_ctx *ctx = (struct round_table_ctx*) vctx;
+	ducq_loop_t control = DUCQ_LOOP_CONTINUE;
 
-int ducq_loop(ducq_reactor *reactor) {
-	char buffer[DUCQ_MSGSZ] = "";
+	if( ! FD_ISSET(conn->fd, ctx->fds) )
+		return control;
+	
+	if(--ctx->nready <= 0 ) control = DUCQ_LOOP_BREAK;
+
+	if(conn->type == DUCQ_CONNECTION_SERVER) {
+		conn->as.server.accept_f(ctx->reactor, conn->fd, conn->as.server.ctx);
+		return control;
+	}
+
+	ducq_i * ducq = conn->as.client.ducq;
 	size_t size = DUCQ_MSGSZ;
-	ducq_state state = DUCQ_OK;
+	ducq_state state = ducq_recv(ducq, ctx->buffer, &size);
+
+	switch(state) {
+		case DUCQ_OK:
+			ducq_dispatch(ctx->reactor->dispatcher, ducq, ctx->buffer, size);
+			break;
+		case DUCQ_PROTOCOL: break; // ignore
+		default: control |= DUCQ_LOOP_DELETE; break;
+	}
+	return control;
+}
+void ducq_loop(ducq_reactor *reactor) {
+	fd_set readfds;
+	char buffer[DUCQ_MSGSZ] = "";
+	struct round_table_ctx ctx = { 
+		.reactor =  reactor,
+		.fds     = &readfds,
+		.buffer  =  buffer
+	};
 
 	while(true) {
-		fd_set readfds;
 		FD_ZERO(&readfds);
 		int max = 1;
 
@@ -234,31 +294,14 @@ int ducq_loop(ducq_reactor *reactor) {
 			conn = conn->next;
 		}
 
-		int nready = select(max+1, &readfds, NULL, NULL, NULL);
-		if( nready == -1) {
+		ctx.nready = select(max+1, &readfds, NULL, NULL, NULL);
+		if( ctx.nready == -1) {
 			ducq_reactor_log(reactor, DUCQ_LOG_ERROR, __func__, "n\\a", "select() failed: %s\n", strerror(errno));
 			continue;
 		}
 
-		conn = reactor->connections;
-		while(conn) {
-			if( ! FD_ISSET(conn->fd, &readfds) ) 
-				continue;
-			if(conn->type == DUCQ_CONNECTION_SERVER) {
-				void *ctx = conn->as.server.ctx;
-				conn->as.server.accept_f(reactor, conn->fd, ctx);
-			}
-			else {
-				ducq_i * ducq = conn->as.client.ducq;
-				size = DUCQ_MSGSZ;
-				state = ducq_recv(ducq, buffer, &size);
-				if(state == DUCQ_PROTOCOL) continue;
-				if(state != DUCQ_OK) ducq_send_ack(ducq, state);
-				else ducq_dispatch(reactor->dispatcher, ducq, buffer, size);
-			}
 
-			conn = conn->next;
-		}
+		connection_loop_template(reactor, round_table, &ctx);
 	}
 }
 
