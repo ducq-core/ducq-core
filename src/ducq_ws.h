@@ -9,6 +9,6 @@ ducq_i *ducq_new_ws_connection(int fd);
 
 ducq_state ducq_new_ws_upgrade_from_http(ducq_i **ws, int fd, char *http_header);
 
-
+char *ducq_buffer(ducq_i *ducq);
 
 #endif // _DUCQ_WS_

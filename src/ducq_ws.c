@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <stdlib.h>
+#include <time.h>
 #include <assert.h>
 
 #include "ducq.h"
@@ -21,13 +22,18 @@ typedef struct ducq_ws {
 	
 	int fd;
 	char  id[MAX_ID];
-	
-	ws_header_t hdr;
+
+	union {
+		byte_t as_buffer[sizeof(ws_header_t) + DUCQ_MSGSZ];
+		ws_header_t as_hdr;
+	} buf;
+
 	bool is_client;
 
 	const char *host;
 	const char *port;
 } ducq_ws;
+
 
 
 
@@ -63,22 +69,23 @@ ducq_state _recv(ducq_i *ducq, char *ptr, size_t *count) {
 	ducq_ws *ws = (ducq_ws*)ducq;
 	
 	ssize_t n = 0;
+	byte_t *hdr = ws->buf.as_hdr;
 
 	// get packet header
-	n = readn(ws->fd, ws->hdr, 2);
+	n = readn(ws->fd, hdr, 2);
 	if(n < 2) return DUCQ_EREAD;
 
-	if(ws->hdr[0] != (WS_FIN | WS_TEXT) )
+	if(hdr[0] != (WS_FIN | WS_TEXT) )
 		return DUCQ_ENOIMPL;
 
-	int hdr_len = ws_get_hdr_len(ws->hdr);
+	int hdr_len = ws_get_hdr_len(hdr);
 	if(hdr_len > 2) {
-		n = readn(ws->fd, ws->hdr+2, hdr_len-2);
+		n = readn(ws->fd, hdr+2, hdr_len-2);
 		if(n < hdr_len-2) return DUCQ_EREAD;
 	}
 
 	// get packet length
-	uint64_t msg_len = ws_get_len(ws->hdr);
+	uint64_t msg_len = ws_get_len(hdr);
 	if(msg_len > *count) return DUCQ_EMSGSIZE;
 	*count = readn(ws->fd, ptr, msg_len);
 	if(*count != msg_len) return DUCQ_EREAD;
@@ -86,7 +93,7 @@ ducq_state _recv(ducq_i *ducq, char *ptr, size_t *count) {
 
 	// unmask
 	if( is_server(ws) ) {
-		ws_mask_t *mask = ws_get_msk(ws->hdr);
+		ws_mask_t *mask = ws_get_msk(hdr);
 		ws_mask_message(mask, ptr, *count);
 	}
 
@@ -97,7 +104,33 @@ ducq_state _recv(ducq_i *ducq, char *ptr, size_t *count) {
 static
 ducq_state _send(ducq_i *ducq, const void *buf, size_t *count) {
 	ducq_ws *ws = (ducq_ws*) ducq;
-	return DUCQ_ENOIMPL;
+
+	ssize_t n = 0;
+	const char *payload = buf;
+	byte_t *hdr = ws->buf.as_hdr;
+
+	hdr[0] = WS_FIN | WS_TEXT;
+	ws_set_len(hdr, *count);
+
+	
+	if( is_client(ws) ) {
+	// change to inner buffer for masking: client buffer is const
+		 if(*count > DUCQ_MSGSZ) return DUCQ_EMSGSIZE;
+		payload = ws->buf.as_buffer + sizeof(ws_header_t);
+		memcpy((void*)payload, buf, *count);
+		
+		ws_mask_t mask = ws_make_mask(time(NULL));
+		ws_set_msk(hdr, &mask);
+		ws_mask_message(&mask, (void*)payload, *count);
+	}
+
+	n = writen( ws->fd, hdr, ws_get_hdr_len(hdr) );
+	if(n != ws_get_hdr_len(hdr) ) return DUCQ_EWRITE;
+	
+	n = writen( ws->fd, payload, *count );
+	if(n != *count ) return DUCQ_EWRITE;
+
+	return DUCQ_OK;
 }
 
 static
@@ -183,10 +216,10 @@ ducq_i *ducq_new_ws_client(const char *host, const char *port) {
 	ws->host = host;
 	ws->port = port;
 	ws->id[0] = '\0';
-
 	ws->is_client = true;
-	memset(ws->hdr, 0, sizeof(ws_header_t));
-
+	
+	memset(ws->buf.as_buffer, 0, sizeof(ws->buf.as_buffer) );
+	
 	return (ducq_i *) ws;
 }
 
@@ -201,9 +234,9 @@ ducq_i *ducq_new_ws_connection(int fd) {
 	ws->host  = NULL;
 	ws->port  = NULL;
 	ws->id[0] = '\0';
-	
 	ws->is_client = false;
-	memset(ws->hdr, 0, sizeof(ws_header_t));
+
+	memset(ws->buf.as_buffer, 0, sizeof(ws->buf.as_buffer) );
 
 	return (ducq_i *) ws;
 }
@@ -245,7 +278,12 @@ ducq_state ducq_new_ws_upgrade_from_http(ducq_i **ws, int fd, char *http_header)
 	return DUCQ_PROTOCOL;
 }
 
-
+char *ducq_buffer(ducq_i *ducq) {
+	ducq_ws *ws = (ducq_ws*)ducq;
+	return ws->tbl == &table
+		? ws->buf.as_buffer
+		: NULL;
+}
 
 #undef is_client
 #undef is_server

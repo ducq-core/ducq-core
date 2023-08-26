@@ -201,7 +201,18 @@ void ws_mask_message(ws_mask_t *mask, char *buf, size_t len) {
 		buf[i] ^=  mask->bytes[i%4];		
 }
 
+ws_mask_t ws_make_mask(int seed) {
+	ws_mask_t mask = {};
 
+	srand(seed);
+
+	mask.bytes[0] = rand();
+	mask.bytes[1] = rand();
+	mask.bytes[2] = rand();
+	mask.bytes[3] = rand();
+
+	return mask;
+}
 
 
 //

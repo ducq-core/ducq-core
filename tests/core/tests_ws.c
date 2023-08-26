@@ -5,11 +5,13 @@
 #include <cmocka.h>
 
 #include <string.h>
+#include <stdlib.h>
 #include <stdio.h>
 
 #include "tests_ws.h"
 
 #include "inet_http.h"
+#include "inet_ws.h"
 #include "ducq_ws.h"
 
 extern char READ_BUFFER[];
@@ -282,4 +284,212 @@ void ws_recv_buffer_too_small(void **state) {
 
 	// teardown
 	ducq_free(ducq);
+}
+
+void ws_send_client_ok(void **state) {
+	// arrange
+	ducq_state expected_state = DUCQ_OK;
+
+	// mock
+	char   expected_header[]  = { 0x81, 0x85 };
+	char   expected_message[] = "Hello";
+	size_t expected_header_size  =  sizeof(expected_header);
+	size_t expected_message_size =  strlen(expected_message);
+	
+	expect_any_count(writen, vptr, 2);
+	will_return  (writen, 6);
+	will_return  (writen, 5);
+
+	// act
+	ducq_i *ducq = ducq_new_ws_client("path", "port");
+	char   message[] = "Hello";
+	size_t actual_message_size =  strlen(message);
+
+	ducq_state actual_state = ducq_send(ducq, message, &actual_message_size);
+
+	// audit
+	assert_int_equal(expected_state, actual_state);
+
+	assert_int_equal(expected_message_size, actual_message_size);
+
+	ws_header_t *actual_header = (ws_header_t*) ducq_buffer(ducq);
+	
+	byte_t *header = ducq_buffer(ducq);
+	assert_memory_equal(expected_header, header, expected_header_size);
+	
+	char *actual_message = header + sizeof(ws_header_t);
+	assert_memory_not_equal(expected_message, actual_message, expected_message_size);
+	ws_mask_t *mask = ws_get_msk(header);
+	ws_mask_message(mask, actual_message, actual_message_size);
+	assert_memory_equal(expected_message, actual_message, expected_message_size);
+
+
+	// teardown
+	ducq_free(ducq);
+}
+
+void ws_send_server_ok(void **state) {
+	// arrange
+	ducq_state expected_state = DUCQ_OK;
+
+	// mock
+	char   expected_header[]  = { 0x81, 0x05 };
+	char   expected_message[] = { 0x48, 0x65, 0x6c, 0x6c, 0x6f };
+	size_t expected_header_size  =  sizeof(expected_header);
+	size_t expected_message_size =  sizeof(expected_message);
+	
+	expect_memory(writen, vptr, expected_header,  expected_header_size);
+	expect_memory(writen, vptr, expected_message, expected_message_size);
+	will_return  (writen, expected_header_size);
+	will_return  (writen, expected_message_size);
+
+	// act
+	ducq_i *ducq = ducq_new_ws_connection(-1);
+	char   message[] = "Hello";
+	size_t message_size =  strlen(message);
+
+	ducq_state actual_state = ducq_send(ducq, message, &message_size);
+
+	// audit
+	assert_int_equal(expected_state, actual_state);
+
+	// teardown
+	ducq_free(ducq);
+}
+void ws_send_client_message_too_big(void **state) {
+	// arrange
+	ducq_state expected_state = DUCQ_EMSGSIZE;
+
+	// act
+	ducq_i *ducq = ducq_new_ws_client("path", "port");
+	char   message[DUCQ_MSGSZ+1] = ""; // too big
+	size_t message_size =  sizeof(message);
+	
+	ducq_state actual_state = ducq_send(ducq, message, &message_size);
+
+	// audit
+	assert_int_equal(expected_state, actual_state);
+
+	// teardown
+	ducq_free(ducq);
+}
+
+void ws_send_header_write_fail(void **state) {
+	// arrange
+	ducq_state expected_state = DUCQ_EWRITE;
+
+	// mock
+	expect_any   (writen, vptr);
+	will_return  (writen, -1);
+
+	// act
+	ducq_i *ducq = ducq_new_ws_connection(-1);
+	char   message[] = "Hello";
+	size_t message_size =  strlen(message);
+
+	ducq_state actual_state = ducq_send(ducq, message, &message_size);
+
+	// audit
+	assert_int_equal(expected_state, actual_state);
+
+	// teardown
+	ducq_free(ducq);
+}
+
+void ws_send_payload_write_fail(void **state) {
+	// arrange
+	ducq_state expected_state = DUCQ_EWRITE;
+
+	// mock
+	expect_any_count(writen, vptr, 2);
+	will_return     (writen,  2);
+	will_return     (writen, -1);
+
+	// act
+	ducq_i *ducq = ducq_new_ws_connection(-1);
+	char   message[] = "Hello";
+	size_t message_size =  strlen(message);
+
+	ducq_state actual_state = ducq_send(ducq, message, &message_size);
+
+	// audit
+	assert_int_equal(expected_state, actual_state);
+
+	// teardown
+	ducq_free(ducq);
+}
+
+void ws_send_reorder_len_16(void **state) {
+	// arrange
+#define TEST_LEN_BITS 0x1234U
+	uint16_t test_int = TEST_LEN_BITS;
+	char *order_test = (char*) &test_int;
+	if( order_test[0] !=  0x34U )
+		skip();
+
+	ducq_state expected_state = DUCQ_OK;
+	byte_t expected_header[] = { 
+		(WS_FIN | WS_TEXT),
+		126,         // len on 16 bits, no mask
+		0x12U, 0x34U
+	};
+	char message[TEST_LEN_BITS] = "";
+	size_t message_size = sizeof(message);
+	memset(message, 0, TEST_LEN_BITS);
+
+	// mock
+	expect_memory(writen, vptr, expected_header, sizeof(expected_header));
+	will_return  (writen, sizeof(expected_header));
+	expect_memory(writen, vptr, message, sizeof(message));
+	will_return  (writen, sizeof(message));
+
+	// act
+	ducq_i *ducq = ducq_new_ws_connection(-1);
+	ducq_state actual_state = ducq_send(ducq, message, &message_size);
+
+	// audit
+	assert_int_equal(expected_state, actual_state);
+
+	// teardown
+	ducq_free(ducq);
+#undef TEST_LEN_BITS
+}
+
+void ws_send_reorder_len_64(void **state) {
+	// arrange
+#define TEST_LEN_BITS 0x12345678U
+	uint64_t test_int = TEST_LEN_BITS;
+	char *order_test = (char*) &test_int;
+	if( order_test[0] !=  0x78U )
+		skip();
+
+	ducq_state expected_state = DUCQ_OK;
+	byte_t expected_header[] = { 
+		(WS_FIN | WS_TEXT),
+		127,         // len on 64 bits, no mask
+		0x00U, 0x00U, 0x00U, 0x00U,
+		0x12U, 0x34U, 0x56U, 0x78U
+	};
+	char *message = malloc(TEST_LEN_BITS);
+	size_t message_size = TEST_LEN_BITS;
+	memset(message, 0, TEST_LEN_BITS);
+
+
+	// mock
+	expect_memory(writen, vptr, expected_header, sizeof(expected_header));
+	will_return  (writen, sizeof(expected_header));
+	expect_any(writen, vptr);
+	will_return  (writen, TEST_LEN_BITS);
+
+	// act
+	ducq_i *ducq = ducq_new_ws_connection(-1);
+	ducq_state actual_state = ducq_send(ducq, message, &message_size);
+
+	// audit
+	assert_int_equal(expected_state, actual_state);
+
+	// teardown
+	ducq_free(ducq);
+	free(message);
+#undef TEST_LEN_BITS
 }

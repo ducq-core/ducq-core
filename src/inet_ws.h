@@ -79,7 +79,7 @@ const char *ws_error_tostring(ws_error_t error);
 
 // masking
 void ws_mask_message(ws_mask_t *mask, char *buf, size_t len);
-
+ws_mask_t ws_make_mask(int seed);
 
 // handshake key
 #define WS_B64_CONNECTION_KEY_LEN 25 // base64(16 bytes nonce) + null
