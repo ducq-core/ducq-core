@@ -10,6 +10,7 @@
 
 #include "tests_state.h"
 #include "tests_tcp.h"
+#include "tests_ws.h"
 #include "tests_parse.h"
 #include "tests_dispatcher.h"
 #include "tests_ack.h"
@@ -25,6 +26,9 @@ const struct CMUnitTest state[] = {
 };
 const struct CMUnitTest tcp[] = { 
 	build_tcp_tests()
+};
+const struct CMUnitTest ws[] = { 
+	build_ws_tests()
 };
 const struct CMUnitTest parse[] = { 
 	build_parse_tests()
@@ -55,6 +59,8 @@ int main(int argc, char** argv){
 	cmocka_run_group_tests(state, NULL, NULL);
 		printf("\n\n");
 	cmocka_run_group_tests(tcp, NULL, NULL);
+		printf("\n\n");
+	cmocka_run_group_tests(ws, NULL, NULL);
 		printf("\n\n");
 	cmocka_run_group_tests(parse, NULL, NULL);
 		printf("\n\n");

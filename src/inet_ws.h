@@ -9,6 +9,7 @@
 
 // definitions
 #define WS_GUID "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
+#define SEC_WEBSOCKET_KEY "Sec-WebSocket-Key"
 
 #define WS_FIN           0x80U
 #define WS_RSV1          0x40U

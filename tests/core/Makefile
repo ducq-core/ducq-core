@@ -28,6 +28,11 @@ mock_commands = \
 core_test_objs= \
 	${SRCDIR}/ducq.c \
 	${SRCDIR}/ducq_tcp.c \
+	${SRCDIR}/sha1.c \
+	${SRCDIR}/base64.c \
+	${SRCDIR}/inet_ws.c \
+	${SRCDIR}/inet_http.c \
+	${SRCDIR}/ducq_ws.c \
 	${SRCDIR}/ducq_reactor.c \
 	${SRCDIR}/ducq_dispatcher.c \
 	${TESTDIR}/mock_ducq_client.c \
@@ -39,14 +44,36 @@ core_test_objs= \
 	tests_parse.c \
 	tests_state.c \
 	tests_tcp.c \
+	tests_ws.c \
 	tests_cli_publish.c \
 	tests_cli_subscribe.c \
 	main.c
+core_test_http_objs= \
+	${SRCDIR}/ducq.c \
+	${SRCDIR}/sha1.c \
+	${SRCDIR}/base64.c \
+	${SRCDIR}/inet_ws.c \
+	${SRCDIR}/ducq_ws.c \
+	${SRCDIR}/ducq_http.c \
+	${SRCDIR}/inet_socket.c \
+	${SRCDIR}/inet_http.c \
+	${TESTDIR}/mock_os.c \
+	tests_http.c \
+	main_http.c
+
 .PHONY: tests_core
 tests_core: PREREQ $(mock_commands) $(core_test_objs)
 	$(CC) -o $(BUILDDIR)/$@ $(core_test_objs) $(HEADERS) -ldl $(LINK_TEST_LIB)
 	cd $(BUILDDIR) &&  valgrind ./$@
+	$(CC) -o $(BUILDDIR)/$@ $(core_test_http_objs) $(HEADERS) $(RE_DEFINES) $(LINK_TEST_LIB)
+	cd $(BUILDDIR) &&  valgrind ./$@
 
+RE_DEFINES = \
+	-D read=mock_read \
+	-D write=mock_write \
+	-D close=mock_close \
+	-D getsockname=mock_getsockname \
+	-D getpeername=mock_getpeername
 
 .PHONY: PREREQ
 PREREQ:

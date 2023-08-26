@@ -14,8 +14,8 @@ inet_test_objs = \
 	$(SRCDIR)/inet_ws.c \
 	$(SRCDIR)/base64.c \
 	$(SRCDIR)/sha1.c \
+	$(TESTDIR)/mock_os.c \
 	main_inet.c \
-	mock_os.c \
 	tests_base64.c \
 	tests_http.c \
 	tests_inet.c \

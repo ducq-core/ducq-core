@@ -67,7 +67,7 @@ void http_get_header_ok(void **state) {
 	// act
 	ssize_t actual_size = 
 		inet_get_http_header(fd, actual_header, sizeof(actual_header), &actual_end);
-	expected_end = strstr(actual_header, "\r\n\r\n");
+	expected_end = strstr(actual_header, "\r\n\r\n") + 2;
 
 	// audit
 	assert_int_equal(expected_size, actual_size);
@@ -142,4 +142,111 @@ void http_get_header_not_terminated(void **state) {
 	assert_null(actual_end);
 }
 
+void http_find_http_header(void **state) {
+	//arrange
+	
+	char *expected_header = strstr(example_header, "websocket");
+	if(!expected_header) fail();
+	char *expected_end  = expected_header + strlen("websocket");
+
+	// act
+	char *actual_end    = NULL;
+	char *actual_header = inet_find_http_header(example_header, "Upgrade", &actual_end);
+
+	// audit
+	assert_string_equal(expected_header, actual_header);
+	assert_ptr_equal(expected_header, actual_header);
+	assert_ptr_equal(expected_end, actual_end);
+}
+
+void http_find_http_header_fails(void **state) {
+	//arrange
+	
+	// act
+	char *actual_end    = NULL;
+	char *actual_header = inet_find_http_header(example_header, "non-existent", &actual_end);
+
+	// audit
+	assert_null(actual_header);
+	assert_null(actual_end);
+}
+
+
+
+void http_find_http_header_even_if_token_found_elsewhere(void **state) {
+	//arrange
+	char repeated_token[] = 
+		"Connection: keep-alive, Upgrade\r\n"
+		"Sec-Fetch-Dest: empty\r\n"
+		"Sec-Fetch-Mode: websocket\r\n"
+		"Sec-Fetch-Site: cross-site\r\n"
+		"Pragma: no-cache\r\n"
+		"Upgrade: websocket\r\n"
+		"Cache-Control: no-cache\r\n"
+		"\r\n";
+
+	char *expected_header = strstr(repeated_token, "Upgrade: websocket\r\n");
+	if(!expected_header) fail();
+	expected_header += strlen("Upgrade: ");
+	char *expected_end  = expected_header + strlen("websocket");
+
+	// act
+	char *actual_end    = NULL;
+	char *actual_header = inet_find_http_header(repeated_token, "Upgrade", &actual_end);
+
+	// audit
+	assert_non_null(actual_header);
+	assert_non_null(actual_end);
+	assert_string_equal(expected_header, actual_header);
+	assert_ptr_equal(expected_header, actual_header);
+	assert_ptr_equal(expected_end, actual_end);
+}
+
+void http_find_http_header_even_if_last(void **state) {
+	//arrange
+	char repeated_token[] = 
+		"Connection: keep-alive, Upgrade\r\n"
+		"Sec-Fetch-Dest: empty\r\n"
+		"Sec-Fetch-Mode: websocket\r\n"
+		"Sec-Fetch-Site: cross-site\r\n"
+		"Pragma: no-cache\r\n"
+		"Cache-Control: no-cache\r\n"
+		"Upgrade: websocket\r\n"
+		"\r\n";
+
+	char *expected_header = strstr(repeated_token, "websocket\r\n\r\n");
+	if(!expected_header) fail();
+	char *expected_end  = expected_header + strlen("websocket");
+
+	// act
+	char *actual_end    = NULL;
+	char *actual_header = inet_find_http_header(repeated_token, "Upgrade", &actual_end);
+
+	// audit
+	assert_non_null(actual_header);
+	assert_non_null(actual_end);
+	assert_string_equal(expected_header, actual_header);
+	assert_ptr_equal(expected_header, actual_header);
+	assert_ptr_equal(expected_end, actual_end);
+}
+
+void http_find_http_header_not_found_both_return_and_end_are_null(void **state) {
+	//arrange
+	char repeated_token[] = 
+		"Connection: keep-alive, Upgrade\r\n"
+		"Sec-Fetch-Dest: empty\r\n"
+		"Sec-Fetch-Mode: websocket\r\n"
+		"Sec-Fetch-Site: cross-site\r\n"
+		"Pragma: no-cache\r\n"
+		"Cache-Control: no-cache\r\n"
+		"\r\n";
+
+	// act
+	char *actual_end    = NULL;
+	char *actual_header = inet_find_http_header(repeated_token, "Upgrade", &actual_end);
+
+	// audit
+	assert_null(actual_header);
+	assert_null(actual_end);
+}
 

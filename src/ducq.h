@@ -4,6 +4,7 @@
 #include <stdbool.h>
 
 
+
 #ifndef DUCQ_MSGSZ
 #define DUCQ_MSGSZ 256
 #endif
@@ -25,7 +26,8 @@
 	apply(DUCQ_EMSGSIZE,    "message too big") \
 	apply(DUCQ_ENOCMD,      "command unknown") \
 	apply(DUCQ_EACK,        "no ack received") \
-	apply(DUCQ_ENOTFOUND,	"connection not found")
+	apply(DUCQ_ENOTFOUND,	"connection not found") \
+	apply(DUCQ_ENOIMPL,	"not implemented yet")
 
 typedef enum ducq_state {
 	DUCQ_OK = 0,
