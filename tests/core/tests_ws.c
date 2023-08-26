@@ -12,6 +12,8 @@
 #include "inet_http.h"
 #include "ducq_ws.h"
 
+extern char READ_BUFFER[];
+extern int  pos;
 
 void ws_upgrade_from_http(void **state) {
 	// arrange
@@ -112,3 +114,172 @@ void ws_upgrade_from_http_return_ewrite(void **state) {
 	ducq_free(ducq);
 }
 
+
+
+
+void ws_recv_client_ok(void **state) {
+	// arrange
+	ducq_state expected_state = DUCQ_OK;
+	char   expected_message[] = "Hello";
+	size_t expected_size = strlen(expected_message);
+	
+	// mock
+	char   message[] = { 0x81, 0x05, 0x48, 0x65, 0x6c, 0x6c, 0x6f };
+	size_t size = sizeof(message);
+	memcpy(READ_BUFFER, message, sizeof(message));
+	pos = 0;
+
+	will_return(readn, 2);
+	will_return(readn, 5);
+
+	// act
+	ducq_i *ducq = ducq_new_ws_client("path", "port");
+	char   actual_message[DUCQ_MSGSZ] = "";
+	size_t actual_size =  DUCQ_MSGSZ;
+
+	ducq_state actual_state = ducq_recv(ducq, actual_message, &actual_size);
+
+	// audit
+	assert_int_equal(expected_state, actual_state);
+	assert_string_equal(expected_message, actual_message);
+	assert_int_equal(expected_size, actual_size);
+
+	// teardown
+	ducq_free(ducq);
+}
+
+void ws_recv_server_ok(void **state) {
+	// arrange
+	ducq_state expected_state = DUCQ_OK;
+	char   expected_message[] = "Hello";
+	size_t expected_size = strlen(expected_message);
+	
+	// mock
+	char   message[] = { 0x81, 0x85, 0x37, 0xfa, 0x21, 0x3d, 0x7f, 0x9f, 0x4d, 0x51, 0x58 };
+	size_t size = sizeof(message);
+	memcpy(READ_BUFFER, message, sizeof(message));
+	pos = 0;
+
+	will_return(readn, 2);
+	will_return(readn, 4);
+	will_return(readn, 5);
+
+	// act
+	ducq_i *ducq = ducq_new_ws_connection(-1);
+	char   actual_message[DUCQ_MSGSZ] = "";
+	size_t actual_size =  DUCQ_MSGSZ;
+	ducq_state actual_state = ducq_recv(ducq, actual_message, &actual_size);
+
+	// audit
+	assert_int_equal(expected_state, actual_state);
+	assert_string_equal(expected_message, actual_message);
+	assert_int_equal(expected_size, actual_size);
+
+	// teardown
+	ducq_free(ducq);
+}
+
+void ws_recv_message_read_error(void **state) {
+	// arrange
+	ducq_state expected_state = DUCQ_EREAD;
+	
+	// mock
+	char   message[] = { 0x81, 0x85, 0x37, 0xfa, 0x21, 0x3d, 0x7f, 0x9f, 0x4d, 0x51, 0x58 };
+	size_t size = sizeof(message);
+	memcpy(READ_BUFFER, message, sizeof(message));
+	pos = 0;
+
+	will_return(readn,  2);
+	will_return(readn,  4);
+	will_return(readn, -1);
+
+	// act
+	ducq_i *ducq = ducq_new_ws_connection(-1);
+	char   actual_message[DUCQ_MSGSZ] = "";
+	size_t actual_size =  DUCQ_MSGSZ;
+	ducq_state actual_state = ducq_recv(ducq, actual_message, &actual_size);
+
+	// audit
+	assert_int_equal(expected_state, actual_state);
+
+	// teardown
+	ducq_free(ducq);
+}
+
+void ws_recv_mask_read_error(void **state) {
+	// arrange
+	ducq_state expected_state = DUCQ_EREAD;
+	
+	// mock
+	char   message[] = { 0x81, 0x85, 0x37, 0xfa, 0x21, 0x3d, 0x7f, 0x9f, 0x4d, 0x51, 0x58 };
+	size_t size = sizeof(message);
+	memcpy(READ_BUFFER, message, sizeof(message));
+	pos = 0;
+
+	will_return(readn,  2);
+	will_return(readn, -1);
+
+	// act
+	ducq_i *ducq = ducq_new_ws_connection(-1);
+	char   actual_message[DUCQ_MSGSZ] = "";
+	size_t actual_size =  DUCQ_MSGSZ;
+	ducq_state actual_state = ducq_recv(ducq, actual_message, &actual_size);
+
+	// audit
+	assert_int_equal(expected_state, actual_state);
+
+	// teardown
+	ducq_free(ducq);
+}
+void ws_recv_header_read_error(void **state) {
+	// arrange
+	ducq_state expected_state = DUCQ_EREAD;
+	
+	// mock
+	char   message[] = { 0x81, 0x85, 0x37, 0xfa, 0x21, 0x3d, 0x7f, 0x9f, 0x4d, 0x51, 0x58 };
+	size_t size = sizeof(message);
+	memcpy(READ_BUFFER, message, sizeof(message));
+	pos = 0;
+
+	will_return(readn, -1);
+
+	// act
+	ducq_i *ducq = ducq_new_ws_connection(-1);
+	char   actual_message[DUCQ_MSGSZ] = "";
+	size_t actual_size =  DUCQ_MSGSZ;
+	ducq_state actual_state = ducq_recv(ducq, actual_message, &actual_size);
+
+	// audit
+	assert_int_equal(expected_state, actual_state);
+
+	// teardown
+	ducq_free(ducq);
+}
+
+void ws_recv_buffer_too_small(void **state) {
+	// arrange
+	ducq_state expected_state = DUCQ_EMSGSIZE;
+	char   expected_message[] = "Hello";
+	size_t expected_size = strlen(expected_message);
+	
+	// mock
+	char   message[] = { 0x81, 0x85, 0x37, 0xfa, 0x21, 0x3d, 0x7f, 0x9f, 0x4d, 0x51, 0x58 };
+	size_t size = sizeof(message);
+	memcpy(READ_BUFFER, message, sizeof(message));
+	pos = 0;
+
+	will_return(readn, 2);
+	will_return(readn, 4);
+
+	// act
+	ducq_i *ducq = ducq_new_ws_connection(-1);
+	char   actual_message[3] = "";
+	size_t actual_size =  3; // too small
+	ducq_state actual_state = ducq_recv(ducq, actual_message, &actual_size);
+
+	// audit
+	assert_int_equal(expected_state, actual_state);
+
+	// teardown
+	ducq_free(ducq);
+}

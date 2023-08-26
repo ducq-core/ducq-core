@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <stdlib.h>
+#include <assert.h>
 
 #include "ducq.h"
 #include "ducq_vtbl.h"
@@ -9,6 +10,9 @@
 #include "inet_socket.h"
 #include "inet_http.h"
 #include "inet_ws.h"
+
+#define is_client(ws) (   ws->is_client )
+#define is_server(ws)  ( ! ws->is_client )
 
 #define  MAX_ID 99 // 3 + 46 + 6 + 1; // WS:ipv6(46):65535\0
 
@@ -28,7 +32,6 @@ typedef struct ducq_ws {
 
 
 
-#include <assert.h>
 
 static
 ducq_state _conn(ducq_i *ducq) {
@@ -58,8 +61,36 @@ ducq_state _timeout(ducq_i *ducq, int timeout) {
 static
 ducq_state _recv(ducq_i *ducq, char *ptr, size_t *count) {
 	ducq_ws *ws = (ducq_ws*)ducq;
+	
+	ssize_t n = 0;
 
-	return DUCQ_ENOIMPL;
+	// get packet header
+	n = readn(ws->fd, ws->hdr, 2);
+	if(n < 2) return DUCQ_EREAD;
+
+	if(ws->hdr[0] != (WS_FIN | WS_TEXT) )
+		return DUCQ_ENOIMPL;
+
+	int hdr_len = ws_get_hdr_len(ws->hdr);
+	if(hdr_len > 2) {
+		n = readn(ws->fd, ws->hdr+2, hdr_len-2);
+		if(n < hdr_len-2) return DUCQ_EREAD;
+	}
+
+	// get packet length
+	uint64_t msg_len = ws_get_len(ws->hdr);
+	if(msg_len > *count) return DUCQ_EMSGSIZE;
+	*count = readn(ws->fd, ptr, msg_len);
+	if(*count != msg_len) return DUCQ_EREAD;
+
+
+	// unmask
+	if( is_server(ws) ) {
+		ws_mask_t *mask = ws_get_msk(ws->hdr);
+		ws_mask_message(mask, ptr, *count);
+	}
+
+	return DUCQ_OK;
 }
 
 
@@ -143,7 +174,7 @@ static ducq_vtbl table = {
 	.dtor    = _dtor
 };
 
-ducq_i *ducq_new_ws(const char *host, const char *port) {
+ducq_i *ducq_new_ws_client(const char *host, const char *port) {
 	ducq_ws *ws = malloc(sizeof(ducq_ws));
 	if(!ws) return NULL;
 
@@ -213,3 +244,9 @@ ducq_state ducq_new_ws_upgrade_from_http(ducq_i **ws, int fd, char *http_header)
 
 	return DUCQ_PROTOCOL;
 }
+
+
+
+#undef is_client
+#undef is_server
+#undef MAX_ID
