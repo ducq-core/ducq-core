@@ -38,6 +38,12 @@ typedef enum {
 } ws_state_t;
 
 typedef enum {
+	WS_CLOSE_NORMAL     = 1000,
+	WS_CLOSE_GOING_AWAY = 1001,
+
+} ws_status_code_t;
+
+typedef enum {
 	WS_OK,
 	WS_BASE64_NULL,
 	WS_BASE64_OUT_LEN,
@@ -63,6 +69,7 @@ typedef byte_t ws_header_t[ 2 + sizeof(uint64_t) + sizeof(ws_mask_t) ];
 #define WS_HEADER_SIZE sizeof(ws_header_t)
 
 // byte ordering
+#define WS_IS_NETWORK_BYTE_ORDER ( ((char)0x00FF) == 0x00 )
 uint16_t ws_reorder_16(uint16_t x);
 uint64_t ws_reorder_64(uint64_t x);
 

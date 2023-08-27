@@ -21,7 +21,12 @@
 	apply(ws_send_payload_write_fail) \
 	apply(ws_send_reorder_len_16) \
 	apply(ws_send_reorder_len_64) \
-	apply(ws_send_reset_header) 
+	apply(ws_send_reset_header) \
+	apply(ws_close_server) \
+	apply(ws_close_client) \
+	apply(ws_close_server_init_by_client) \
+	apply(ws_close_client_init_by_server) \
+	apply(ws_close_wait_max_3_reads)
 
 foreach_ws_tests(build_forward_declarations)
 

@@ -455,8 +455,7 @@ void ws_send_reorder_len_16(void **state) {
 	// arrange
 #define TEST_LEN_BITS 0x1234U
 	uint16_t test_int = TEST_LEN_BITS;
-	char *order_test = (char*) &test_int;
-	if( order_test[0] !=  0x34U )
+	if( WS_IS_NETWORK_BYTE_ORDER )
 		skip();
 
 	ducq_state expected_state = DUCQ_OK;
@@ -492,8 +491,7 @@ void ws_send_reorder_len_64(void **state) {
 	// arrange
 #define TEST_LEN_BITS 0x12345678U
 	uint64_t test_int = TEST_LEN_BITS;
-	char *order_test = (char*) &test_int;
-	if( order_test[0] !=  0x78U )
+	if( WS_IS_NETWORK_BYTE_ORDER )
 		skip();
 
 	ducq_state expected_state = DUCQ_OK;
@@ -570,4 +568,306 @@ void ws_send_reset_header(void **state) {
 	ducq_free(ducq);
 }
 
+
+
+void ws_close_server(void **state) {
+	// arrange
+	int fd = -1;
+	ducq_state expected_state  = DUCQ_OK;
+	uint16_t expected_status = WS_CLOSE_GOING_AWAY;
+	if( ! WS_IS_NETWORK_BYTE_ORDER)
+		expected_status = ws_reorder_16(expected_status);
+	
+	byte_t *expected_message = (byte_t*) &expected_status;
+	byte_t expected_header[] = {
+		(WS_FIN | WS_CLOSE),
+		sizeof(uint16_t),
+		expected_message[0],
+		expected_message[1]
+	};
+
+
+	// mock
+	expect_memory(writen, vptr, expected_header,     2 );
+	expect_memory(writen, vptr, expected_header + 2, 2 );
+	will_return  (writen, 2);
+	will_return  (writen, 2);
+
+
+	will_return(readn, 10); // client ws  close frame
+	will_return(readn,  0); // client tcp close connection
+
+	will_return(inet_set_read_timeout, 0);
+	expect_value(inet_shutdown_write, fd, fd);
+	will_return(inet_shutdown_write, 0);
+	will_return(inet_close, 0);
+
+
+	// act
+	ducq_i *ducq = ducq_new_ws_connection(fd);
+	ducq_state actual_state = ducq_close(ducq);
+
+	// audit
+	assert_int_equal(expected_state, actual_state);
+
+	// teardown
+	ducq_free(ducq);
+}
+
+struct check_message_ctx {
+	byte_t *actual_hdr;
+	byte_t *expected_hdr;
+	int expected_hdr_size;
+	byte_t *expected_msg;
+	int expected_msg_size;
+	int count;
+};
+static
+int _check_masked_message(LargestIntegralType param, LargestIntegralType ctx) {	
+	struct check_message_ctx *msg = (struct check_message_ctx*) ctx;
+
+	if(msg->count == 0) {
+		byte_t *actual_hdr = (byte_t*)param;
+		size_t size = ws_get_hdr_len(actual_hdr);
+
+		assert_int_equal(msg->expected_hdr_size, size);
+
+		assert_memory_equal(
+			msg->expected_hdr,
+			actual_hdr,
+			2	// don't check random mask
+		);
+		msg->actual_hdr = actual_hdr;
+		msg->count++;
+	}
+	else {
+		byte_t *actual_msg = (byte_t*)param;
+		size_t size = ws_get_len(msg->actual_hdr);
+
+		assert_int_equal(msg->expected_msg_size, size);
+
+		ws_mask_message(
+			ws_get_msk(msg->actual_hdr),
+			actual_msg,
+			size
+		);
+		assert_memory_equal(
+			msg->expected_msg,
+			actual_msg,
+			msg->expected_msg_size
+		);
+	} 	
+
+	return true;
+}
+void ws_close_client(void **state) {
+	// arrange
+	int fd = -1;
+	ducq_state expected_state  = DUCQ_OK;
+	uint16_t expected_status = WS_CLOSE_NORMAL;
+	if( ! WS_IS_NETWORK_BYTE_ORDER)
+		expected_status = ws_reorder_16(expected_status);
+	
+	byte_t *expected_message = (byte_t*) &expected_status;
+	byte_t expected_header[] = {
+		(WS_FIN | WS_CLOSE),
+		(WS_MASK | sizeof(uint16_t)),
+		0x00, 0x00, 0x00, 0x00, // mask placeholder 
+		expected_message[0],
+		expected_message[1]
+	};
+
+	// mock
+	struct check_message_ctx ctx = {
+		.count = 0,
+		.expected_hdr = expected_header,
+		.expected_hdr_size = 6,
+		.expected_msg = expected_message,
+		.expected_msg_size = 2
+	};
+	expect_check(writen, vptr, _check_masked_message, &ctx);
+	expect_check(writen, vptr, _check_masked_message, &ctx);
+	will_return (writen, 6);
+	will_return (writen, 2);
+
+
+	will_return(readn, 10); // server ws  close frame
+	will_return(readn,  0); // server tcp close connection
+
+	will_return(inet_set_read_timeout, 0);
+	expect_value(inet_shutdown_write, fd, fd);
+	will_return(inet_shutdown_write, 0);
+	will_return(inet_close, 0);
+
+
+	// act
+	ducq_i *ducq = ducq_new_ws_client("host", "port");
+	ducq_state actual_state = ducq_close(ducq);
+
+	// audit
+	assert_int_equal(expected_state, actual_state);
+
+	// teardown
+	ducq_free(ducq);
+}
+
+void ws_close_server_init_by_client(void **state) {
+	// arrange
+	int fd = -1;
+	ducq_state expected_state  = DUCQ_OK;
+	uint16_t expected_status = WS_CLOSE_NORMAL;
+	if( ! WS_IS_NETWORK_BYTE_ORDER)
+		expected_status = ws_reorder_16(expected_status);
+	
+	byte_t *expected_message = (byte_t*) &expected_status;
+	byte_t expected_header[] = {
+		(WS_FIN | WS_CLOSE),
+		sizeof(uint16_t),
+		expected_message[0],
+		expected_message[1]
+	};
+
+
+	// mock
+	expect_memory(writen, vptr, expected_header,     2 );
+	expect_memory(writen, vptr, expected_header + 2, 2 );
+	will_return  (writen, 2);
+	will_return  (writen, 2);
+
+	byte_t client_close_frame[] = {
+		(WS_FIN | WS_CLOSE),
+		(WS_MASK | sizeof(uint16_t)),
+		0x00, 0x00, 0x00, 0x00, // mask placeholder 
+		expected_message[0],
+		expected_message[1]
+	};
+	pos = 0;
+	memcpy(READ_BUFFER, client_close_frame, sizeof(client_close_frame));
+	will_return(readn,  2); // client ws  close frame
+	will_return(readn,  4); // client ws  close frame
+	will_return(readn,  2); // client ws  close frame
+
+	will_return(inet_close, 0);
+
+
+	// act
+	char buffer[DUCQ_MSGSZ] = "";
+	size_t size = DUCQ_MSGSZ;
+
+	ducq_i *ducq = ducq_new_ws_connection(fd);
+	ducq_state recv_state   = ducq_recv(ducq, buffer, &size);
+	ducq_state actual_state = ducq_close(ducq);
+
+	// audit
+	assert_int_equal(DUCQ_ECONNCLOSED, recv_state);
+	assert_int_equal(expected_state, actual_state);
+
+	// teardown
+	ducq_free(ducq);
+}
+void ws_close_client_init_by_server(void **state) {
+	// arrange
+	int fd = -1;
+	ducq_state expected_state  = DUCQ_OK;
+	uint16_t expected_status = WS_CLOSE_NORMAL;
+	if( ! WS_IS_NETWORK_BYTE_ORDER)
+		expected_status = ws_reorder_16(expected_status);
+	
+	byte_t *expected_message = (byte_t*) &expected_status;
+	byte_t expected_header[] = {
+		(WS_FIN | WS_CLOSE),
+		(WS_MASK | sizeof(uint16_t)),
+		0x00, 0x00, 0x00, 0x00, // mask placeholder 
+		expected_message[0],
+		expected_message[1]
+	};
+
+	// mock
+	struct check_message_ctx ctx = {
+		.count = 0,
+		.expected_hdr = expected_header,
+		.expected_hdr_size = 6,
+		.expected_msg = expected_message,
+		.expected_msg_size = 2
+	};
+	expect_check(writen, vptr, _check_masked_message, &ctx);
+	expect_check(writen, vptr, _check_masked_message, &ctx);
+	will_return (writen, 6);
+	will_return (writen, 2);
+
+
+	byte_t server_close_frame[] = {
+		(WS_FIN | WS_CLOSE),
+		sizeof(uint16_t),
+		expected_message[0],
+		expected_message[1]
+	};
+	pos = 0;
+	memcpy(READ_BUFFER, server_close_frame, sizeof(server_close_frame));
+	will_return(readn, 2); // server ws  close frame
+	will_return(readn, 2); // server ws  close frame
+
+	will_return(inet_close, 0);
+
+
+	// act
+	char buffer[DUCQ_MSGSZ] = "";
+	size_t size = DUCQ_MSGSZ;
+
+	ducq_i *ducq = ducq_new_ws_client("host", "port");
+	ducq_state recv_state   = ducq_recv(ducq, buffer, &size);
+	ducq_state actual_state = ducq_close(ducq);
+
+	// audit
+	assert_int_equal(expected_state, actual_state);
+
+	// teardown
+	ducq_free(ducq);
+}
+void ws_close_wait_max_3_reads(void **state) {
+	// arrange
+	int fd = -1;
+	ducq_state expected_state  = DUCQ_OK;
+	uint16_t expected_status = WS_CLOSE_GOING_AWAY;
+	if( ! WS_IS_NETWORK_BYTE_ORDER)
+		expected_status = ws_reorder_16(expected_status);
+	
+	byte_t *expected_message = (byte_t*) &expected_status;
+	byte_t expected_header[] = {
+		(WS_FIN | WS_CLOSE),
+		sizeof(uint16_t),
+		expected_message[0],
+		expected_message[1]
+	};
+
+
+	// mock
+	expect_memory(writen, vptr, expected_header,     2 );
+	expect_memory(writen, vptr, expected_header + 2, 2 );
+	will_return  (writen, 2);
+	will_return  (writen, 2);
+
+
+	will_return(readn, 10); // client ws  close frame
+	will_return(readn,  1); // client tcp tray bytes
+	will_return(readn,  2); // client tcp tray bytes
+	will_return(readn,  3); // client tcp tray bytes
+	will_return(readn,  4); // client tcp tray bytes
+
+	will_return(inet_set_read_timeout, 0);
+	expect_value(inet_shutdown_write, fd, fd);
+	will_return(inet_shutdown_write, 0);
+	will_return(inet_close, 0);
+
+
+	// act
+	ducq_i *ducq = ducq_new_ws_connection(fd);
+	ducq_state actual_state = ducq_close(ducq);
+
+	// audit
+	assert_int_equal(expected_state, actual_state);
+
+	// teardown
+	ducq_free(ducq);
+}
 

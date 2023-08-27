@@ -27,7 +27,7 @@ typedef struct ducq_ws {
 		byte_t as_buffer[sizeof(ws_header_t) + DUCQ_MSGSZ];
 		ws_header_t as_hdr;
 	} buf;
-
+	ws_state_t state;
 	bool is_client;
 
 	const char *host;
@@ -75,8 +75,6 @@ ducq_state _recv(ducq_i *ducq, char *ptr, size_t *count) {
 	n = readn(ws->fd, hdr, 2);
 	if(n < 2) return DUCQ_EREAD;
 
-	if(hdr[0] != (WS_FIN | WS_TEXT) )
-		return DUCQ_ENOIMPL;
 
 	int hdr_len = ws_get_hdr_len(hdr);
 	if(hdr_len > 2) {
@@ -95,8 +93,17 @@ ducq_state _recv(ducq_i *ducq, char *ptr, size_t *count) {
 		ws_mask_t *mask = ws_get_msk(hdr);
 		ws_mask_message(mask, ptr, *count);
 	}
-
 	ptr[*count] = '\0';
+
+	// check opcode
+	if( (hdr[0] & WS_OPCODE) == WS_CLOSE ) {
+		ws->state = WS_CLOSING;
+		return DUCQ_ECONNCLOSED;
+	}
+	if(hdr[0] != (WS_FIN | WS_TEXT) )
+		return DUCQ_ENOIMPL;
+
+
 	return DUCQ_OK;
 }
 
@@ -106,9 +113,9 @@ ducq_state ws_send(ducq_ws *ws, const void *buf, size_t *count) {
 	const char *payload = buf;
 	byte_t *hdr = ws->buf.as_hdr;
 
-	hdr[1] = 0;
 	ws_set_len(hdr, *count);
 
+	hdr[1] &= ~WS_MASK;
 	if( is_client(ws) ) {
 	// change to inner buffer for masking: client buffer is const
 		 if(*count > DUCQ_MSGSZ) return DUCQ_EMSGSIZE;
@@ -132,7 +139,9 @@ ducq_state ws_send(ducq_ws *ws, const void *buf, size_t *count) {
 static
 ducq_state _send(ducq_i *ducq, const void *buf, size_t *count) {
 	ducq_ws *ws = (ducq_ws*) ducq;
-	ws->buf.as_hdr[0] = WS_FIN | WS_TEXT;
+	byte_t *hdr = ws->buf.as_hdr;
+
+	hdr[0]  =  WS_FIN | WS_TEXT;
 	return ws_send(ws, buf, count);
 }
 
@@ -176,12 +185,41 @@ bool _eq(ducq_i *a, ducq_i *b) {
 
 static
 ducq_state _close(ducq_i *ducq) {
-	ducq_ws *ws = (ducq_ws*)ducq;
+	ducq_ws *ws = (ducq_ws*) ducq;
 
-	int rc = inet_close(ws->fd);
-	if( rc == -1)
-		return DUCQ_ECLOSE;
-	return DUCQ_OK;
+	bool we_inited_close = ws->state != WS_CLOSING;
+
+	// status code
+	uint16_t status_code = (is_server(ws) && we_inited_close)
+		? WS_CLOSE_GOING_AWAY
+		: WS_CLOSE_NORMAL;
+	
+	// close body
+	byte_t *header  = ws->buf.as_hdr;
+	byte_t *payload = ws->buf.as_buffer + sizeof(ws_header_t);
+
+	header[0] = WS_FIN | WS_CLOSE;
+
+	*(uint16_t*) payload = ws_reorder_16(status_code);
+	size_t n = 2;
+
+	// send
+	ws_send(ws, payload, &n);
+
+	// wait
+	if( we_inited_close) {
+		inet_shutdown_write(ws->fd);
+		int max_read = 3;
+		ducq_timeout(ducq, 3);
+		while( readn(ws->fd, payload, DUCQ_MSGSZ) > 0 )
+			if(max_read-- < 0) break;
+	}
+
+	// close tcp and change state
+	inet_close(ws->fd);
+	ws->fd    = -1;
+	ws->state = WS_CLOSE;
+	return DUCQ_OK; 
 }
 
 static
@@ -220,7 +258,8 @@ ducq_i *ducq_new_ws_client(const char *host, const char *port) {
 	ws->port = port;
 	ws->id[0] = '\0';
 	ws->is_client = true;
-	
+	ws->state = WS_CLOSED;
+
 	memset(ws->buf.as_buffer, 0, sizeof(ws->buf.as_buffer) );
 	
 	return (ducq_i *) ws;
@@ -238,6 +277,7 @@ ducq_i *ducq_new_ws_connection(int fd) {
 	ws->port  = NULL;
 	ws->id[0] = '\0';
 	ws->is_client = false;
+	ws->state = WS_CLOSED;
 
 	memset(ws->buf.as_buffer, 0, sizeof(ws->buf.as_buffer) );
 
@@ -278,6 +318,7 @@ ducq_state ducq_new_ws_upgrade_from_http(ducq_i **ws, int fd, char *http_header)
 	*ws = ducq_new_ws_connection(fd);
 	if( !(*ws) ) return DUCQ_EMEMFAIL;
 
+	((ducq_ws*)*ws)->state = WS_OPEN;
 	return DUCQ_PROTOCOL;
 }
 
