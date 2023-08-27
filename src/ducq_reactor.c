@@ -263,17 +263,22 @@ ducq_loop_t round_table(connection_t *conn, void *vctx) {
 
 	ducq_i * ducq = conn->as.client.ducq;
 	size_t size = DUCQ_MSGSZ;
-	ctx->buffer[0] = '\0';
 	ducq_state state = ducq_recv(ducq, ctx->buffer, &size);
 
 	switch(state) {
 		case DUCQ_OK:
 			ducq_dispatch(ctx->reactor->dispatcher, ducq, ctx->buffer, size);
 			break;
-		case DUCQ_PROTOCOL: break; // ignore
+		case DUCQ_PROTOCOL:
+			break; // ignore
 		default:
-			ducq_reactor_log(ctx->reactor, DUCQ_LOG_INFO, __func__, ducq_id(ducq), "disconnecting: %s (%.*s)\n", ducq_state_tostr(state), (int) size, ctx->buffer);
-			control |= DUCQ_LOOP_DELETE; break;
+			char *route = conn->as.client.route;
+			bool is_a_monitor = route && strcmp(route, DUCQ_MONITOR_ROUTE) == 0;
+			ducq_reactor_log(ctx->reactor, DUCQ_LOG_INFO, __func__, ducq_id(ducq),
+					"disconnecting: %s (%.*s)\n", ducq_state_tostr(state), (int) size, ctx->buffer);
+			if(! is_a_monitor) // monitor lopp will have deleted this connection
+				control |= DUCQ_LOOP_DELETE;
+			break;
 	}
 	return control;
 }
