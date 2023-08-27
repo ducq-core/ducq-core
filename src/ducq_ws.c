@@ -86,10 +86,9 @@ ducq_state _recv(ducq_i *ducq, char *ptr, size_t *count) {
 
 	// get packet length
 	uint64_t msg_len = ws_get_len(hdr);
-	if(msg_len > *count) return DUCQ_EMSGSIZE;
+	if(msg_len > *count+1) return DUCQ_EMSGSIZE; // count + null
 	*count = readn(ws->fd, ptr, msg_len);
 	if(*count != msg_len) return DUCQ_EREAD;
-
 
 	// unmask
 	if( is_server(ws) ) {
@@ -97,22 +96,19 @@ ducq_state _recv(ducq_i *ducq, char *ptr, size_t *count) {
 		ws_mask_message(mask, ptr, *count);
 	}
 
+	ptr[*count] = '\0';
 	return DUCQ_OK;
 }
 
-
 static
-ducq_state _send(ducq_i *ducq, const void *buf, size_t *count) {
-	ducq_ws *ws = (ducq_ws*) ducq;
-
+ducq_state ws_send(ducq_ws *ws, const void *buf, size_t *count) {
 	ssize_t n = 0;
 	const char *payload = buf;
 	byte_t *hdr = ws->buf.as_hdr;
 
-	hdr[0] = WS_FIN | WS_TEXT;
+	hdr[1] = 0;
 	ws_set_len(hdr, *count);
 
-	
 	if( is_client(ws) ) {
 	// change to inner buffer for masking: client buffer is const
 		 if(*count > DUCQ_MSGSZ) return DUCQ_EMSGSIZE;
@@ -126,11 +122,18 @@ ducq_state _send(ducq_i *ducq, const void *buf, size_t *count) {
 
 	n = writen( ws->fd, hdr, ws_get_hdr_len(hdr) );
 	if(n != ws_get_hdr_len(hdr) ) return DUCQ_EWRITE;
-	
+
 	n = writen( ws->fd, payload, *count );
 	if(n != *count ) return DUCQ_EWRITE;
 
 	return DUCQ_OK;
+}
+
+static
+ducq_state _send(ducq_i *ducq, const void *buf, size_t *count) {
+	ducq_ws *ws = (ducq_ws*) ducq;
+	ws->buf.as_hdr[0] = WS_FIN | WS_TEXT;
+	return ws_send(ws, buf, count);
 }
 
 static

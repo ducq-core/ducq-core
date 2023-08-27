@@ -286,6 +286,38 @@ void ws_recv_buffer_too_small(void **state) {
 	ducq_free(ducq);
 }
 
+void ws_recv_garantees_null_terminated(void **state) {
+	// arrange
+	ducq_state expected_state = DUCQ_OK;
+
+	// mock
+	char   expected_message[] = "new shorter message";
+	size_t expected_size =  strlen(expected_message);
+	pos = 0;
+	snprintf(READ_BUFFER, DUCQ_MSGSZ, "00%s", expected_message);
+	READ_BUFFER[0] = (WS_FIN|WS_TEXT);
+	READ_BUFFER[1] = (unsigned)expected_size;
+
+	will_return(readn,  2);
+	will_return(readn, expected_size);
+
+
+	// act
+	char   actual_message[DUCQ_MSGSZ] = "1234567890 previous, garbage message to be overriden.";
+	size_t actual_size =  DUCQ_MSGSZ;
+
+	ducq_i *ducq = ducq_new_ws_client("host", "port");
+	ducq_state actual_state = ducq_recv(ducq, actual_message, &actual_size);
+
+	// audit
+	assert_int_equal(expected_state, actual_state);
+	assert_string_equal(expected_message, actual_message);
+
+	// teardown
+	ducq_free(ducq);
+}
+
+
 void ws_send_client_ok(void **state) {
 	// arrange
 	ducq_state expected_state = DUCQ_OK;
@@ -456,6 +488,7 @@ void ws_send_reorder_len_16(void **state) {
 }
 
 void ws_send_reorder_len_64(void **state) {
+	printf("valgrind warning ok for this test, but test should pass.\n");
 	// arrange
 #define TEST_LEN_BITS 0x12345678U
 	uint64_t test_int = TEST_LEN_BITS;
@@ -493,3 +526,48 @@ void ws_send_reorder_len_64(void **state) {
 	free(message);
 #undef TEST_LEN_BITS
 }
+
+
+
+void ws_send_reset_header(void **state) {
+	// arrange
+	char send_message[] = "sent_message";
+	size_t send_size = strlen(send_message);
+
+	byte_t expected_send_header[] = { (WS_FIN|WS_TEXT), send_size } ;
+
+	// mock
+	pos = 0;
+	snprintf(READ_BUFFER, DUCQ_MSGSZ, "HEADER1234567890");
+	READ_BUFFER[0] = WS_FIN | WS_TEXT;
+	READ_BUFFER[1] = WS_MASK | 10U;
+	READ_BUFFER[2] = 'a';
+	READ_BUFFER[3] = 'b';
+	READ_BUFFER[4] = 'c';
+	READ_BUFFER[5] = 'd';
+
+	will_return  (readn,  2); // header
+	will_return  (readn,  4); // mask
+	will_return  (readn, 10); // message
+
+	expect_memory(writen, vptr, expected_send_header, 2);
+	expect_any   (writen, vptr);
+	will_return  (writen, 2);
+	will_return  (writen, send_size);
+
+	// act
+	ducq_i *ducq = ducq_new_ws_connection(-1);
+	char recv_buffer[DUCQ_MSGSZ] = "";
+	size_t recv_size = DUCQ_MSGSZ;
+	ducq_recv(ducq, recv_buffer, &recv_size);
+
+	ducq_send(ducq, send_message, &send_size);
+
+	// audit
+	// (in mock)
+
+	// teardown
+	ducq_free(ducq);
+}
+
+

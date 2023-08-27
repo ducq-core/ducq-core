@@ -13,13 +13,15 @@
 	apply(ws_recv_mask_read_error) \
 	apply(ws_recv_header_read_error) \
 	apply(ws_recv_buffer_too_small) \
+	apply(ws_recv_garantees_null_terminated) \
 	apply(ws_send_client_ok) \
 	apply(ws_send_server_ok) \
 	apply(ws_send_client_message_too_big) \
 	apply(ws_send_header_write_fail) \
 	apply(ws_send_payload_write_fail) \
 	apply(ws_send_reorder_len_16) \
-	apply(ws_send_reorder_len_64)
+	apply(ws_send_reorder_len_64) \
+	apply(ws_send_reset_header) 
 
 foreach_ws_tests(build_forward_declarations)
 

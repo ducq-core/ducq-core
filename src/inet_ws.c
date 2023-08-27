@@ -13,9 +13,9 @@
 //			B Y T E   O R D E R I N G
 //			
 
-#define IS_NETWORK_BYTE_ORDER ( ((char)0x00FF) == 0x00 ) 
+#define WS_IS_NETWORK_BYTE_ORDER ( ((char)0x00FF) == 0x00 )
 uint16_t ws_reorder_16(uint16_t x) {
-	if(IS_NETWORK_BYTE_ORDER) return x;
+	if(WS_IS_NETWORK_BYTE_ORDER) return x;
 
 	uint16_t res = x;
 	
@@ -27,7 +27,7 @@ uint16_t ws_reorder_16(uint16_t x) {
 	return res;
 }
 uint64_t ws_reorder_64(uint64_t x) {
-	if(IS_NETWORK_BYTE_ORDER) return x;
+	if(WS_IS_NETWORK_BYTE_ORDER) return x;
 	
 	uint64_t res = x;
 	
@@ -40,7 +40,7 @@ uint64_t ws_reorder_64(uint64_t x) {
 
 	return res;
 }
-#undef IS_NETWORK_BYTE_ORDER
+#undef WS_IS_NETWORK_BYTE_ORDER
 
 
 

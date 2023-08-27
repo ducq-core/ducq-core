@@ -62,6 +62,9 @@ typedef unsigned char byte_t;
 typedef byte_t ws_header_t[ 2 + sizeof(uint64_t) + sizeof(ws_mask_t) ];
 #define WS_HEADER_SIZE sizeof(ws_header_t)
 
+// byte ordering
+uint16_t ws_reorder_16(uint16_t x);
+uint64_t ws_reorder_64(uint64_t x);
 
 // getters and setters
 size_t     ws_get_hdr_len(ws_header_t hdr);
