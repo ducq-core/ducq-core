@@ -27,7 +27,8 @@
 	apply(DUCQ_ENOCMD,      "command unknown") \
 	apply(DUCQ_EACK,        "no ack received") \
 	apply(DUCQ_ENOTFOUND,	"connection not found") \
-	apply(DUCQ_ENOIMPL,	"not implemented yet")
+	apply(DUCQ_ENOIMPL,	"not implemented yet") \
+	apply(DUCQ_ELUA,	"lua error")
 
 typedef enum ducq_state {
 	DUCQ_OK = 0,

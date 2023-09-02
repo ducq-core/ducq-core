@@ -62,16 +62,18 @@ ducq_reactor *ducq_reactor_new() {
 	ducq_reactor* reactor = malloc(sizeof(ducq_reactor));
 	if(!reactor) return NULL;
 
-	reactor->dispatcher = ducq_dispatcher_new(reactor);
-	if( !reactor->dispatcher) {
-		free(reactor);
-		return NULL;
-	}
 	reactor->connections = NULL;
 
 	reactor->allow_monitor_route = true;
 	reactor->log_ctx = NULL;
 	reactor->log     = _no_log;
+
+	// create dispatcher after values are set
+	reactor->dispatcher = ducq_dispatcher_new(reactor);
+	if( !reactor->dispatcher) {
+		free(reactor);
+		return NULL;
+	}
 	return reactor;
 }
 

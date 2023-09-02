@@ -19,12 +19,13 @@ cmd_test_objs= \
 	${SRCDIR}/ducq.c \
 	${SRCDIR}/ducq_reactor.c \
 	${SRCDIR}/ducq_dispatcher.c \
+	${SRCDIR}/ducq_lua.c \
 	${TESTDIR}/*.c \
 	*.c
 
 .PHONY: test_cmds
 tests_cmds: PREREQ  $(cmd_test_objs)
-	$(CC) -o $(BUILDDIR)/$@ $(cmd_test_objs) $(HEADERS) -ldl $(LINK_TEST_LIB)
+	$(CC) -o $(BUILDDIR)/$@ $(cmd_test_objs) $(HEADERS) -ldl -llua -lm -rdynamic $(LINK_TEST_LIB)
 	cd $(BUILDDIR) && valgrind ./$@
 
 

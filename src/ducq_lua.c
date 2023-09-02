@@ -102,6 +102,22 @@ int _loop(lua_State *L) {
 }
 
 static
+int _msg_tostring(lua_State *L) {
+	luaL_checktype(L, 1, LUA_TTABLE);
+
+	lua_getfield(L, 1, "command");
+	lua_getfield(L, 1, "route");
+	lua_getfield(L, 1, "payload");
+
+	lua_pushfstring(L, "%s %s\n%s",
+		lua_tostring(L, -3),
+		lua_tostring(L, -2),
+		lua_tostring(L, -1)
+	);
+	return 1;
+}
+
+static
 const struct luaL_Reg ducqlib_f[] = {
 	{ NULL,      NULL }
 };
@@ -122,6 +138,13 @@ const struct luaL_Reg ducq_m[] = {
 static
 const struct luaL_Reg reactor_m[] = {
 	{ "loop",   _loop   },
+
+	{ NULL, NULL }
+};
+
+static
+const struct luaL_Reg msg_m[] = {
+	{ "__tostring",   _msg_tostring },
 
 	{ NULL, NULL }
 };
@@ -152,6 +175,15 @@ int luaopen_LuaDucq(lua_State *L) {
 
 	luaL_setfuncs(L, reactor_m, 0);
 
+	// msg
+	luaL_newmetatable(L, DUCQ_MSG_METATABLE);
+	lua_pushvalue(L, -1);
+	lua_setfield(L, -2, "__index");
+	lua_pushstring(L, DUCQ_MSG_METATABLE);
+	lua_setfield(L, -2, "__metatable");
+
+	luaL_setfuncs(L, msg_m, 0);
+
 	// library
 	luaL_newlib(L, ducqlib_f);
 	return 1;
@@ -173,8 +205,18 @@ void ducq_push_reactor(lua_State *L, ducq_reactor *reactor) {
 	luaL_getmetatable(L, DUCQ_REACTOR_METATABLE);
 	lua_setmetatable(L, -2);
 }
+void ducq_push_msg(lua_State *L, struct ducq_msg *msg) {
+	lua_createtable(L, 0, 3);
 
+	lua_pushstring(L, msg->command);
+	lua_setfield(L, -2, "command");
 
+	lua_pushstring(L, msg->route);
+	lua_setfield(L, -2, "route");
 
-#undef DUCQ_METATABLE
-#undef REACTOR_METATABLE
+	lua_pushstring(L, msg->payload);
+	lua_setfield(L, -2, "payload");
+
+	luaL_getmetatable(L, DUCQ_MSG_METATABLE);
+	lua_setmetatable(L, -2);
+}

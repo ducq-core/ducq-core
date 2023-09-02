@@ -35,9 +35,11 @@ core_test_objs= \
 	${SRCDIR}/ducq_ws.c \
 	${SRCDIR}/ducq_reactor.c \
 	${SRCDIR}/ducq_dispatcher.c \
+	${SRCDIR}/ducq_lua.c \
 	${TESTDIR}/mock_ducq_client.c \
 	mock_inet.c \
 	tests_dispatcher.c \
+	tests_dispatcher_lua.c \
 	tests_connections.c \
 	tests_ack.c \
 	tests_log.c \
@@ -63,7 +65,9 @@ core_test_http_objs= \
 
 .PHONY: tests_core
 tests_core: PREREQ $(mock_commands) $(core_test_objs)
-	$(CC) -o $(BUILDDIR)/$@ $(core_test_objs) $(HEADERS) -ldl $(LINK_TEST_LIB)
+	$(CC) -g -fPIC -shared  $(SRCDIR)/ducq_lua.c -o $(BUILDDIR)/LuaDucq.so
+	$(CC) -o $(BUILDDIR)/$@ $(core_test_objs) $(HEADERS) -ldl -llua -lm $(LINK_TEST_LIB) -rdynamic
+	cp *.lua $(BUILDDIR)
 	cd $(BUILDDIR) &&  valgrind ./$@
 	$(CC) -o $(BUILDDIR)/$@ $(core_test_http_objs) $(HEADERS) $(RE_DEFINES) $(LINK_TEST_LIB)
 	cd $(BUILDDIR) &&  valgrind ./$@

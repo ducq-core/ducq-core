@@ -251,4 +251,26 @@ void lua_call_close(void **state) {
 	assert_true(isnum);
 	assert_int_equal(expected_state, actual_state); 
 }
+void lua_msg_tostring(void **state) {
+	// arrange
+	struct test_ctx *ctx = (struct test_ctx*) *state;
+	lua_State *L = ctx->L;
 
+	struct	ducq_msg msg = {
+		.command = "command",
+		.route   = "route",
+		.payload = "payload"
+	};
+	char *expected_string = "command route\npayload";
+
+	// act
+	ducq_push_msg(L, &msg);
+	lua_setglobal(L, "MSG");
+	run_lua_script(L, "msg_to_string = tostring(MSG)");
+		
+	lua_getglobal(L, "msg_to_string");
+	const char *actual_string = lua_tostring(L, -1);
+
+	// audit
+	assert_string_equal(expected_string, actual_string); 
+}

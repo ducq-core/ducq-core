@@ -13,8 +13,8 @@ int lua_ducq_teardown(void **state);
 	apply(lua_call_timeout) \
 	apply(lua_call_send) \
 	apply(lua_call_recv) \
-	apply(lua_call_close)
-
+	apply(lua_call_close) \
+	apply(lua_msg_tostring)
 
 foreach_lua_tests(build_forward_declarations)
 

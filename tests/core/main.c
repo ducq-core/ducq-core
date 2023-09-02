@@ -13,6 +13,7 @@
 #include "tests_ws.h"
 #include "tests_parse.h"
 #include "tests_dispatcher.h"
+#include "tests_dispatcher_lua.h"
 #include "tests_ack.h"
 #include "tests_log.h"
 #include "tests_connections.h"
@@ -42,6 +43,9 @@ const struct CMUnitTest connections[] = {
 const struct CMUnitTest dispatcher[] = {
 	build_dispatcher_tests()
 };
+const struct CMUnitTest dispatcher_lua[] = {
+	build_dispatcher_lua_tests()
+};
 const struct CMUnitTest log_func[] = {
 	build_log_tests()
 };
@@ -69,6 +73,8 @@ int main(int argc, char** argv){
 	cmocka_run_group_tests(connections, NULL, NULL);
 		printf("\n\n");
 	cmocka_run_group_tests(dispatcher, NULL, NULL);
+		printf("\n\n");
+	cmocka_run_group_tests(dispatcher_lua, NULL, NULL);
 		printf("\n\n");
 	cmocka_run_group_tests(log_func, NULL, NULL);
 		printf("\n\n");

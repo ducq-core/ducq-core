@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <errno.h>
 
 #ifndef __linux__
 	#warning "as of now, ducq dispatcher is supported on linux only"
@@ -11,16 +12,24 @@
 	#include <linux/limits.h> // PATH_MAX
 
 
+#include <lua.h>
+#include <lauxlib.h>
+#include <lualib.h>
+
 #include "ducq.h"
 #include "ducq_reactor.h"
 #include "ducq_dispatcher.h"
+#include "ducq_lua.h"
 
 
 struct ducq_dispatcher {
 	ducq_reactor *reactor;
+
 	struct ducq_cmd_t **cmds;
 	void **hdls;
 	int ncmd;
+
+	lua_State* L;
 };
 
 
@@ -29,14 +38,33 @@ struct ducq_dispatcher {
 //			C O N S T U C T O R   /   D E S T R U C T O R
 //
 
+static
+lua_State *_make_lua(ducq_reactor *reactor) {
+	lua_State *L = luaL_newstate();
+	luaL_openlibs(L);
+	int error = luaL_loadstring(L, "Ducq = require('LuaDucq')") || lua_pcall(L, 0, 0, 0);
+	if(error) {
+		ducq_reactor_log(reactor, DUCQ_LOG_ERROR, __func__, "dispacher",
+			"failed to require('LuaDucq'): %s", lua_tostring(L, -1));
+		lua_close(L);
+		return NULL;
+	}
+
+	ducq_push_reactor(L, reactor);
+	lua_setglobal(L, "reactor");
+	return L;
+
+}
 ducq_dispatcher *ducq_dispatcher_new(ducq_reactor *reactor) {
 	ducq_dispatcher* dispatcher = malloc(sizeof(ducq_dispatcher));
 	if(!dispatcher) return NULL;
 
 	dispatcher->reactor  = reactor;
-	dispatcher->cmds = NULL;
-	dispatcher->hdls = NULL;
-	dispatcher->ncmd = 0;
+	dispatcher->cmds     = NULL;
+	dispatcher->hdls     = NULL;
+	dispatcher->ncmd     = 0;
+
+	dispatcher->L        = _make_lua(reactor);
 
 	return dispatcher;
 }
@@ -52,6 +80,8 @@ void ducq_dispatcher_free(ducq_dispatcher* dispatcher) {
 	if(dispatcher->cmds)
 		free(dispatcher->cmds);
 
+	if(dispatcher->L)
+		lua_close(dispatcher->L);
 
 	free(dispatcher);
 }
@@ -60,10 +90,16 @@ void ducq_dispatcher_free(ducq_dispatcher* dispatcher) {
 int ducq_dispatcher_count_cmds(ducq_dispatcher *dispatcher) {
 	return dispatcher->ncmd;
 }
-	
+
+
+
+
+
+
 //
 //			C O M M A N D S   L O A D I N G
 //
+
 static
 int _count_commands(const char *path) {
 	int count = 0;
@@ -89,7 +125,7 @@ void _load_command(ducq_dispatcher* dispatcher, const char *path, struct dirent 
 	char fullpath[PATH_MAX];
 	char *name = dp->d_name;
 	char *ext  = strrchr(name, '.');
-	if(strcmp(ext, ".so") != 0)
+	if(!ext || strcmp(ext, ".so") != 0)
 		return;
 	snprintf(fullpath, PATH_MAX, "%s/%s", path, name);
 
@@ -98,7 +134,7 @@ void _load_command(ducq_dispatcher* dispatcher, const char *path, struct dirent 
 		ducq_reactor_log(dispatcher->reactor, DUCQ_LOG_ERROR, __func__, "server", "dlopen() failed for: %s", dlerror());
 		return;
 	}
-	
+
 	(void)dlerror(); // clear
 	struct ducq_cmd_t *cmd = dlsym(handle, "command");
 	char *err = dlerror();
@@ -141,6 +177,44 @@ ducq_state ducq_dispatcher_load_commands_path(ducq_dispatcher *dispatcher, const
 }
 
 
+static
+ducq_state _load_lua(ducq_dispatcher *dispatcher, const char *path) {
+	lua_State *L          = dispatcher->L;
+	ducq_reactor *reactor = dispatcher->reactor;
+
+	DIR *dirp = opendir(path);
+	if(dirp == NULL) return DUCQ_EFILE;
+
+	struct dirent *dp;
+	while( (dp = readdir(dirp)) ) {
+		char *name = dp->d_name;
+		char *ext  = strrchr(name, '.');
+		if(!ext || strcmp(ext, ".lua") != 0) continue;
+
+		ducq_reactor_log(reactor, DUCQ_LOG_INFO, __func__, "dispatcher", "loading %s", name);
+
+		char fullpath[PATH_MAX] = "";
+		snprintf(fullpath, PATH_MAX, "%s/%s", path, name);
+
+		int error = luaL_loadfile(L, fullpath) || lua_pcall(L, 0, 0, 0);
+		if(error) {
+			ducq_reactor_log(reactor, DUCQ_LOG_WARN, __func__, "dispatcher", "%s", lua_tostring(L, -1));
+			lua_pop(L, 1);
+		}
+	}
+
+	if(closedir(dirp) == -1) return DUCQ_EFILE;
+
+	return DUCQ_OK;
+}
+ducq_state ducq_dispatcher_add(ducq_dispatcher *dispatcher, const char *path) {
+	DUCQ_CHECK( _load_lua(dispatcher, path) );
+}
+
+
+
+
+
 
 //
 //			D I S P A T C H
@@ -153,6 +227,33 @@ ducq_state unknown(ducq_reactor *reactor, ducq_i *ducq, char *buffer, size_t siz
 
 	ducq_send_ack(ducq, DUCQ_ENOCMD);
 	return DUCQ_ENOCMD;
+}
+
+static // function must be on top of lua stack
+ducq_state lua_command(ducq_reactor *reactor, ducq_i *ducq, char *buffer, size_t size) {
+	ducq_dispatcher *dispatcher = ducq_reactor_get_dispatcher(reactor);
+	lua_State *L = dispatcher->L;
+
+	struct ducq_msg msg = ducq_parse_msg(buffer);
+	ducq_log(INFO, "runnning command '%s'", msg.command);
+
+	ducq_state state = DUCQ_OK;
+	ducq_push_ducq(L, ducq);
+	ducq_push_msg(L, &msg);
+	if( lua_pcall(L, 2, 1, 0) != LUA_OK ) {
+		ducq_log( ERROR, "'%s': %s", msg.command, lua_tostring(L, -1) );
+		state = DUCQ_ELUA;
+	}
+	else if( ! lua_isinteger(L, -1) ) {
+		ducq_log(ERROR, "'%s' did not returned a state", msg.command);
+		state = DUCQ_ELUA;
+	}
+	else {
+		state = lua_tointeger(L, -1);
+	}
+
+	lua_pop(L, 1); // error/state
+	return state;
 }
 ducq_state list_commands(ducq_reactor *reactor, ducq_i *ducq, char *buffer, size_t size) {
 	(void) buffer;
@@ -196,6 +297,14 @@ ducq_command_f _find_command(ducq_dispatcher *dispatcher, const char *msg) {
 		if(strcmp(name, dispatcher->cmds[i]->name) == 0) {
 			command = dispatcher->cmds[i]->exec;
 			break;
+		}
+	}
+
+	if(command == unknown) {
+		lua_State *L = dispatcher->L;
+		lua_getglobal(L, name);
+		if(lua_isfunction(L, -1) ) {
+			command = lua_command;
 		}
 	}
 
