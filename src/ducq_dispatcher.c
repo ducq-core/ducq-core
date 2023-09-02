@@ -10,6 +10,9 @@
 	#include <dirent.h>
 	#include <dlfcn.h>
 	#include <linux/limits.h> // PATH_MAX
+	#include <unistd.h>       // close()
+	#include <sys/stat.h>	  // is directory or file
+	#include <sys/inotify.h>
 
 
 #include <lua.h>
@@ -30,6 +33,7 @@ struct ducq_dispatcher {
 	int ncmd;
 
 	lua_State* L;
+	int notifyfd;
 };
 
 
@@ -56,6 +60,9 @@ lua_State *_make_lua(ducq_reactor *reactor) {
 
 }
 ducq_dispatcher *ducq_dispatcher_new(ducq_reactor *reactor) {
+	int fd = inotify_init1(IN_NONBLOCK);
+	if(fd == -1) return NULL;
+
 	ducq_dispatcher* dispatcher = malloc(sizeof(ducq_dispatcher));
 	if(!dispatcher) return NULL;
 
@@ -65,6 +72,13 @@ ducq_dispatcher *ducq_dispatcher_new(ducq_reactor *reactor) {
 	dispatcher->ncmd     = 0;
 
 	dispatcher->L        = _make_lua(reactor);
+	if(dispatcher->L) {
+		dispatcher->notifyfd = fd;
+		ducq_reactor_add_server(reactor, fd, ducq_dispatcher_accept_notify, NULL);
+	} else {
+		close(fd);
+		dispatcher->notifyfd = -1;
+	}
 
 	return dispatcher;
 }
@@ -79,9 +93,10 @@ void ducq_dispatcher_free(ducq_dispatcher* dispatcher) {
 
 	if(dispatcher->cmds)
 		free(dispatcher->cmds);
-
 	if(dispatcher->L)
 		lua_close(dispatcher->L);
+	if(dispatcher->notifyfd != -1)
+		close(dispatcher->notifyfd);
 
 	free(dispatcher);
 }
@@ -177,39 +192,81 @@ ducq_state ducq_dispatcher_load_commands_path(ducq_dispatcher *dispatcher, const
 }
 
 
+
+//
+//			L U A   C O M M A N D   L O A D I N G
+//
 static
-ducq_state _load_lua(ducq_dispatcher *dispatcher, const char *path) {
-	lua_State *L          = dispatcher->L;
-	ducq_reactor *reactor = dispatcher->reactor;
+ducq_state _load_lua_file(lua_State *L, ducq_reactor *reactor, const char *path) {
+	ducq_reactor_log(reactor, DUCQ_LOG_INFO, __func__, "dispatcher", "loading %s", path);
+	int error = luaL_loadfile(L, path) || lua_pcall(L, 0, 0, 0);
+	if(! error)
+		return DUCQ_OK;
+
+	ducq_reactor_log(reactor, DUCQ_LOG_WARN, __func__, "dispatcher", "%s", lua_tostring(L, -1));
+	lua_pop(L, 1);
+	return DUCQ_ELUA;
+}
+static
+ducq_state _load_lua(lua_State *L, ducq_reactor *reactor, const char *path) {
+	struct stat statbuf = {};
+	if(stat(path, &statbuf) == -1) {
+		ducq_reactor_log(reactor, DUCQ_LOG_ERROR, __func__, "dispatcher", "stat() fsiled: %s", strerror(errno));
+		return DUCQ_EFILE;
+	}
+	if(S_ISREG(statbuf.st_mode))
+		return _load_lua_file(L, reactor, path);
 
 	DIR *dirp = opendir(path);
-	if(dirp == NULL) return DUCQ_EFILE;
-
+	if(dirp == NULL)
+		return DUCQ_EFILE;
 	struct dirent *dp;
 	while( (dp = readdir(dirp)) ) {
 		char *name = dp->d_name;
 		char *ext  = strrchr(name, '.');
-		if(!ext || strcmp(ext, ".lua") != 0) continue;
-
-		ducq_reactor_log(reactor, DUCQ_LOG_INFO, __func__, "dispatcher", "loading %s", name);
-
+		if(!ext || strcmp(ext, ".lua") != 0)
+			continue;
 		char fullpath[PATH_MAX] = "";
 		snprintf(fullpath, PATH_MAX, "%s/%s", path, name);
-
-		int error = luaL_loadfile(L, fullpath) || lua_pcall(L, 0, 0, 0);
-		if(error) {
-			ducq_reactor_log(reactor, DUCQ_LOG_WARN, __func__, "dispatcher", "%s", lua_tostring(L, -1));
-			lua_pop(L, 1);
-		}
+		DUCQ_CHECK( _load_lua_file(L, reactor, fullpath) );
 	}
 
-	if(closedir(dirp) == -1) return DUCQ_EFILE;
-
-	return DUCQ_OK;
+	return closedir(dirp) == -1
+		? DUCQ_EFILE
+		: DUCQ_OK;
 }
 ducq_state ducq_dispatcher_add(ducq_dispatcher *dispatcher, const char *path) {
-	DUCQ_CHECK( _load_lua(dispatcher, path) );
+	DUCQ_CHECK( _load_lua(dispatcher->L, dispatcher->reactor, path) );
+	int wd = inotify_add_watch(dispatcher->notifyfd, path, IN_CLOSE_WRITE | IN_MOVED_TO);
+	return wd == -1
+		? DUCQ_EFILE
+		: DUCQ_OK;
 }
+#define NOTIFY_BUFFER_SIZE ( (sizeof(struct inotify_event) + NAME_MAX + 1) )
+void ducq_dispatcher_accept_notify(ducq_reactor *reactor, int fd, void *ctx) {
+	(void)fd;
+	ducq_dispatcher *dispatcher = (ducq_dispatcher*) ctx;
+
+	char buffer[NOTIFY_BUFFER_SIZE] = "";
+	int n = read(dispatcher->notifyfd, buffer, NOTIFY_BUFFER_SIZE);
+	if(n ==  0) return;
+	if(n == -1) {
+		ducq_reactor_log(reactor, DUCQ_LOG_ERROR, __func__, "dispatcher", "read() for inotify failed: %s", strerror(errno));
+		return;
+	}
+
+	char *ptr = buffer;
+	char *end = buffer + n;
+	while(ptr < end) {
+		struct inotify_event *event = (struct inotify_event*) ptr;
+		ducq_reactor_log(reactor, DUCQ_LOG_ERROR, __func__, "dispatcher", "reloading: %s", event->name);
+
+		_load_lua(dispatcher->L, reactor, event->name);
+
+		ptr += sizeof(struct inotify_event) + event->len;
+	}
+}
+
 
 
 

@@ -13,6 +13,7 @@ void ducq_dispatcher_free(ducq_dispatcher* dispatcher);
 
 ducq_state ducq_dispatcher_load_commands_path(ducq_dispatcher *dispatcher, const char *path);
 ducq_state ducq_dispatcher_add(ducq_dispatcher *dispatcher, const char *path);
+void ducq_dispatcher_accept_notify(ducq_reactor *reactor, int fd, void *ctx);
 
 ducq_state ducq_dispatch(ducq_dispatcher *dispatcher, ducq_i *ducq, char *msg, size_t size);
 
