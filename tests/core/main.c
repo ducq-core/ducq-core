@@ -17,6 +17,7 @@
 #include "tests_ack.h"
 #include "tests_log.h"
 #include "tests_connections.h"
+#include "tests_iterator.h"
 #include "tests_cli_publish.h"
 #include "tests_cli_subscribe.h"
 
@@ -39,6 +40,9 @@ const struct CMUnitTest ack[] = {
 };
 const struct CMUnitTest connections[] = {
 	build_connections_tests()
+};
+const struct CMUnitTest iterator[] = {
+	build_iterator_tests()
 };
 const struct CMUnitTest dispatcher[] = {
 	build_dispatcher_tests()
@@ -69,6 +73,8 @@ int main(int argc, char** argv){
 	cmocka_run_group_tests(parse, NULL, NULL);
 		printf("\n\n");
 	cmocka_run_group_tests(ack, NULL, NULL);
+		printf("\n\n");
+	cmocka_run_group_tests(iterator, NULL, NULL);
 		printf("\n\n");
 	cmocka_run_group_tests(connections, NULL, NULL);
 		printf("\n\n");

@@ -41,6 +41,7 @@ core_test_objs= \
 	tests_dispatcher.c \
 	tests_dispatcher_lua.c \
 	tests_connections.c \
+	tests_iterator.c \
 	tests_ack.c \
 	tests_log.c \
 	tests_parse.c \

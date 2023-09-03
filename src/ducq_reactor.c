@@ -234,7 +234,44 @@ bool ducq_reactor_delete(ducq_reactor *reactor, ducq_i *ducq) {
 
 
 
+//
+//			I T E R A T O R
+//
 
+typedef struct ducq_client_it {
+	int i;
+	connection_t *conn;
+} ducq_client_it;
+
+ducq_client_it *ducq_new_client_it(ducq_reactor *reactor) {
+	ducq_client_it *it = malloc(sizeof(ducq_client_it));
+	it->i    = 0;
+	it->conn = reactor->connections;
+	return it;
+}
+ducq_i *ducq_next(ducq_client_it *it, char **route) {
+	int i              = it->i;
+	connection_t *conn = it->conn;
+
+	for(; i < DUCQ_MAX_CONNECTIONS; i++) {
+		if(conn[i].fd != -1
+		&& conn[i].type == DUCQ_CONNECTION_CLIENT
+		) break;
+	}
+
+	if(i >= DUCQ_MAX_CONNECTIONS)
+		return NULL;
+
+	*route       = conn[i].as.client.route;
+	ducq_i *ducq = conn[i].as.client.ducq;
+
+	it->i = i+1;
+	return  ducq;
+}
+
+void ducq_client_it_free(ducq_client_it *it) {
+	if(it) free(it);
+}
 
 
 //

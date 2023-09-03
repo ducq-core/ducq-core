@@ -54,6 +54,11 @@ ducq_state ducq_reactor_add_server(ducq_reactor *reactor, int fd, ducq_accept_f 
 ducq_state ducq_reactor_add_client(ducq_reactor *reactor, int fd, ducq_i *ducq);
 
 // iteration
+typedef struct ducq_client_it ducq_client_it;
+ducq_client_it *ducq_new_client_it(ducq_reactor *reactor);
+ducq_i *ducq_next(ducq_client_it *it, char **route);
+void ducq_client_it_free(ducq_client_it *it);
+
 typedef enum {
 	DUCQ_LOOP_CONTINUE = 0x00,
 	DUCQ_LOOP_BREAK    = 0x01,
