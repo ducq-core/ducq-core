@@ -99,8 +99,8 @@ void publish_subscribers_has_ducq_send_called(void **state) {
 	expect_value(_send, *count, sizeof(ack_msg)-1);
 	will_return(_send, DUCQ_OK);
 
-	expect_value(_send, ducq, ducq3);
 	expect_value(_send, ducq, ducq1);
+	expect_value(_send, ducq, ducq3);
 	expect_string_count(_send, buf, buffer, 2);
 	expect_value_count(_send, *count, sizeof(buffer), 2);
 	will_return_count(_send, DUCQ_OK, 2);
@@ -167,9 +167,9 @@ void publish_unsubcribe_sub_on_write_error(void **state) {
 	expect_value(_send, *count, sizeof(ack_msg)-1);
 	will_return(_send, DUCQ_OK);
 	
-	expect_value(_send, ducq, ducq3);
-	expect_value(_send, ducq, ducq2);
 	expect_value(_send, ducq, ducq1);
+	expect_value(_send, ducq, ducq2);
+	expect_value(_send, ducq, ducq3);
 	expect_string_count(_send, buf, buffer, 3);
 	expect_value_count(_send, *count, size, 3);
 	will_return(_send, DUCQ_OK);

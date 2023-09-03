@@ -243,7 +243,7 @@ ducq_loop_t _check_all_removed(ducq_i *ducq, char *route, void *ctx) {
 void reactor_unsubscribe_remove_all_connection(void **state) {
 	// arange
 	ducq_reactor *reactor = *state;
-	ducq_loop_t expected = DUCQ_LOOP_CONTINUE;
+	ducq_loop_t expected = (DUCQ_LOOP_CONTINUE | DUCQ_LOOP_DELETE);
 	int expected_count = 0;
 
 	expect_any_count(_close, ducq, 3);

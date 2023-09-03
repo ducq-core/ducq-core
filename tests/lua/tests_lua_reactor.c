@@ -160,7 +160,7 @@ void lua_reactor_loop_pass_routes(void **state) {
 	lua_State *L = ctx->L;
 	ducq_reactor *reactor = ctx->reactor;
 
-	const char expected_routes[] = "routeC, routeB, routeA";
+	const char expected_routes[] = "routeA, routeB, routeC";
 
 	// act
 	run_lua_script(L,

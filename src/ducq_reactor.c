@@ -11,6 +11,12 @@
 #include "ducq_reactor.h"
 #include "ducq_dispatcher.h"
 
+#ifndef DUCQ_MAX_CONNECTIONS
+#define DUCQ_MAX_CONNECTIONS 25
+#endif
+#ifndef DUCQ_MAX_ROUTE_LEN
+#define DUCQ_MAX_ROUTE_LEN 100
+#endif
 
 enum connection_type {
 	DUCQ_CONNECTION_CLIENT,
@@ -24,7 +30,7 @@ typedef struct connection_t {
 	union {
 		struct {
 			ducq_i *ducq;
-			char   *route;
+			char    route[DUCQ_MAX_ROUTE_LEN];
 		} client;
 		struct {
 			ducq_accept_f  accept_f;
@@ -32,13 +38,10 @@ typedef struct connection_t {
 		} server;
 			
 	} as;
-
-	connection_t *next;
-
 } connection_t;
 
 struct ducq_reactor {
-	connection_t *connections;
+	connection_t connections[DUCQ_MAX_CONNECTIONS];
 
 	ducq_dispatcher *dispatcher;
 	
@@ -53,6 +56,7 @@ struct ducq_reactor {
 //
 
 
+
 ducq_reactor *ducq_reactor_new_with_log(ducq_log_f log, void *ctx) {
 	if(signal(SIGPIPE, SIG_IGN) == SIG_ERR)
 		return NULL;
@@ -60,7 +64,12 @@ ducq_reactor *ducq_reactor_new_with_log(ducq_log_f log, void *ctx) {
 	ducq_reactor* reactor = malloc(sizeof(ducq_reactor));
 	if(!reactor) return NULL;
 
-	reactor->connections = NULL;
+	connection_t *it  = reactor->connections;
+	for(int i = 0; i < DUCQ_MAX_CONNECTIONS; i++) {
+		memset(&it[i], 0, sizeof(connection_t));
+		it[i].fd = -1;
+	}
+
 
 	reactor->allow_monitor_route = true;
 	reactor->log     = log;
@@ -76,33 +85,29 @@ ducq_reactor *ducq_reactor_new_with_log(ducq_log_f log, void *ctx) {
 }
 
 
-
 static
 void connection_free(connection_t *conn) {
-	if(!conn) return;
+	if(!conn)          return;
+	if(conn->fd == -1) return;
+
+	conn->fd = -1;
 
 	if(conn->type == DUCQ_CONNECTION_CLIENT) {
-		if(conn->as.client.route)
-			free(conn->as.client.route);
 		ducq_i *ducq = conn->as.client.ducq;
 		if(ducq) {
 			ducq_close(ducq);
 			ducq_free(ducq);
 		}
 	}
-	
-	free(conn);
 }
-
 void ducq_reactor_free(ducq_reactor* reactor) {
 	if(!reactor) return;
 
-	connection_t *conn = reactor->connections;
-	while(conn) {
-		connection_t *next = conn->next;
-		connection_free(conn);
-		conn = next;
-	}
+
+	connection_t *it  = reactor->connections;
+	for(int i = 0; i < DUCQ_MAX_CONNECTIONS; i++)
+		connection_free(&it[i]);
+
 	ducq_dispatcher_free(reactor->dispatcher);
 	free(reactor);
 }
@@ -121,31 +126,36 @@ ducq_dispatcher *ducq_reactor_get_dispatcher(ducq_reactor * reactor) {
 //
 //			C O N N E C T I O N S	
 //
-
+//
 ducq_state ducq_reactor_add_server(ducq_reactor *reactor, int fd, ducq_accept_f accept_f, void *ctx) {
-	connection_t *connection = malloc(sizeof(connection_t));
-	if(!connection) return DUCQ_EMEMFAIL;
+	int i;
+	connection_t *it  = reactor->connections;
+	for(i = 0; i < DUCQ_MAX_CONNECTIONS; i++) {
+		if(it[i].fd == -1) break;
+	}
+	if(i == DUCQ_MAX_CONNECTIONS) return DUCQ_EMAX;
 
-	connection->fd                 = fd;
-	connection->type               = DUCQ_CONNECTION_SERVER;
-	connection->as.server.accept_f = accept_f;
-	connection->as.server.ctx      = ctx;
-	connection->next               = reactor->connections;
+	
+	it[i].fd                 = fd;
+	it[i].type               = DUCQ_CONNECTION_SERVER;
+	it[i].as.server.accept_f = accept_f;
+	it[i].as.server.ctx      = ctx;
 
-	reactor->connections = connection;
 	return DUCQ_OK;
 }
 ducq_state ducq_reactor_add_client(ducq_reactor *reactor, int fd, ducq_i *ducq) {
-	connection_t *connection = malloc(sizeof(connection_t));
-	if(!connection) return DUCQ_EMEMFAIL;
+	int i;
+	connection_t *it  = reactor->connections;
+	for(i = 0; i < DUCQ_MAX_CONNECTIONS; i++) {
+		if(it[i].fd == -1) break;
+	}
+	if(i == DUCQ_MAX_CONNECTIONS) return DUCQ_EMAX;
 
-	connection->fd               = fd;	
-	connection->type             = DUCQ_CONNECTION_CLIENT;	
-	connection->as.client.ducq   = ducq;	
-	connection->as.client.route  = NULL;
-	connection->next             = reactor->connections;
+	it[i].fd                  = fd;	
+	it[i].type                = DUCQ_CONNECTION_CLIENT;	
+	it[i].as.client.ducq      = ducq;	
+	it[i].as.client.route[0]  = '\0';
 
-	reactor->connections = connection;
 	return DUCQ_OK;
 }
 
@@ -157,26 +167,17 @@ ducq_state ducq_reactor_add_client(ducq_reactor *reactor, int fd, ducq_i *ducq) 
 typedef ducq_loop_t (*loop_hook_f)(connection_t *connection, void *ctx);
 
 static
-ducq_loop_t connection_loop_template(ducq_reactor *reactor, loop_hook_f hook, void *ctx) {	ducq_loop_t control = DUCQ_LOOP_CONTINUE;
-	connection_t *prev  = NULL;
-	connection_t *iter  = NULL;
-	connection_t *next  = reactor->connections;
+ducq_loop_t connection_loop_template(ducq_reactor *reactor, loop_hook_f hook, void *ctx) {
+	ducq_loop_t control = DUCQ_LOOP_CONTINUE;
+	connection_t *it  = reactor->connections;
+	for(int i = 0; i < DUCQ_MAX_CONNECTIONS; i++) {
+		if(it[i].fd == -1) continue;
 
-	while(prev = iter, iter = next)  {
-		next = iter->next;
+		control = hook(&it[i], ctx);
 
-
-		control = hook(iter, ctx);
-
-
-		if (control & DUCQ_LOOP_DELETE) {
-			if(prev) prev->next = iter->next;
-			if(iter == reactor->connections)
-				reactor->connections = next;
-			connection_free(iter);
-			iter = prev;
-		}
-		if (control & DUCQ_LOOP_BREAK)
+		if(control & DUCQ_LOOP_DELETE)
+			connection_free(&it[i]);
+		if(control & DUCQ_LOOP_BREAK)
 			break;
 	}
 
@@ -186,13 +187,12 @@ ducq_loop_t connection_loop_template(ducq_reactor *reactor, loop_hook_f hook, vo
 
 
 ducq_state ducq_reactor_subscribe(ducq_reactor *reactor, ducq_i *ducq, const char *route) {
-	connection_t *conn = reactor->connections;
-	while(conn) {
-		if( ducq == conn->as.client.ducq ) {
-			conn->as.client.route = strdup(route);
-			return !conn->as.client.route ? DUCQ_EMEMFAIL : DUCQ_OK;
-		}
-		conn = conn->next;
+	connection_t *it  = reactor->connections;
+	for(int i = 0; i < DUCQ_MAX_CONNECTIONS; i++) {
+		if( ducq != it[i].as.client.ducq )
+			continue;
+		strncpy(it[i].as.client.route, route, DUCQ_MAX_ROUTE_LEN);
+		return DUCQ_OK;
 	}
 
 	return DUCQ_ENOTFOUND;
@@ -295,11 +295,11 @@ void ducq_loop(ducq_reactor *reactor) {
 		FD_ZERO(&readfds);
 		int max = 1;
 
-		connection_t *conn = reactor->connections;
-		while(conn) {
-			FD_SET(conn->fd, &readfds);
-			if(conn->fd > max) max = conn->fd;
-			conn = conn->next;
+		connection_t *it  = reactor->connections;
+		for(int i = 0; i < DUCQ_MAX_CONNECTIONS; i++) {
+			if(it[i].fd == -1) continue;
+			FD_SET(it[i].fd, &readfds);
+			if(it[i].fd > max) max = it[i].fd;
 		}
 
 		ctx.nready = select(max+1, &readfds, NULL, NULL, NULL);

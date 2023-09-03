@@ -60,10 +60,10 @@ void list_subscriptions_list_all_subscribers_id(void **state) {
 	
 	ducq_state expected_state = DUCQ_OK;
 	char expected_msg[] = 
-		"emitter\n"
-		"sub_id_3,route_3\n"
-		"sub_id_2,route_2\n"
 		"sub_id_1,route_1\n"
+		"sub_id_2,route_2\n"
+		"sub_id_3,route_3\n"
+		"emitter,\n"
 	;
 
 
@@ -114,10 +114,10 @@ void list_subscriptions_list_all_non_subscribers(void **state) {
 	
 	ducq_state expected_state = DUCQ_OK;
 	char expected_msg[] = 
-		"emitter\n"
-		"sub_id_3,route_3\n"
-		"sub_id_2\n"
 		"sub_id_1,route_1\n"
+		"sub_id_2,\n"
+		"sub_id_3,route_3\n"
+		"emitter,\n"
 	;
 
 
