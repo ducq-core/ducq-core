@@ -7,6 +7,9 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
+#include <fcntl.h>    // options and rights on files
+#include <sys/stat.h> // mkdir
 
 #include "tests_dispatcher.h"
 
@@ -14,7 +17,8 @@
 #include "../src/ducq_dispatcher.h"
 #include "mock_ducq_client.h"
 
-
+#define EXTENSION_FOLDER "./extensions/"
+#define EXTENSION_FILE   "lua_file.lua"
 
 void dispatcher_lua_can_load_a_command(void **state) {
 	//arrange
@@ -264,6 +268,69 @@ void dispatcher_lua_watch_is_nonblock(void **state) {
 	ducq_dispatch(dispatcher, ducq, message1, strlen(message1));
 
 	ducq_dispatcher_accept_notify(reactor, -1, dispatcher); // non-block
+
+	ducq_dispatch(dispatcher, ducq, message2, strlen(message2));
+
+
+	//teardown
+	ducq_reactor_free(reactor);
+	ducq_free(ducq);
+}
+
+void dispatcher_lua_can_reload__different_directory(void **state) {
+	//arrange
+	int error = mkdir(EXTENSION_FOLDER, O_CREAT | S_IRUSR | S_IWUSR);
+	if(error && errno != EEXIST) {
+		fprintf(stderr, "mkdir() failded:(%d) %s\n", errno, strerror(errno));
+		fail();
+	}
+	char filename[] = EXTENSION_FOLDER EXTENSION_FILE;
+	FILE *lua_file = fopen(filename, "w");
+	fprintf(lua_file,
+		"function reload(ducq, msg)\n"
+		"	ducq:send('first')\n"
+		"	return 0\n"
+		"end\n"
+	);
+	fclose(lua_file);
+
+	char message1[] = "reload *\n"; // copy: msg
+	char message2[] = "reload *\n"; // splitted by parser
+
+	char *expected_message1 = "first";
+	char *expected_message2 = "second";
+
+
+	// mock
+	ducq_i *ducq = ducq_new_mock(NULL);
+
+	expect_value (_send, ducq, ducq);
+	expect_string(_send, buf, expected_message1);
+	expect_value (_send, *count, strlen(expected_message1));
+	will_return  (_send, DUCQ_OK);
+
+	expect_value (_send, ducq, ducq);
+	expect_string(_send, buf, expected_message2);
+	expect_value (_send, *count, strlen(expected_message2));
+	will_return  (_send, DUCQ_OK);
+
+
+	// act
+	ducq_reactor *reactor = ducq_reactor_new();
+	ducq_dispatcher *dispatcher = ducq_reactor_get_dispatcher(reactor);
+	ducq_dispatcher_add(dispatcher, EXTENSION_FOLDER);
+	ducq_dispatch(dispatcher, ducq, message1, strlen(message1));
+
+	remove(filename);
+	lua_file = fopen(filename, "w");
+	fprintf(lua_file,
+		"function reload(ducq, msg)\n"
+		"	ducq:send('second')\n"
+		"	return 0\n"
+		"end\n"
+	);
+	fclose(lua_file);
+	ducq_dispatcher_accept_notify(reactor, -1, dispatcher);
 
 	ducq_dispatch(dispatcher, ducq, message2, strlen(message2));
 

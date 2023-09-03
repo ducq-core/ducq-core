@@ -11,8 +11,8 @@
 	apply(dispatcher_lua_returns_command_value) \
 	apply(dispatcher_lua_give_msg_as_userdata) \
 	apply(dispatcher_lua_can_reload_an_extension) \
-	apply(dispatcher_lua_watch_is_nonblock)
-
+	apply(dispatcher_lua_watch_is_nonblock) \
+	apply(dispatcher_lua_can_reload__different_directory)
 
 foreach_dispatcher_lua_tests(build_forward_declarations)
 

@@ -24,6 +24,10 @@
 #include "ducq_dispatcher.h"
 #include "ducq_lua.h"
 
+#define MAX_EXTENSIONS 10
+
+#define log(level, fmt, ...) ducq_reactor_log(reactor, DUCQ_LOG_##level, __func__, "dispatcher", fmt ,##__VA_ARGS__)
+
 
 struct ducq_dispatcher {
 	ducq_reactor *reactor;
@@ -34,6 +38,10 @@ struct ducq_dispatcher {
 
 	lua_State* L;
 	int notifyfd;
+	struct {
+		int wd;
+		char path[PATH_MAX];
+	} extensions[MAX_EXTENSIONS];
 };
 
 
@@ -48,8 +56,7 @@ lua_State *_make_lua(ducq_reactor *reactor) {
 	luaL_openlibs(L);
 	int error = luaL_loadstring(L, "Ducq = require('LuaDucq')") || lua_pcall(L, 0, 0, 0);
 	if(error) {
-		ducq_reactor_log(reactor, DUCQ_LOG_ERROR, __func__, "dispacher",
-			"failed to require('LuaDucq'): %s", lua_tostring(L, -1));
+		log(ERROR, "failed to require('LuaDucq'): %s", lua_tostring(L, -1));
 		lua_close(L);
 		return NULL;
 	}
@@ -71,10 +78,15 @@ ducq_dispatcher *ducq_dispatcher_new(ducq_reactor *reactor) {
 	dispatcher->hdls     = NULL;
 	dispatcher->ncmd     = 0;
 
+	for(int i = 0; i < MAX_EXTENSIONS; i++) {
+		dispatcher->extensions[i].wd      = -1;
+		dispatcher->extensions[i].path[0] = '\0';
+	}
+
 	dispatcher->L        = _make_lua(reactor);
 	if(dispatcher->L) {
 		dispatcher->notifyfd = fd;
-		ducq_reactor_add_server(reactor, fd, ducq_dispatcher_accept_notify, NULL);
+		ducq_reactor_add_server(reactor, fd, ducq_dispatcher_accept_notify, dispatcher);
 	} else {
 		close(fd);
 		dispatcher->notifyfd = -1;
@@ -197,13 +209,19 @@ ducq_state ducq_dispatcher_load_commands_path(ducq_dispatcher *dispatcher, const
 //			L U A   C O M M A N D   L O A D I N G
 //
 static
+int _is_dir(char *path) {
+	struct stat statbuf = {};
+	return stat(path, &statbuf) == -1
+		? -1
+		: S_ISDIR(statbuf.st_mode);
+}
+static
 ducq_state _load_lua_file(lua_State *L, ducq_reactor *reactor, const char *path) {
-	ducq_reactor_log(reactor, DUCQ_LOG_INFO, __func__, "dispatcher", "loading %s", path);
+	log(INFO, "loading '%s'", path);
 	int error = luaL_loadfile(L, path) || lua_pcall(L, 0, 0, 0);
 	if(! error)
 		return DUCQ_OK;
-
-	ducq_reactor_log(reactor, DUCQ_LOG_WARN, __func__, "dispatcher", "%s", lua_tostring(L, -1));
+	log(ERROR, "%s", lua_tostring(L, -1));
 	lua_pop(L, 1);
 	return DUCQ_ELUA;
 }
@@ -211,12 +229,13 @@ static
 ducq_state _load_lua(lua_State *L, ducq_reactor *reactor, const char *path) {
 	struct stat statbuf = {};
 	if(stat(path, &statbuf) == -1) {
-		ducq_reactor_log(reactor, DUCQ_LOG_ERROR, __func__, "dispatcher", "stat() fsiled: %s", strerror(errno));
+		log(ERROR, "stat() failed: %s", strerror(errno));
 		return DUCQ_EFILE;
 	}
 	if(S_ISREG(statbuf.st_mode))
 		return _load_lua_file(L, reactor, path);
 
+	log(INFO, "loading '%s'", path);
 	DIR *dirp = opendir(path);
 	if(dirp == NULL)
 		return DUCQ_EFILE;
@@ -236,12 +255,36 @@ ducq_state _load_lua(lua_State *L, ducq_reactor *reactor, const char *path) {
 		: DUCQ_OK;
 }
 ducq_state ducq_dispatcher_add(ducq_dispatcher *dispatcher, const char *path) {
-	DUCQ_CHECK( _load_lua(dispatcher->L, dispatcher->reactor, path) );
+	ducq_reactor *reactor = dispatcher->reactor;
+	log(INFO, "request to add '%s'", path);
+
+	int i;
+	for(i = 0; i < MAX_EXTENSIONS; i++) {
+		if(dispatcher->extensions[i].wd == -1)
+			break;
+	}
+	if(i == MAX_EXTENSIONS) return DUCQ_EMAX;
+
 	int wd = inotify_add_watch(dispatcher->notifyfd, path, IN_CLOSE_WRITE | IN_MOVED_TO);
-	return wd == -1
-		? DUCQ_EFILE
-		: DUCQ_OK;
+	if(wd == -1) {
+		log(ERROR, "inotify_add_watch() failed: %s", strerror(errno));
+		return DUCQ_EFILE;
+	}
+	
+	dispatcher->extensions[i].wd = wd;
+	char *name = dispatcher->extensions[i].path;
+	strncpy(name, path, PATH_MAX);
+	size_t len = strlen(name);
+	if(len+2 < PATH_MAX && _is_dir(name) == 1 && name[len-1] != '/') {
+		name[len]   = '/';
+		name[len+1] = '\0';
+	}
+
+	log(INFO, "adding '%s' (%s)", name, _is_dir(name)? "dir" : "file");
+	DUCQ_CHECK( _load_lua(dispatcher->L, dispatcher->reactor, name) );
+	return  DUCQ_OK;
 }
+
 #define NOTIFY_BUFFER_SIZE ( (sizeof(struct inotify_event) + NAME_MAX + 1) )
 void ducq_dispatcher_accept_notify(ducq_reactor *reactor, int fd, void *ctx) {
 	(void)fd;
@@ -251,7 +294,7 @@ void ducq_dispatcher_accept_notify(ducq_reactor *reactor, int fd, void *ctx) {
 	int n = read(dispatcher->notifyfd, buffer, NOTIFY_BUFFER_SIZE);
 	if(n ==  0) return;
 	if(n == -1) {
-		ducq_reactor_log(reactor, DUCQ_LOG_ERROR, __func__, "dispatcher", "read() for inotify failed: %s", strerror(errno));
+		log(ERROR, "read() for inotify failed: %s (%d)", strerror(errno), errno);
 		return;
 	}
 
@@ -259,9 +302,21 @@ void ducq_dispatcher_accept_notify(ducq_reactor *reactor, int fd, void *ctx) {
 	char *end = buffer + n;
 	while(ptr < end) {
 		struct inotify_event *event = (struct inotify_event*) ptr;
-		ducq_reactor_log(reactor, DUCQ_LOG_ERROR, __func__, "dispatcher", "reloading: %s", event->name);
-
-		_load_lua(dispatcher->L, reactor, event->name);
+		//log(INFO, "reloading: '%s'", event->name);
+		
+		int i;
+		for(i = 0; i < MAX_EXTENSIONS; i++) {
+			if(dispatcher->extensions[i].wd == event->wd)
+				break;
+		}
+		if(i == MAX_EXTENSIONS) {
+			log(ERROR, "wd not found for '%s'\n", event->name);
+			return;
+		}
+		char path[PATH_MAX] = "";
+		snprintf(path, PATH_MAX, "%s%s", dispatcher->extensions[i].path, event->name);
+		log(INFO, "reloading: '%s'", path);
+		_load_lua(dispatcher->L, reactor, path);
 
 		ptr += sizeof(struct inotify_event) + event->len;
 	}
@@ -374,5 +429,5 @@ ducq_state ducq_dispatch(ducq_dispatcher *dispatcher, ducq_i *ducq, char *msg, s
 }
 
 
-
+#undef log
 #endif // #ifndef __linux__

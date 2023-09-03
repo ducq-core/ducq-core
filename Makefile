@@ -9,6 +9,7 @@ HEADERS = $(wildcard ./src/.*h)
 install:
 	mkdir -p build
 	mkdir -p $(prefix)/lib
+	$(CC) -g -fPIC -Wall ./src/ducq_lua.c -shared -o $(prefix)/lib/lua/5.4/LuaDucq.so
 	$(CC) -g -fPIC -Wall ./src/*.c -shared -o $(prefix)/lib/libducq.so -ldl
 	cp ./src/*.h $(prefix)/include
 	sudo ldconfig
