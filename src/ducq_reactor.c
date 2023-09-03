@@ -51,11 +51,9 @@ struct ducq_reactor {
 //
 //			C O N S T U C T O R   /   D E S T R U C T O R
 //
-static
-int _no_log(void *ctx, enum ducq_log_level level, const char *function_name, const char *sender_id, const char *fmt, va_list args) {
-	return 0;
-}
-ducq_reactor *ducq_reactor_new() {
+
+
+ducq_reactor *ducq_reactor_new_with_log(ducq_log_f log, void *ctx) {
 	if(signal(SIGPIPE, SIG_IGN) == SIG_ERR)
 		return NULL;
 		
@@ -65,8 +63,8 @@ ducq_reactor *ducq_reactor_new() {
 	reactor->connections = NULL;
 
 	reactor->allow_monitor_route = true;
-	reactor->log_ctx = NULL;
-	reactor->log     = _no_log;
+	reactor->log     = log;
+	reactor->log_ctx = ctx;
 
 	// create dispatcher after values are set
 	reactor->dispatcher = ducq_dispatcher_new(reactor);
@@ -354,7 +352,9 @@ void ducq_reactor_set_log(ducq_reactor *reactor, void* ctx, ducq_log_f log) {
 }
 
 
-
+int ducq_no_log(void *ctx, enum ducq_log_level level, const char *function_name, const char *sender_id, const char *fmt, va_list args) {
+	return 0;
+}
 
 int ducq_color_console_log(void *ctx, enum ducq_log_level level, const char *function_name, const char *sender_id, const char *fmt, va_list args) {
 	(void) ctx; // unused

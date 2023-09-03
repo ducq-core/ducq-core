@@ -7,8 +7,43 @@
 
 typedef struct ducq_reactor ducq_reactor;
 
-ducq_reactor *ducq_reactor_new();
+
+
+// log
+#define FOREACH_DUCQ_LOG(apply) \
+	apply(DEBUG) \
+	apply(INFO) \
+	apply(WARN) \
+	apply(ERROR)
+enum ducq_log_level {
+	#define _build_enum_(str) DUCQ_LOG_##str,
+	FOREACH_DUCQ_LOG(_build_enum_)
+	#undef _build_enum_
+};
+char *ducq_loglevel_tostring(enum ducq_log_level level);
+
+// log callbacks
+typedef int (*ducq_log_f)(void *ctx, enum ducq_log_level level, const char *function_name, const char *sender_id, const char *fmt, va_list args);
+
+int ducq_color_console_log(void *ctx, enum ducq_log_level level, const char *function_name, const char *sender_id, const char *fmt, va_list args);
+int ducq_no_log(void *ctx, enum ducq_log_level level, const char *function_name, const char *sender_id, const char *fmt, va_list args);
+
+void ducq_reactor_set_log(ducq_reactor *reactor, void* ctx, ducq_log_f log);
+void ducq_reactor_set_default_log(ducq_reactor *reactor);
+
+// main log function and shortcut
+int ducq_reactor_log(ducq_reactor *reactor, enum ducq_log_level level, const char *function_name, const char *sender_id, const char *fmt, ...);
+#define ducq_log(level, fmt, ...) ducq_reactor_log(reactor, DUCQ_LOG_##level, __func__, ducq_id(ducq), fmt ,##__VA_ARGS__)
+
+
+
+// reactor
+ducq_reactor *ducq_reactor_new_with_log(ducq_log_f log, void *ctx);
+#define ducq_reactor_new() ducq_reactor_new_with_log(ducq_no_log, NULL)
 void ducq_reactor_free(ducq_reactor* reactor);
+
+#define DUCQ_MONITOR_ROUTE "__MONITOR__"
+bool ducq_reactor_set_monitor_route(ducq_reactor *reactor, bool is_allowed);
 
 void ducq_loop(ducq_reactor *reactor);
 
@@ -41,37 +76,6 @@ struct ducq_cmd_t {
 	ducq_command_f exec;
 };
 
-
-
-
-
-
-//
-// LOG
-//
-
-#define FOREACH_DUCQ_LOG(apply) \
-	apply(DEBUG) \
-	apply(INFO) \
-	apply(WARN) \
-	apply(ERROR)
-enum ducq_log_level {
-	#define _build_enum_(str) DUCQ_LOG_##str,
-	FOREACH_DUCQ_LOG(_build_enum_)
-	#undef _build_enum_
-};
-char *ducq_loglevel_tostring(enum ducq_log_level level);
-
-#define DUCQ_MONITOR_ROUTE "__MONITOR__"
-bool ducq_reactor_set_monitor_route(ducq_reactor *reactor, bool is_allowed);
-
-typedef int (*ducq_log_f)(void *ctx, enum ducq_log_level level, const char *function_name, const char *sender_id, const char *fmt, va_list args);
-void ducq_reactor_set_log(ducq_reactor *reactor, void* ctx, ducq_log_f log);
-void ducq_reactor_set_default_log(ducq_reactor *reactor);
-int ducq_reactor_log(ducq_reactor *reactor, enum ducq_log_level level, const char *function_name, const char *sender_id, const char *fmt, ...);
-#define ducq_log(level, fmt, ...) ducq_reactor_log(reactor, DUCQ_LOG_##level, __func__, ducq_id(ducq), fmt ,##__VA_ARGS__)
-
-int ducq_color_console_log(void *ctx, enum ducq_log_level level, const char *function_name, const char *sender_id, const char *fmt, va_list args);
 
 
 #endif // _DUCQ_REACTOR_HEADER_
