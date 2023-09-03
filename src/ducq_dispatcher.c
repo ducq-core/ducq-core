@@ -54,12 +54,18 @@ static
 lua_State *_make_lua(ducq_reactor *reactor) {
 	lua_State *L = luaL_newstate();
 	luaL_openlibs(L);
-	int error = luaL_loadstring(L, "Ducq = require('LuaDucq')") || lua_pcall(L, 0, 0, 0);
+
+	static char require[] = "Ducq = require('" LUA_DUCQ_PACKAGE_NAME "')";
+	log(INFO, "loading: '%s'\n", LUA_DUCQ_PACKAGE_NAME);
+	int error = luaL_loadstring(L, require) || lua_pcall(L, 0, 0, 0);
 	if(error) {
-		log(ERROR, "failed to require('LuaDucq'): %s", lua_tostring(L, -1));
+		log(ERROR, "%s failed: %s", require, lua_tostring(L, -1));
 		lua_close(L);
 		return NULL;
 	}
+
+	lua_pushlightuserdata(L, reactor);
+	lua_setfield(L, LUA_REGISTRYINDEX, "reactor");
 
 	ducq_push_reactor(L, reactor);
 	lua_setglobal(L, "reactor");
@@ -76,7 +82,7 @@ ducq_dispatcher *ducq_dispatcher_new(ducq_reactor *reactor) {
 	dispatcher->reactor  = reactor;
 	dispatcher->cmds     = NULL;
 	dispatcher->hdls     = NULL;
-	dispatcher->ncmd     = 0;
+	dispatcher->ncmd     = -1;
 
 	for(int i = 0; i < MAX_EXTENSIONS; i++) {
 		dispatcher->extensions[i].wd      = -1;
@@ -404,7 +410,6 @@ ducq_command_f _find_command(ducq_dispatcher *dispatcher, const char *msg) {
 		return list_commands;
 
 	ducq_command_f command = unknown;
-
 	for(int i = 0; i < dispatcher->ncmd ; i++) {
 		if(strcmp(name, dispatcher->cmds[i]->name) == 0) {
 			command = dispatcher->cmds[i]->exec;

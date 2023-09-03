@@ -252,7 +252,6 @@ ducq_client_it *ducq_new_client_it(ducq_reactor *reactor) {
 ducq_i *ducq_next(ducq_client_it *it, char **route) {
 	int i              = it->i;
 	connection_t *conn = it->conn;
-
 	for(; i < DUCQ_MAX_CONNECTIONS; i++) {
 		if(conn[i].fd != -1
 		&& conn[i].type == DUCQ_CONNECTION_CLIENT

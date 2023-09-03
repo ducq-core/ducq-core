@@ -22,18 +22,21 @@ lua_test_objs= \
 	${TESTDIR}/mock_ducq_client.c \
 	tests_lua.c \
 	tests_lua_reactor.c \
+	tests_lua_client_iterator.c \
 	main.c
+
 
 .PHONY: tests_lua
 tests_lua: PREREQ $(lua_test_objs)
-	$(CC) -g -fPIC -shared  $(SRCDIR)/ducq_lua.c -o $(BUILDDIR)/LuaDucq.so
-	$(CC) -o $(BUILDDIR)/$@ $(lua_test_objs) $(HEADERS) -ldl -llua -lm $(LINK_TEST_LIB) -rdynamic
+	$(CC) -g -fPIC -shared  $(SRCDIR)/ducq_lua.c -o $(BUILDDIR)/LuaDucq-Test.so
+	$(CC) -o $(BUILDDIR)/$@ $(lua_test_objs) $(HEADERS) -ldl -llua -lm $(LINK_TEST_LIB) -rdynamic -DLUA_DUCQ_PACKAGE_NAME=\"LuaDucq-Test\"
 	cd $(BUILDDIR) &&  valgrind ./$@
 
 
 .PHONY: PREREQ
 PREREQ:
 	mkdir -p build
+
 .PHONY: clean
 clean:
 	rm -rf build

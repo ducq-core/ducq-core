@@ -37,7 +37,7 @@ struct test_ctx {
 int lua_ducq_setup(void **state) {
 	lua_State *L = luaL_newstate();
 	luaL_openlibs(L);
-	run_lua_script(L, "local Ducq = require('LuaDucq')\n");
+	run_lua_script(L, "local Ducq = require('" LUA_DUCQ_PACKAGE_NAME "')\n");
 	
 	ducq_state expected_state = DUCQ_OK;
 	ducq_i *ducq = ducq_new_mock(NULL);
@@ -70,7 +70,7 @@ void lua_create_mock_as_object(void **state) {
 	// arrange
 	lua_State *L = luaL_newstate();
 	luaL_openlibs(L);
-	run_lua_script(L, "local Ducq = require('LuaDucq')\n");
+	run_lua_script(L, "local Ducq = require('" LUA_DUCQ_PACKAGE_NAME "')\n");
 	
 	char expected_id[] = "mock_id";
 	ducq_i *ducq = ducq_new_mock(expected_id);

@@ -51,7 +51,7 @@ int lua_reactor_setup(void **state) {
 
 	lua_State *L = luaL_newstate();
 	luaL_openlibs(L);
-	run_lua_script(L, "local Ducq = require('LuaDucq')\n");
+	run_lua_script(L, "local Ducq = require('" LUA_DUCQ_PACKAGE_NAME "')\n");
 
 	ducq_push_reactor(L, reactor);
 	lua_setglobal(L, "reactor");

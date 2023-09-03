@@ -66,8 +66,8 @@ core_test_http_objs= \
 
 .PHONY: tests_core
 tests_core: PREREQ $(mock_commands) $(core_test_objs)
-	$(CC) -g -fPIC -shared  $(SRCDIR)/ducq_lua.c -o $(BUILDDIR)/LuaDucq.so
-	$(CC) -o $(BUILDDIR)/$@ $(core_test_objs) $(HEADERS) -ldl -llua -lm $(LINK_TEST_LIB) -rdynamic
+	$(CC) -g -fPIC -shared  $(SRCDIR)/ducq_lua.c -o $(BUILDDIR)/LuaDucq-Test.so
+	$(CC) -o $(BUILDDIR)/$@ $(core_test_objs) $(HEADERS) -ldl -llua -lm $(LINK_TEST_LIB) -rdynamic -DLUA_DUCQ_PACKAGE_NAME=\"LuaDucq-Test\"
 	cp *.lua $(BUILDDIR)
 	cd $(BUILDDIR) &&  valgrind ./$@
 	$(CC) -o $(BUILDDIR)/$@ $(core_test_http_objs) $(HEADERS) $(RE_DEFINES) $(LINK_TEST_LIB)
