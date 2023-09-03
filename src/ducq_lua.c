@@ -24,6 +24,15 @@ int _id(lua_State *L) {
 	return 1;
 }
 static
+int _eq(lua_State *L) {
+	ducq_i *ducq_a = *(ducq_i**) luaL_checkudata(L, 1, DUCQ_METATABLE);
+	ducq_i *ducq_b = *(ducq_i**) luaL_checkudata(L, 2, DUCQ_METATABLE);
+
+	bool equal = ducq_eq(ducq_a, ducq_b);
+
+	lua_pushboolean(L, equal);
+	return 1;
+}static
 int _timeout(lua_State *L) {
 	ducq_i *ducq = *(ducq_i**) luaL_checkudata(L, 1, DUCQ_METATABLE);
 	int isnum = 0;
@@ -179,6 +188,7 @@ const struct luaL_Reg ducq_m[] = {
 	{ "timeout", _timeout },
 	{ "recv",    _recv    },
 	{ "send",    _send    },
+	{ "__eq",    _eq   },
 	{ "close",   _close   },
 
 	{ "sendack", _sendack },
