@@ -65,49 +65,6 @@ ducq_state _timeout(ducq_i *ducq, int timeout) {
 
 
 static
-ducq_state _recv(ducq_i *ducq, char *ptr, size_t *count) {
-	ducq_ws *ws = (ducq_ws*)ducq;
-	
-	ssize_t n = 0;
-	byte_t *hdr = ws->buf.as_hdr;
-
-	// get packet header
-	n = readn(ws->fd, hdr, 2);
-	if(n < 2) return DUCQ_EREAD;
-
-
-	int hdr_len = ws_get_hdr_len(hdr);
-	if(hdr_len > 2) {
-		n = readn(ws->fd, hdr+2, hdr_len-2);
-		if(n < hdr_len-2) return DUCQ_EREAD;
-	}
-
-	// get packet length
-	uint64_t msg_len = ws_get_len(hdr);
-	if(msg_len > *count+1) return DUCQ_EMSGSIZE; // count + null
-	*count = readn(ws->fd, ptr, msg_len);
-	if(*count != msg_len) return DUCQ_EREAD;
-
-	// unmask
-	if( is_server(ws) ) {
-		ws_mask_t *mask = ws_get_msk(hdr);
-		ws_mask_message(mask, ptr, *count);
-	}
-	ptr[*count] = '\0';
-
-	// check opcode
-	if( (hdr[0] & WS_OPCODE) == WS_CLOSE ) {
-		ws->state = WS_CLOSING;
-		return DUCQ_ECONNCLOSED;
-	}
-	if(hdr[0] != (WS_FIN | WS_TEXT) )
-		return DUCQ_ENOIMPL;
-
-
-	return DUCQ_OK;
-}
-
-static
 ducq_state ws_send(ducq_ws *ws, const void *buf, size_t *count) {
 	ssize_t n = 0;
 	const char *payload = buf;
@@ -132,6 +89,56 @@ ducq_state ws_send(ducq_ws *ws, const void *buf, size_t *count) {
 
 	n = writen( ws->fd, payload, *count );
 	if(n != *count ) return DUCQ_EWRITE;
+
+	return DUCQ_OK;
+}
+
+static
+ducq_state _recv(ducq_i *ducq, char *ptr, size_t *count) {
+	ducq_ws *ws = (ducq_ws*)ducq;
+	
+	ssize_t n = 0;
+	byte_t *hdr = ws->buf.as_hdr;
+
+	// get packet header
+	n = readn(ws->fd, hdr, 2);
+	if(n < 2) return DUCQ_EREAD;
+
+
+	int hdr_len = ws_get_hdr_len(hdr);
+	if(hdr_len > 2) {
+		n = readn(ws->fd, hdr+2, hdr_len-2);
+		if(n < hdr_len-2) return DUCQ_EREAD;
+	}
+
+	// get packet length
+	uint64_t msg_len = ws_get_len(hdr);
+	if(msg_len > *count+1) return DUCQ_EMSGSIZE; // count + null
+
+	// get packet
+	*count = readn(ws->fd, ptr, msg_len);
+	if(*count != msg_len) return DUCQ_EREAD;
+
+	// unmask
+	if( is_server(ws) ) {
+		ws_mask_t *mask = ws_get_msk(hdr);
+		ws_mask_message(mask, ptr, *count);
+	}
+	ptr[*count] = '\0';
+
+	// check opcode
+	if( (hdr[0] & WS_OPCODE) == WS_CLOSE ) {
+		ws->state = WS_CLOSING;
+		return DUCQ_ECONNCLOSED;
+	}
+	if( (hdr[0] & WS_OPCODE) == WS_PING ) {
+		hdr[0]  =  WS_FIN | WS_PONG;
+		ducq_state state = ws_send(ws, ptr, count);
+		return state ? state : DUCQ_PROTOCOL;
+	}
+	if(hdr[0] != (WS_FIN | WS_TEXT) )
+		return DUCQ_ENOIMPL;
+
 
 	return DUCQ_OK;
 }

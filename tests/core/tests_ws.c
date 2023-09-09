@@ -871,3 +871,51 @@ void ws_close_wait_max_3_reads(void **state) {
 	ducq_free(ducq);
 }
 
+void ws_server_recv_ping_send_pong(void **state) {
+	// arrange
+	ducq_state expected_state  = DUCQ_PROTOCOL;
+	char expected_message[] = "ping payload";
+	size_t message_len = strlen(expected_message);
+
+	ws_header_t expected_header = {};
+	expected_header[0] = (WS_FIN | WS_PONG);
+	ws_set_len(expected_header, message_len);
+
+	
+	// mock
+	ws_header_t ping_header = {};
+	ws_mask_t mask = ws_make_mask(1);
+	ping_header[0] = (WS_FIN | WS_PING);
+	ws_set_msk(ping_header, &mask);
+	ws_set_len(ping_header, message_len);
+	char ping_message[] = "ping payload";
+	ws_mask_message(&mask, ping_message, message_len);
+	pos = 0;
+	snprintf(READ_BUFFER, BUFSIZ, "%.*s%s", 
+			(int)ws_get_len(ping_header), ping_header, ping_message);
+
+	will_return(readn,  2);           // header
+	will_return(readn,  4);           // mask
+	will_return(readn,  message_len); // payload
+
+	expect_memory(writen, vptr, expected_header,  2 );
+	expect_memory(writen, vptr, expected_message, message_len);
+	will_return  (writen, 2);
+	will_return  (writen, message_len);
+
+	// act
+	int fd = -1;
+	char actual_message[DUCQ_MSGSZ] = "";
+	size_t size = DUCQ_MSGSZ;
+
+	ducq_i *ducq = ducq_new_ws_connection(fd);
+	ducq_state actual_state = ducq_recv(ducq, actual_message, &size);
+
+	// audit
+	assert_int_equal(expected_state, actual_state);
+	assert_string_equal(expected_message, actual_message);
+
+	// teardown
+	ducq_free(ducq);
+}
+

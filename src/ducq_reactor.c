@@ -299,6 +299,7 @@ ducq_loop_t round_table(connection_t *conn, void *vctx) {
 
 	ducq_i * ducq = conn->as.client.ducq;
 	size_t size = DUCQ_MSGSZ;
+	ctx->buffer[0] = '\0';
 	ducq_state state = ducq_recv(ducq, ctx->buffer, &size);
 
 	switch(state) {

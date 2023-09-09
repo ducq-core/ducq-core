@@ -26,7 +26,8 @@
 	apply(ws_close_client) \
 	apply(ws_close_server_init_by_client) \
 	apply(ws_close_client_init_by_server) \
-	apply(ws_close_wait_max_3_reads)
+	apply(ws_close_wait_max_3_reads) \
+	apply(ws_server_recv_ping_send_pong)
 
 foreach_ws_tests(build_forward_declarations)
 
