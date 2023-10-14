@@ -13,7 +13,7 @@ Beside a few core commands that should not be changed (like publish and subscrib
 
 
 * [server implementation example](https://github.com/ducq-core/server)
-* [command line client](https://github.com/ducq-core/cli-client)
+* [command line client](https://github.com/ducq-core/ducq_cli)
 
 
 ## Todo toward beta version
