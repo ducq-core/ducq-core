@@ -10,11 +10,15 @@ The core concept is to abstract the communication layer so that clients can send
 
 Beside a few core commands that should not be changed (like publish and subscribe), the commands that clients send to the server can be added and modified on the fly by dropping Lua script in a specified folder. Thus, even if the main purpose of the server is to dispatch payload to subscribers, it  can also act like a mock REST, a chat, or whatever you implement.
 
+##### Dependencies
+* cmocka
+* Lua
 
-
+##### Examples 
 * [server implementation example](https://github.com/ducq-core/server)
 * [command line client](https://github.com/ducq-core/ducq_cli)
-
+* [esp32 publisher example](https://github.com/ducq-core/esp32_publisher_example)
+* [websocket client example](https://github.com/ducq-core/dashbord) in [Preact.js](https://preactjs.com/)
 
 ## Todo toward beta version
 
@@ -22,7 +26,7 @@ Beside a few core commands that should not be changed (like publish and subscrib
 - recv: make *count = 0 on error
 - ws client-side connection
 - http
-- https and wss (maybe)
+- https, wss, mqtt (maybe)
 
 ### protocol
 - formalize difference between "control command" and "application command"
@@ -52,3 +56,6 @@ Beside a few core commands that should not be changed (like publish and subscrib
     - implementation ideas:
         - control access channel
         - send last message received on subscription channel
+
+### C++
+- fix C++ warnings (esp32 compilation)
