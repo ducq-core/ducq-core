@@ -1,3 +1,7 @@
+#ifndef __linux__
+#warning "as of now, Lua extension is supported on linux only"
+#else
+
 #include "lua.h"
 #include "lauxlib.h"
 
@@ -289,3 +293,6 @@ void ducq_push_msg(lua_State *L, struct ducq_msg *msg) {
 	luaL_getmetatable(L, DUCQ_MSG_METATABLE);
 	lua_setmetatable(L, -2);
 }
+
+
+#endif // #ifndef __linux__
