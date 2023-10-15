@@ -302,6 +302,8 @@ ducq_loop_t round_table(connection_t *conn, void *vctx) {
 	ctx->buffer[0] = '\0';
 	ducq_state state = ducq_recv(ducq, ctx->buffer, &size);
 
+	char *route = conn->as.client.route;
+	enum ducq_log_level level = state == DUCQ_ECONNCLOSED ? DUCQ_LOG_INFO : DUCQ_LOG_WARN;
 	switch(state) {
 		case DUCQ_OK:
 			ducq_dispatch(ctx->reactor->dispatcher, ducq, ctx->buffer, size);
@@ -309,13 +311,9 @@ ducq_loop_t round_table(connection_t *conn, void *vctx) {
 		case DUCQ_PROTOCOL:
 			break; // ignore
 		default:
-			char *route = conn->as.client.route;
-			//bool is_a_monitor = route && strcmp(route, DUCQ_MONITOR_ROUTE) == 0;
-			enum ducq_log_level level = state == DUCQ_ECONNCLOSED ? DUCQ_LOG_INFO : DUCQ_LOG_WARN;
 			ducq_send_ack(ducq, state);
 			ducq_reactor_log(ctx->reactor, level, __func__, ducq_id(ducq),
 					"%s,disconnecting: %s [%ld](%.*s)\n", route, ducq_state_tostr(state), size, (int) size, ctx->buffer);
-			//if(! is_a_monitor) // monitor lopp will have deleted this connection
 			control |= DUCQ_LOOP_DELETE;
 			break;
 	}
