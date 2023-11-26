@@ -153,27 +153,6 @@ ducq_state _send(ducq_i *ducq, const void *buf, size_t *count) {
 }
 
 static
-ducq_state _emit(ducq_i *ducq, const char *command, const char *route, const char *payload, size_t payload_size, bool close) {
-	char msg[DUCQ_MSGSZ];
-	size_t len = snprintf(msg, DUCQ_MSGSZ, "%s %s\n%.*s", command, route, (int)payload_size, payload);
-
-	if(len >= DUCQ_MSGSZ)
-		return DUCQ_EMSGSIZE;
-
-	ducq_state state = ducq_send(ducq, msg, &len);
-	if(state != DUCQ_OK) return state;
-
-	if(close) {
-		ducq_ws *ws = (ducq_ws*)ducq;
-		if(inet_shutdown_write(ws->fd))
-			return DUCQ_ECLOSE;
-	}
-
-	return DUCQ_OK;
-}
-
-
-static
 ducq_i *_copy(ducq_i * ducq) {
 	ducq_ws *ws = (ducq_ws*)ducq;
 	return NULL;
@@ -247,7 +226,6 @@ static ducq_vtbl table = {
 	.id      = _id,
 	.recv    = _recv,
 	.send    = _send,
-	.emit    = _emit,
 	.copy    = _copy,
 	.eq      = _eq,
 	.timeout = _timeout,

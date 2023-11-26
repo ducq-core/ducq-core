@@ -18,8 +18,9 @@
 #include "tests_log.h"
 #include "tests_connections.h"
 #include "tests_iterator.h"
+#include "tests_receive.h"
+#include "tests_listen.h"
 #include "tests_cli_publish.h"
-#include "tests_cli_subscribe.h"
 
 
 
@@ -53,11 +54,14 @@ const struct CMUnitTest dispatcher_lua[] = {
 const struct CMUnitTest log_func[] = {
 	build_log_tests()
 };
+const struct CMUnitTest receive[] = {
+	build_receive_tests()
+};
+const struct CMUnitTest listen[] = {
+	build_listen_tests()
+};
 const struct CMUnitTest cli_pub[] = {
 	build_cli_pub_tests()
-};
-const struct CMUnitTest cli_sub[] = {
-	build_cli_sub_tests()
 };
 
 
@@ -84,9 +88,11 @@ int main(int argc, char** argv){
 		printf("\n\n");
 	cmocka_run_group_tests(log_func, NULL, NULL);
 		printf("\n\n");
-	cmocka_run_group_tests(cli_pub, NULL, NULL);
+	cmocka_run_group_tests(receive, NULL, NULL);
 		printf("\n\n");
-	cmocka_run_group_tests(cli_sub, NULL, NULL);
+	cmocka_run_group_tests(listen, NULL, NULL);
+		printf("\n\n");
+	cmocka_run_group_tests(cli_pub, NULL, NULL);
 		printf("\n\n");
 
 	return 0;

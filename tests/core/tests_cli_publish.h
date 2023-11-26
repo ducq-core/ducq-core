@@ -5,12 +5,10 @@
 
 #define foreach_cli_pub_tests(apply) \
 	apply(pub_ok) \
-	apply(pub_conn_error) \
-	apply(pub_emit_error) \
+	apply(pub_send_error) \
 	apply(pub_recv_error) \
-	apply(pub_nack_state_returned) \
-	apply(pub_close_error)
-	
+	apply(pub_nack_state_returned)
+
 foreach_cli_pub_tests(build_forward_declarations)
 
 #define build_cli_pub_tests() \

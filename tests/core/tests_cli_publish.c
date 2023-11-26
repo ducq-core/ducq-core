@@ -18,15 +18,14 @@ void pub_ok(void **state) {
 	ducq_i *ducq = ducq_new_mock(NULL);
 	char payload[] = "payload";
 	size_t size = sizeof(payload);
+	ducq_state expected_state = DUCQ_OK;
 
-	expect_value(_conn, ducq, ducq);
-	will_return (_conn, DUCQ_OK);
-
-	expect_value (_emit, ducq, ducq);
-	expect_string(_emit, command, "publish");
-	expect_string(_emit, payload, payload);
-	expect_value (_emit, payload_size, size);
-	will_return  (_emit, DUCQ_OK);
+	// mock
+	char expected_message[] = "publish route\npayload";
+	expect_value (_send, ducq, ducq);
+	expect_string(_send, buf, expected_message);
+	expect_value (_send, *count, strlen(expected_message));
+	will_return  (_send, DUCQ_OK);
 
 	strcpy(MOCK_CLIENT_RECV_BUFFER, "ACK *\n0\nok");
 	MOCK_CLIENT_RECV_BUFFER_LEN = strlen("ACK *\n0\nok");
@@ -34,11 +33,6 @@ void pub_ok(void **state) {
 	expect_any(_recv, ptr);
 	expect_any(_recv, count);
 	will_return (_recv, DUCQ_OK);
-
-	expect_value(_close, ducq, ducq);
-	will_return (_close, DUCQ_OK);
-
-	ducq_state expected_state = DUCQ_OK;
 
 	// act
 	ducq_state actual_state = ducq_publish(ducq, "route", payload, size);
@@ -51,52 +45,27 @@ void pub_ok(void **state) {
 }
 
 
-void pub_conn_error(void **state) {
+void pub_send_error(void **state) {
 	// arange
 	ducq_i *ducq = ducq_new_mock(NULL);
 	char payload[] = "payload";
 	size_t size = sizeof(payload);
-
-	expect_value(_conn, ducq, ducq);
-	will_return (_conn, DUCQ_ECONNECT);
-
-	ducq_state expected_state = DUCQ_ECONNECT;
-
-	// act
-	ducq_state actual_state = ducq_publish(ducq, "route", payload, size);
-
-	// audit
-	assert_int_equal(expected_state, actual_state);
-
-		// teardown
-	ducq_free(ducq);
-}
-
-void pub_emit_error(void **state) {
-	// arange
-	ducq_i *ducq = ducq_new_mock(NULL);
-	char payload[] = "payload";
-	size_t size = sizeof(payload);
-
-	expect_value(_conn, ducq, ducq);
-	will_return (_conn, DUCQ_OK);
-
-	expect_value (_emit, ducq, ducq);
-	expect_string(_emit, command, "publish");
-	expect_string(_emit, payload, payload);
-	expect_value (_emit, payload_size, size);
-	will_return  (_emit, DUCQ_ECLOSE);
-
-
 	ducq_state expected_state = DUCQ_ECLOSE;
 
+	// mock
+	char expected_message[] = "publish route\npayload";
+	expect_value (_send, ducq, ducq);
+	expect_string(_send, buf, expected_message);
+	expect_value (_send, *count, strlen(expected_message));
+	will_return  (_send, DUCQ_ECLOSE);
+
 	// act
 	ducq_state actual_state = ducq_publish(ducq, "route", payload, size);
 
 	// audit
 	assert_int_equal(expected_state, actual_state);
 
-		// teardown
+	// teardown
 	ducq_free(ducq);
 }
 
@@ -107,22 +76,21 @@ void pub_recv_error(void **state) {
 	ducq_i *ducq = ducq_new_mock(NULL);
 	char payload[] = "payload";
 	size_t size = sizeof(payload);
-
-	expect_any (_conn, ducq);
-	will_return(_conn, DUCQ_OK);
-
-	expect_any (_emit, ducq);
-	expect_any (_emit, command);
-	expect_any (_emit, payload);
-	expect_any (_emit, payload_size);
-	will_return(_emit, DUCQ_OK);
-
-	expect_any (_recv, ducq);
-	expect_any (_recv, ptr);
-	expect_any (_recv, count);
-	will_return(_recv, DUCQ_ECLOSE);
-
 	ducq_state expected_state = DUCQ_ECLOSE;
+
+	// mock
+	char expected_message[] = "publish route\npayload";
+	expect_value (_send, ducq, ducq);
+	expect_string(_send, buf, expected_message);
+	expect_value (_send, *count, strlen(expected_message));
+	will_return  (_send, DUCQ_OK);
+
+	strcpy(MOCK_CLIENT_RECV_BUFFER, "ACK *\n0\nok");
+	MOCK_CLIENT_RECV_BUFFER_LEN = strlen("ACK *\n0\nok");
+	expect_value(_recv, ducq, ducq);
+	expect_any(_recv, ptr);
+	expect_any(_recv, count);
+	will_return (_recv, DUCQ_ECLOSE);
 
 	// act
 	ducq_state actual_state = ducq_publish(ducq, "route", payload, size);
@@ -130,7 +98,7 @@ void pub_recv_error(void **state) {
 	// audit
 	assert_int_equal(expected_state, actual_state);
 
-		// teardown
+	// teardown
 	ducq_free(ducq);
 }
 
@@ -139,64 +107,22 @@ void pub_nack_state_returned(void **state) {
 	ducq_i *ducq = ducq_new_mock(NULL);
 	char payload[] = "payload";
 	size_t size = sizeof(payload);
-
-	expect_any (_conn, ducq);
-	will_return(_conn, DUCQ_OK);
-
-	expect_any (_emit, ducq);
-	expect_any (_emit, command);
-	expect_any (_emit, payload);
-	expect_any (_emit, payload_size);
-	will_return(_emit, DUCQ_OK);
-
-	strcpy(MOCK_CLIENT_RECV_BUFFER, "NACK *\n22\nerror");
-	MOCK_CLIENT_RECV_BUFFER_LEN = strlen("ACK *\n22\nerror");
-	expect_any (_recv, ducq);
-	expect_any (_recv, ptr);
-	expect_any (_recv, count);
-	will_return(_recv, DUCQ_OK);
-
-
 	ducq_state expected_state = 22;
 
-	// act
-	ducq_state actual_state = ducq_publish(ducq, "route", payload, size);
+	// mock
+	char expected_message[] = "publish route\npayload";
+	expect_value (_send, ducq, ducq);
+	expect_string(_send, buf, expected_message);
+	expect_value (_send, *count, strlen(expected_message));
+	will_return  (_send, DUCQ_OK);
 
-	// audit
-	assert_int_equal(expected_state, actual_state);
-
-		// teardown
-	ducq_free(ducq);
-}
-
-
-
-void pub_close_error(void **state) {
-	// arange
-	ducq_i *ducq = ducq_new_mock(NULL);
-	char payload[] = "payload";
-	size_t size = sizeof(payload);
-
-	expect_any (_conn, ducq);
-	will_return(_conn, DUCQ_OK);
-
-	expect_any (_emit, ducq);
-	expect_any (_emit, command);
-	expect_any (_emit, payload);
-	expect_any (_emit, payload_size);
-	will_return(_emit, DUCQ_OK);
-
-	strcpy(MOCK_CLIENT_RECV_BUFFER, "ACK *\n0\nok");
-	MOCK_CLIENT_RECV_BUFFER_LEN = strlen("ACK *\n0\nok");
-	expect_any (_recv, ducq);
-	expect_any (_recv, ptr);
-	expect_any (_recv, count);
-	will_return(_recv, DUCQ_OK);
-
-	expect_value(_close, ducq, ducq);
-	will_return (_close, DUCQ_ECLOSE);
-
-	ducq_state expected_state = DUCQ_ECLOSE;
+	char nack[] = "NACK _\n22\nerror";
+	strcpy(MOCK_CLIENT_RECV_BUFFER, nack);
+	MOCK_CLIENT_RECV_BUFFER_LEN = sizeof(nack);
+	expect_value(_recv, ducq, ducq);
+	expect_any(_recv, ptr);
+	expect_any(_recv, count);
+	will_return (_recv, DUCQ_OK);
 
 	// act
 	ducq_state actual_state = ducq_publish(ducq, "route", payload, size);
@@ -204,6 +130,6 @@ void pub_close_error(void **state) {
 	// audit
 	assert_int_equal(expected_state, actual_state);
 
-		// teardown
+	// teardown
 	ducq_free(ducq);
 }

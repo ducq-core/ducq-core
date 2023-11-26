@@ -16,6 +16,7 @@
 	apply(tcp_copy_is_equal) \
 	apply(tcp_timeout_ok) \
 	apply(tcp_timeout_err) \
+	apply(tcp_recv_timeout) \
 	apply(tcp_send_count_ok) \
 	apply(tcp_send_ewrite_header) \
 	apply(tcp_send_ewrite_payload) \
@@ -31,10 +32,7 @@
 	apply(tcp_recv_payload_length_smaller_than_expected) \
 	apply(tcp_recv_payload_length_bigger_than_expected) \
 	apply(tcp_recv_payload_size_minus_one_buffer_is_null_terminated) \
-	apply(tcp_recv_payload_exactly_same_as_buffer_is_err) \
-	apply(tcp_emit_param_received) \
-	apply(tcp_emit_shutdown_called) \
-	apply(tcp_emit_msg_too_big)
+	apply(tcp_recv_payload_exactly_same_as_buffer_is_err) 
 	
 foreach_tcp_tests(build_forward_declarations)
 

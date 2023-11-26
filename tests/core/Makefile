@@ -13,7 +13,7 @@ LINK_TEST_LIB = -lcmocka
 
 $(BUILDDIR)/%.o: $(SRCDIR)/%.c
 	$(CC) -c $< -o $@
-
+	:
 $(BUILDDIR)/commands/%.o: %.c
 	$(CC) -g -c -fPIC -Wall -c $< -o $@ $(HEADERS)
 
@@ -48,9 +48,11 @@ core_test_objs= \
 	tests_state.c \
 	tests_tcp.c \
 	tests_ws.c \
+	tests_receive.c \
+	tests_listen.c \
 	tests_cli_publish.c \
-	tests_cli_subscribe.c \
 	main.c
+
 core_test_http_objs= \
 	${SRCDIR}/ducq.c \
 	${SRCDIR}/sha1.c \

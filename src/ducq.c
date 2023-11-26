@@ -37,11 +37,6 @@ typedef struct ducq_i {
 	const ducq_vtbl *tbl;
 } ducq_i;
 
-ducq_state  ducq_emit(ducq_i *ducq, const char *command, const char *route, const char *payload, size_t payload_size, bool close) {
-	return ducq
-		? ducq->tbl->emit(ducq, command, route, payload, payload_size, close)
-		: DUCQ_ENULL;
-}
 ducq_state  ducq_conn(ducq_i *ducq) {
 	return ducq
 		? ducq->tbl->conn(ducq)
@@ -52,7 +47,7 @@ ducq_state  ducq_send(ducq_i *ducq, const void *buf, size_t *size) {
 		? ducq->tbl->send(ducq, buf, size)
 		: DUCQ_ENULL;
 }
-ducq_state  ducq_recv(ducq_i *ducq, void *buf, size_t *size) {
+ducq_state  ducq_recv(ducq_i *ducq, char *buf, size_t *size) {
 	return ducq
 		? ducq->tbl->recv(ducq, buf, size)
 		: DUCQ_ENULL;
@@ -90,6 +85,18 @@ void ducq_free(ducq_i *ducq) {
 
 
 
+
+
+ducq_state ducq_emit(ducq_i *ducq, const char *command, const char *route, const char *payload, size_t size) {
+	char msg[DUCQ_MSGSZ];
+	size = snprintf(msg, DUCQ_MSGSZ, "%s %s\n%.*s", command, route, (int)size, payload);
+
+	if(size >= DUCQ_MSGSZ)
+		return DUCQ_EMSGSIZE;
+
+	return ducq_send(ducq, msg, &size);
+}
+
 ducq_state ducq_send_ack(ducq_i *ducq, ducq_state state) {
 	char msg[128];
 	size_t size = snprintf(msg, 128, "%s *\n%d\n%s",
@@ -100,40 +107,81 @@ ducq_state ducq_send_ack(ducq_i *ducq, ducq_state state) {
 	return ducq_send(ducq, msg, &size);
 }
 
-ducq_state ducq_subscribe(ducq_i *ducq, const char *route, ducq_on_msg_f on_msg, void *ctx) {
-	char recvbuf[DUCQ_MSGSZ] = "";
-	size_t len = DUCQ_MSGSZ;
+ducq_state  ducq_receive(ducq_i *ducq, char *msg, size_t *size) {
+	size_t _size = *size;
+	ducq_state state = ducq_recv(ducq, msg, size);
+
+	if(state == DUCQ_ETIMEOUT) {
+		if(_size >= 4 && strncmp(msg, "PING", 4) == 0)
+			return DUCQ_ETIMEOUT;
+		*size = snprintf(msg, _size, "PING _\nping");
+		DUCQ_CHECK( ducq_send(ducq, msg, size) );
+		return DUCQ_PROTOCOL;
+	}
+	if(state)
+		return state;
+
+	// message
+	if(*size > 0 && ! isupper(msg[0]) )
+		return DUCQ_OK;
 	
-	DUCQ_CHECK( ducq_conn(ducq) );
-	DUCQ_CHECK( ducq_emit(ducq, "subscribe", route, "", 0, true) );
-	DUCQ_CHECK( ducq_recv(ducq, recvbuf, &len) );
-	DUCQ_CHECK( ducq_ack_to_state(recvbuf) );
-	DUCQ_CHECK( ducq_timeout(ducq, 0) );
+	// protocol
+	if(strncmp(msg, "ACK", 3) == 0 || strncmp(msg, "NACK", 4) == 0){
+		state = ducq_ack_to_state(msg);
+		return state <= DUCQ_PROTOCOL ? DUCQ_PROTOCOL : state;
+	}
+	else if(strncmp(msg, "PING", 4) == 0) {
+		msg[1] = 'O';
+		DUCQ_CHECK( ducq_send(ducq, msg, size) );
+		return DUCQ_PROTOCOL;
+	}
+	else if(strncmp(msg, "PONG", 4) == 0) {
+		return DUCQ_PROTOCOL;
+	}
+
+	// freeform message
+	return DUCQ_FREEFORM;
+}
+
+ducq_state ducq_listen(ducq_i *ducq, struct ducq_listen_ctx *ctx) {
+	char msg[DUCQ_MSGSZ] = "";
+	size_t size          = DUCQ_MSGSZ;
+	ducq_state state     = DUCQ_OK;
+
+	ducq_state (*recv)(ducq_i*, char*, size_t*) = ctx->recv_raw
+		? ducq_recv
+		: ducq_receive;
 
 	for(;;) {
-		len = DUCQ_MSGSZ;
-		DUCQ_CHECK( ducq_recv(ducq, recvbuf, &len) );
-		if( on_msg(recvbuf, len, ctx) )
+		size  = DUCQ_MSGSZ;
+		state = recv(ducq, msg, &size);
+
+		ducq_on_msg_f callback = 
+			state == DUCQ_OK       ? ctx->on_message  :
+			state == DUCQ_PROTOCOL ? ctx->on_protocol :
+			state == DUCQ_FREEFORM ? ctx->on_freeform : ctx->on_error;
+	
+		if(!callback) continue;
+		if( callback(ducq, msg, size, ctx->ctx) )
 			break;
 	}
 
-	DUCQ_CHECK( ducq_close(ducq) );
-	return DUCQ_OK;
+	return state;
 }
 
 
 ducq_state ducq_publish(ducq_i *ducq, char *route, char *payload, size_t size) {
-	char recvbuf[DUCQ_MSGSZ] = "";
-	size_t len = DUCQ_MSGSZ;
-	
-	DUCQ_CHECK( ducq_conn(ducq) );
-	DUCQ_CHECK( ducq_emit(ducq, "publish", route, payload, size, true) );
-	DUCQ_CHECK( ducq_recv(ducq, recvbuf, &len) );
-	DUCQ_CHECK( ducq_ack_to_state(recvbuf) );
+	DUCQ_CHECK( ducq_emit(ducq, "publish", route, payload, size) );
 
-	DUCQ_CHECK( ducq_close(ducq) );
-	return DUCQ_OK;
+	char msg[DUCQ_MSGSZ] = "";
+	size = DUCQ_MSGSZ;
+	ducq_state state = ducq_receive(ducq, msg, &size);
+	return state <= DUCQ_PROTOCOL ? DUCQ_OK : state;
 }
+
+
+
+
 
 
 const char * ducq_parse_command(const char *buffer, const char **end) {

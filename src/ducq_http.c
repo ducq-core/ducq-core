@@ -42,7 +42,6 @@ ducq_state _conn(ducq_i *ducq) {
 	return DUCQ_ENOIMPL;
 }
 
-
 static
 const char *_id(ducq_i *ducq) {
 	ducq_http *http = (ducq_http*)ducq;
@@ -55,6 +54,7 @@ const char *_id(ducq_i *ducq) {
 	inet_peer_socket_tostring(http->fd, http->id + n, MAX_ID - n);
 	return http->id;
 }
+
 static
 ducq_state _timeout(ducq_i *ducq, int timeout) {
 	ducq_http *http = (ducq_http*)ducq;
@@ -64,7 +64,6 @@ ducq_state _timeout(ducq_i *ducq, int timeout) {
 	int rc = inet_set_read_timeout(http->fd, timeout);
 	return rc ? DUCQ_ECOMMLAYER : DUCQ_OK;
 }
-
 
 static
 ducq_state _recv(ducq_i *ducq, char *ptr, size_t *count) {
@@ -90,7 +89,6 @@ ducq_state _recv(ducq_i *ducq, char *ptr, size_t *count) {
 	return DUCQ_ENOIMPL;
 }
 
-
 static
 ducq_state _send(ducq_i *ducq, const void *buf, size_t *count) {
 	ducq_http *http = (ducq_http*) ducq;
@@ -99,27 +97,6 @@ ducq_state _send(ducq_i *ducq, const void *buf, size_t *count) {
 
 	return DUCQ_ENOIMPL;
 }
-
-static
-ducq_state _emit(ducq_i *ducq, const char *command, const char *route, const char *payload, size_t payload_size, bool close) {
-	char msg[DUCQ_MSGSZ];
-	size_t len = snprintf(msg, DUCQ_MSGSZ, "%s %s\n%.*s", command, route, (int)payload_size, payload);
-
-	if(len >= DUCQ_MSGSZ)
-		return DUCQ_EMSGSIZE;
-
-	ducq_state state = ducq_send(ducq, msg, &len);
-	if(state != DUCQ_OK) return state;
-
-	if(close) {
-		ducq_http *http = (ducq_http*)ducq;
-		if(inet_shutdown_write(http->fd))
-			return DUCQ_ECLOSE;
-	}
-
-	return DUCQ_OK;
-}
-
 
 static
 ducq_i *_copy(ducq_i * ducq) {
@@ -180,7 +157,6 @@ static ducq_vtbl table = {
 	.id      = _id,
 	.recv    = _recv,
 	.send    = _send,
-	.emit    = _emit,
 	.copy    = _copy,
 	.eq      = _eq,
 	.timeout = _timeout,

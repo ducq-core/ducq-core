@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <stdlib.h>
+#include <errno.h>
 
 #include "ducq.h"
 #include "ducq_vtbl.h"
@@ -101,19 +102,21 @@ ducq_state _timeout(ducq_i *ducq, int timeout) {
 	return rc ? DUCQ_ECOMMLAYER : DUCQ_OK;
 }
 
-
 static
 ducq_state _recv(ducq_i *ducq, char *ptr, size_t *count) {
 	ducq_tcp_t *tcp = (ducq_tcp_t*)ducq;
 
 	int rc = ducq_tcp_recv(tcp->fd, ptr, *count);
-	if( rc < 0)
-		return -rc;
-	
-	*count = rc;
-	return DUCQ_OK;
-}
+	if( rc >= 0) {
+		*count = rc;
+		return DUCQ_OK;
+	}
 
+	rc = -rc;
+	return rc == DUCQ_EREAD && errno == EWOULDBLOCK 
+		? DUCQ_ETIMEOUT
+		: rc;
+}
 
 static
 ducq_state _send(ducq_i *ducq, const void *buf, size_t *count) {
@@ -126,27 +129,6 @@ ducq_state _send(ducq_i *ducq, const void *buf, size_t *count) {
 	*count = rc;
 	return DUCQ_OK;	
 }
-
-static
-ducq_state _emit(ducq_i *ducq, const char *command, const char *route, const char *payload, size_t payload_size, bool close) {
-	char msg[DUCQ_MSGSZ];
-	size_t len = snprintf(msg, DUCQ_MSGSZ, "%s %s\n%.*s", command, route, (int)payload_size, payload);
-
-	if(len >= DUCQ_MSGSZ)
-		return DUCQ_EMSGSIZE;
-
-	ducq_state state = ducq_send(ducq, msg, &len);
-	if(state != DUCQ_OK) return state;
-
-	if(close) {
-		ducq_tcp_t *tcp = (ducq_tcp_t*)ducq;
-		if(inet_shutdown_write(tcp->fd))
-			return DUCQ_ECLOSE;
-	}
-
-	return DUCQ_OK;
-}
-
 
 static
 ducq_i *_copy(ducq_i * ducq) {
@@ -193,7 +175,6 @@ static ducq_vtbl table = {
 	.id      = _id,
 	.recv    = _recv,
 	.send    = _send,
-	.emit    = _emit,
 	.copy    = _copy,
 	.eq      = _eq,
 	.timeout = _timeout,
@@ -225,13 +206,4 @@ ducq_i *ducq_new_tcp_connection(int fd) {
 	tcp->id[0] = '\0';
 
 	return (ducq_i *) tcp;
-}
-
-
-
-
-
-ducq_state ducq_tcp_apply(int cfd, ducq_apply_f apply, void* ctx) {
-	ducq_tcp_t ducq = { .tbl = &table, .fd = cfd };
-	return apply(ctx, (ducq_i*) &ducq);
 }
