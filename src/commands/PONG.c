@@ -8,7 +8,7 @@ ducq_state PONG(struct ducq_reactor *reactor, ducq_i *ducq, char *message, size_
 	const char *payload = ducq_parse_payload(message);
 	ducq_log(DEBUG, payload);
 	message[1] = 'O';
-	return ducq_send(ducq, message, &size);
+	return DUCQ_OK;
 }
 
 
