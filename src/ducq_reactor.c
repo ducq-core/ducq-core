@@ -313,7 +313,10 @@ ducq_loop_t round_table(connection_t *conn, void *vctx) {
 		default:
 			ducq_send_ack(ducq, state);
 			ducq_reactor_log(ctx->reactor, level, __func__, ducq_id(ducq),
-					"%s,disconnecting: %s [%ld](%.*s)\n", route, ducq_state_tostr(state), size, (int) size, ctx->buffer);
+				"disconnecting: %s (%s) "
+				"buffer[%ld]\"%.*s\"\n",
+				ducq_state_tostr(state), strerror(errno), 
+				size, (int)size, ctx->buffer);
 			control |= DUCQ_LOOP_DELETE;
 			break;
 	}

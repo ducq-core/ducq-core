@@ -5,7 +5,7 @@
 
 
 ducq_state PING(struct ducq_reactor *reactor, ducq_i *ducq, char *message, size_t size) {
-	ducq_log(PROTO, "");
+	ducq_log(DEBUG, "");
 	message[1] = 'O';
 	return ducq_send(ducq, message, &size);
 }

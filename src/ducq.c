@@ -121,10 +121,7 @@ ducq_state  ducq_receive(ducq_i *ducq, char *msg, size_t *size) {
 	if(state)
 		return state;
 
-	// message
-	if(*size > 0 && ! isupper(msg[0]) )
-		return DUCQ_OK;
-	
+		
 	// protocol
 	if(strncmp(msg, "ACK", 3) == 0 || strncmp(msg, "NACK", 4) == 0){
 		state = ducq_ack_to_state(msg);
@@ -139,8 +136,8 @@ ducq_state  ducq_receive(ducq_i *ducq, char *msg, size_t *size) {
 		return DUCQ_PROTOCOL;
 	}
 
-	// freeform message
-	return DUCQ_FREEFORM;
+	// message
+	return DUCQ_OK;
 }
 
 ducq_state ducq_listen(ducq_i *ducq, struct ducq_listen_ctx *ctx) {
@@ -158,8 +155,7 @@ ducq_state ducq_listen(ducq_i *ducq, struct ducq_listen_ctx *ctx) {
 
 		ducq_on_msg_f callback = 
 			state == DUCQ_OK       ? ctx->on_message  :
-			state == DUCQ_PROTOCOL ? ctx->on_protocol :
-			state == DUCQ_FREEFORM ? ctx->on_freeform : ctx->on_error;
+			state == DUCQ_PROTOCOL ? ctx->on_protocol : ctx->on_error;
 	
 		if(!callback) continue;
 		if( callback(ducq, msg, size, ctx->ctx) )

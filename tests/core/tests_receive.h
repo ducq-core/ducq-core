@@ -10,7 +10,7 @@
 	apply(receive_ping) \
 	apply(receive_ping_send_fail) \
 	apply(receive_pong) \
-	apply(receive_freeform_message) \
+	apply(receive_other_message) \
 	apply(receive_timeout_send_ping) \
 	apply(receive_timeout_expect_pong)
 

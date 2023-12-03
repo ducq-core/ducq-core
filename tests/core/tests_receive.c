@@ -70,7 +70,8 @@ void receive_nack(void **state) {
 	// arange
 	ducq_i *ducq = ducq_new_mock(NULL);
 	ducq_state expected_state = DUCQ_ECLOSE;
-	char expected_msg[] = "NACK _\n12";
+	char expected_msg[128] = "";
+	snprintf(expected_msg, 128, "NACK _\n%d",  expected_state);
 
 	// mock
 	strcpy(MOCK_CLIENT_RECV_BUFFER, expected_msg);
@@ -184,10 +185,10 @@ void receive_pong(void **state) {
 	ducq_free(ducq);
 }
 
-void receive_freeform_message(void **state) {
+void receive_other_message(void **state) {
 	// arange
 	ducq_i *ducq = ducq_new_mock(NULL);
-	ducq_state expected_state = DUCQ_FREEFORM;
+	ducq_state expected_state = DUCQ_OK;
 	char expected_msg[] = "UNKNOWN _\npayload";
 
 	// mock

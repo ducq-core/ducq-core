@@ -11,7 +11,6 @@
 
 
 #define _foreach_state(apply) \
-	apply(DUCQ_FREEFORM,    "freeform message (not an error)") \
 	apply(DUCQ_PROTOCOL,    "protocol-layer message (not an error)") \
 	apply(DUCQ_ENULL,       "null parameter") \
 	apply(DUCQ_ESTDC,       "std c lib error") \
@@ -66,7 +65,6 @@ typedef ducq_state (*ducq_apply_f)(void* ctx, ducq_i* ducq);
 typedef int (*ducq_on_msg_f)(ducq_i * ducq, char *payload, size_t size, void *ctx);
 struct ducq_listen_ctx {
 	ducq_on_msg_f on_message;
-	ducq_on_msg_f on_freeform;
 	ducq_on_msg_f on_protocol;
 	ducq_on_msg_f on_error;
 	bool recv_raw;

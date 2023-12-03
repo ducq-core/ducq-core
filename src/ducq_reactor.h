@@ -12,7 +12,6 @@ typedef struct ducq_reactor ducq_reactor;
 // log
 #define FOREACH_DUCQ_LOG(apply) \
 	apply(DEBUG) \
-	apply(PROTO) \
 	apply(INFO) \
 	apply(WARN) \
 	apply(ERROR)
