@@ -47,6 +47,16 @@ ducq_state  ducq_send(ducq_i *ducq, const void *buf, size_t *size) {
 		? ducq->tbl->send(ducq, buf, size)
 		: DUCQ_ENULL;
 }
+ducq_state ducq_parts(ducq_i *ducq) {
+	return ducq
+		? ducq->tbl->parts(ducq)
+		: DUCQ_ENULL;
+}
+ducq_state ducq_end(ducq_i *ducq) {
+	return ducq
+		? ducq->tbl->end(ducq)
+		: DUCQ_ENULL;
+}
 ducq_state  ducq_recv(ducq_i *ducq, char *buf, size_t *size) {
 	return ducq
 		? ducq->tbl->recv(ducq, buf, size)

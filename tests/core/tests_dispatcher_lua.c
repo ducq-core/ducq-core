@@ -182,10 +182,12 @@ void dispatcher_lua_can_reload_an_extension(void **state) {
 	char filename[] = "extension.lua";
 	FILE *lua_file = fopen(filename, "w");
 	fprintf(lua_file,
-		"function reload(ducq, msg)\n"
-		"	ducq:send('first')\n"
-		"	return 0\n"
-		"end\n"
+		"commands.reload = {"
+		"	exec = function(ducq, msg)\n"
+		"		ducq:send('first')\n"
+		"		return 0\n"
+		"	end\n"
+		"}"
 	);
 	fclose(lua_file);
 
@@ -218,10 +220,12 @@ void dispatcher_lua_can_reload_an_extension(void **state) {
 	remove(filename);
 	lua_file = fopen(filename, "w");
 	fprintf(lua_file,
-		"function reload(ducq, msg)\n"
-		"	ducq:send('second')\n"
-		"	return 0\n"
-		"end\n"
+		"commands.reload = {"
+		"	exec = function(ducq, msg)\n"
+		"		ducq:send('second')\n"
+		"		return 0\n"
+		"	end\n"
+		"}"
 	);
 	fclose(lua_file);
 	ducq_dispatcher_accept_notify(reactor, -1, dispatcher);
@@ -239,10 +243,12 @@ void dispatcher_lua_watch_is_nonblock(void **state) {
 	char filename[] = "extension.lua";
 	FILE *lua_file = fopen(filename, "w");
 	fprintf(lua_file,
-		"function reload(ducq, msg)\n"
-		"	ducq:send('first')\n"
-		"	return 0\n"
-		"end\n"
+		"commands.reload = {"
+		"	exec = function(ducq, msg)\n"
+		"		ducq:send('first')\n"
+		"		return 0\n"
+		"	end\n"
+		"}"
 	);
 	fclose(lua_file);
 
@@ -287,10 +293,12 @@ void dispatcher_lua_can_reload__different_directory(void **state) {
 	char filename[] = EXTENSION_FOLDER EXTENSION_FILE;
 	FILE *lua_file = fopen(filename, "w");
 	fprintf(lua_file,
-		"function reload(ducq, msg)\n"
-		"	ducq:send('first')\n"
-		"	return 0\n"
-		"end\n"
+		"commands.reload = {"
+		"	exec = function(ducq, msg)\n"
+		"		ducq:send('first')\n"
+		"		return 0\n"
+		"	end\n"
+		"}"
 	);
 	fclose(lua_file);
 
@@ -324,10 +332,12 @@ void dispatcher_lua_can_reload__different_directory(void **state) {
 	remove(filename);
 	lua_file = fopen(filename, "w");
 	fprintf(lua_file,
-		"function reload(ducq, msg)\n"
-		"	ducq:send('second')\n"
-		"	return 0\n"
-		"end\n"
+		"commands.reload = {"
+		"	exec = function(ducq, msg)\n"
+		"		ducq:send('second')\n"
+		"		return 0\n"
+		"	end\n"
+		"}"
 	);
 	fclose(lua_file);
 	ducq_dispatcher_accept_notify(reactor, -1, dispatcher);

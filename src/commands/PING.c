@@ -5,7 +5,7 @@
 
 
 ducq_state PING(struct ducq_reactor *reactor, ducq_i *ducq, char *message, size_t size) {
-	char *payload = ducq_parse_payload(messgae);
+	const char *payload = ducq_parse_payload(message);
 	ducq_log(DEBUG, payload);
 	message[1] = 'O';
 	return ducq_send(ducq, message, &size);

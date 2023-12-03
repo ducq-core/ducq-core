@@ -13,6 +13,8 @@ typedef struct ducq_i ducq_i;
 typedef struct ducq_vtbl {
 	ducq_state   (* conn)    (ducq_i *ducq);
 	ducq_state   (* send)    (ducq_i *ducq, const void *ptr, size_t *size);
+	ducq_state   (* parts)   (ducq_i *ducq);
+	ducq_state   (* end)     (ducq_i *ducq);
 	ducq_state   (* recv)    (ducq_i *ducq, char *ptr, size_t *size);
 	const char * (* id)      (ducq_i *ducq);
 	ducq_i *     (* copy)    (ducq_i *ducq);

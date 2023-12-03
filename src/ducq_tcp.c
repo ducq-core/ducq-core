@@ -11,6 +11,8 @@
 
 
 #define  MAX_ID 100 // 4 + 46 + 6 + 1; // TCP:ipv6(46):65535\0
+#define PARTS "PARTS"
+#define END   "END"
 
 typedef struct ducq_tcp_t {
 	ducq_vtbl *tbl;
@@ -131,6 +133,18 @@ ducq_state _send(ducq_i *ducq, const void *buf, size_t *count) {
 }
 
 static
+ducq_state _parts(ducq_i *ducq) {
+	size_t size = sizeof(PARTS) - 1;
+	return ducq_send(ducq, PARTS, &size);
+}
+
+static
+ducq_state _end(ducq_i *ducq) {
+	size_t size = sizeof(END) - 1;
+	return ducq_send(ducq, END, &size);
+}
+
+static
 ducq_i *_copy(ducq_i * ducq) {
 	ducq_tcp_t *tcp = (ducq_tcp_t*)ducq;
 	ducq_tcp_t *copy = (ducq_tcp_t*) ducq_new_tcp(tcp->host, tcp->port);
@@ -175,6 +189,8 @@ static ducq_vtbl table = {
 	.id      = _id,
 	.recv    = _recv,
 	.send    = _send,
+	.parts   = _parts,
+	.end     = _end,
 	.copy    = _copy,
 	.eq      = _eq,
 	.timeout = _timeout,

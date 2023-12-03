@@ -25,7 +25,8 @@ cmd_test_objs= \
 
 .PHONY: test_cmds
 tests_cmds: PREREQ  $(cmd_test_objs)
-	$(CC) -o $(BUILDDIR)/$@ $(cmd_test_objs) $(HEADERS) -ldl -llua -lm -rdynamic $(LINK_TEST_LIB) -DLUA_DUCQ_PACKAGE_NAME=\"ShouldFail-NotDependent\"
+	cp *.lua $(BUILDDIR)/commands/
+	$(CC) -o $(BUILDDIR)/$@ $(cmd_test_objs) $(HEADERS) -ldl -llua -lm -rdynamic $(LINK_TEST_LIB)
 	cd $(BUILDDIR) && valgrind ./$@
 
 

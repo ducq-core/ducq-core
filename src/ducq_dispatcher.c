@@ -69,6 +69,9 @@ lua_State *_make_lua(ducq_reactor *reactor) {
 
 	ducq_push_reactor(L, reactor);
 	lua_setglobal(L, "reactor");
+
+	lua_newtable(L);
+	lua_setglobal(L, "commands");
 	return L;
 
 }
@@ -373,31 +376,59 @@ ducq_state lua_command(ducq_reactor *reactor, ducq_i *ducq, char *buffer, size_t
 	lua_pop(L, 1); // error/state
 	return state;
 }
-ducq_state list_commands(ducq_reactor *reactor, ducq_i *ducq, char *buffer, size_t size) {
-	(void) buffer;
-	(void) size;
+
+ducq_state list_commands(ducq_reactor *reactor, ducq_i *ducq, char *_buffer, size_t _size) {
+	(void) _buffer;
+	(void) _size;
 	ducq_log(INFO, "");
 
 	struct ducq_dispatcher *dispatcher = ducq_reactor_get_dispatcher(reactor);
 
+	ducq_parts(ducq);
+
 	char payload[DUCQ_MSGSZ] =
-		"list_commands,list all loaded commands as csv: <name>,<doc>\n";
-	size_t len = 0;
-	char *ptr = payload + strlen(payload);
-	char *end = payload + DUCQ_MSGSZ;
+		"\"list_commands\",\"list all loaded commands as csv: <name>,<doc>\"\n";
+	size_t size = strlen(payload);
+	DUCQ_CHECK( ducq_send(ducq, payload, &size) );
+
 	for(int i = 0; i < dispatcher->ncmd; i++) {
 		struct ducq_cmd_t *cmd = dispatcher->cmds[i];
-	
-		size_t left = end-ptr;
-		len = snprintf(ptr, left, "%s,%s\n", cmd->name, cmd->doc);
-
-		ptr += len;
-		if(ptr >= end) break;
+		size = snprintf(payload, DUCQ_MSGSZ, "\"%s\",\"%s\"\n", cmd->name, cmd->doc);
+		DUCQ_CHECK( ducq_send(ducq, payload, &size) );
 	}
 
-	len = ptr - payload;
-	ducq_state state = ducq_send(ducq, payload, &len);
-	return state;
+
+	lua_State *L = dispatcher->L;
+	if( lua_getglobal(L, "commands") != LUA_TTABLE) {
+		return ducq_end(ducq);;
+	}
+
+	for(lua_pushnil(L); lua_next(L, -2); lua_pop(L, 1) ) {
+		if( !lua_isstring(L, -2) || !lua_istable(L, -1) ) continue;
+		if( lua_getfield(L, -1, "doc") == LUA_TSTRING) {
+			size = snprintf(payload, DUCQ_MSGSZ,
+				"\"%s\",\"%s\"\n",
+				lua_tostring(L, -3), lua_tostring(L, -1) );
+			DUCQ_CHECK( ducq_send(ducq, payload, &size) );
+		}
+		lua_pop(L, 1);
+	}
+
+	return ducq_end(ducq);;
+}
+
+static
+ducq_command_f _find_lua_command(ducq_dispatcher *dispatcher, const char *name) {
+	lua_State *L = dispatcher->L;
+	if( lua_getglobal(L, "commands") != LUA_TTABLE ) return unknown;
+
+	lua_pushstring(L, name);
+	if( lua_gettable(L, -2) != LUA_TTABLE ) return unknown;
+
+	lua_pushstring(L, "exec");
+	if( lua_gettable(L, -2) != LUA_TFUNCTION ) return unknown;
+
+	return lua_command;
 }
 static
 ducq_command_f _find_command(ducq_dispatcher *dispatcher, const char *msg) {
@@ -417,13 +448,8 @@ ducq_command_f _find_command(ducq_dispatcher *dispatcher, const char *msg) {
 		}
 	}
 
-	if(command == unknown) {
-		lua_State *L = dispatcher->L;
-		lua_getglobal(L, name);
-		if(lua_isfunction(L, -1) ) {
-			command = lua_command;
-		}
-	}
+	if(command == unknown)
+		command = _find_lua_command(dispatcher, name);
 
 	*end = ' ';
 	return command;

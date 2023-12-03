@@ -99,6 +99,16 @@ ducq_state _send(ducq_i *ducq, const void *buf, size_t *count) {
 }
 
 static
+ducq_state _parts(ducq_i *ducq) {
+	return DUCQ_ENOIMPL;
+}
+
+static
+ducq_state _end(ducq_i *ducq) {
+	return DUCQ_ENOIMPL;
+}
+
+static
 ducq_i *_copy(ducq_i * ducq) {
 	ducq_http *http = (ducq_http*)ducq;
 	if(http->ws) 
@@ -157,6 +167,8 @@ static ducq_vtbl table = {
 	.id      = _id,
 	.recv    = _recv,
 	.send    = _send,
+	.parts   = _parts,
+	.end     = _end,
 	.copy    = _copy,
 	.eq      = _eq,
 	.timeout = _timeout,

@@ -665,3 +665,53 @@ void tcp_recv_payload_exactly_same_as_buffer_is_err(void **state) {
 #undef BUFFER_LENGTH
 }
 
+void tcp_parts_end(void **state) {
+	// arrange
+	ducq_state expected_state = DUCQ_OK;
+	ducq_i *ducq = ducq_new_tcp(NULL, NULL);
+
+	// mock
+	expect_string(writen, vptr, "5\n");
+	expect_string(writen, vptr, "PARTS");
+	will_return(writen, 2);
+	will_return(writen, 5);
+
+	expect_string(writen, vptr, "6\n");
+	expect_string(writen, vptr, "part1\n");
+	will_return(writen, 2);
+	will_return(writen, 6);
+
+	expect_string(writen, vptr, "6\n");
+	expect_string(writen, vptr, "part2\n");
+	will_return(writen, 2);
+	will_return(writen, 6);
+
+	expect_string(writen, vptr, "6\n");
+	expect_string(writen, vptr, "part3\n");
+	will_return(writen, 2);
+	will_return(writen, 6);
+
+	expect_string(writen, vptr, "3\n");
+	expect_string(writen, vptr, "END");
+	will_return(writen, 2);
+	will_return(writen, 3);
+	
+	
+	// act
+	ducq_state actual_state = DUCQ_OK;
+	size_t size = 0;
+	actual_state += ducq_parts(ducq);
+	size = 6;
+	actual_state += ducq_send(ducq, "part1\n", &size);
+	size = 6;
+	actual_state += ducq_send(ducq, "part2\n", &size);
+	size = 6;
+	actual_state += ducq_send(ducq, "part3\n", &size);
+	actual_state += ducq_end(ducq);
+
+	// audit
+	assert_int_equal(expected_state, actual_state);
+
+	// teardown
+	ducq_free(ducq);
+}

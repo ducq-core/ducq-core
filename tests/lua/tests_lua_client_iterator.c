@@ -66,14 +66,16 @@ void _make_test_file() {
 	char filename[] = EXTENSION_FOLDER EXTENSION_FILE;
 	FILE *lua_file = fopen(filename, "w");
 	fprintf(lua_file,
-		"function TestIdAndRoute(ducq, msg)\n"
-		"	ducq:sendack()\n"
-		"	for client, route in ducq:clients() do\n"
-		"		client:send( client:id() )\n"
-		"		client:send( route       )\n"
+		"commands.TestIdAndRoute = {"
+		"	exec = function(ducq, msg)\n"
+		"		ducq:sendack()\n"
+		"		for client, route in ducq:clients() do\n"
+		"			client:send( client:id() )\n"
+		"			client:send( route       )\n"
+		"		end\n"
+		"		return 0;\n"
 		"	end\n"
-		"	return 0;\n"
-		"end\n"
+		"}"
 	);
 	fclose(lua_file);
 }

@@ -94,6 +94,17 @@ ducq_state ws_send(ducq_ws *ws, const void *buf, size_t *count) {
 }
 
 static
+ducq_state _parts(ducq_i *ducq) {
+	return DUCQ_ENOIMPL;
+}
+
+static
+ducq_state _end(ducq_i *ducq) {
+	return DUCQ_ENOIMPL;
+}
+
+
+static
 ducq_state _recv(ducq_i *ducq, char *ptr, size_t *count) {
 	ducq_ws *ws = (ducq_ws*)ducq;
 	
@@ -226,6 +237,8 @@ static ducq_vtbl table = {
 	.id      = _id,
 	.recv    = _recv,
 	.send    = _send,
+	.parts   = _parts,
+	.end     = _end,
 	.copy    = _copy,
 	.eq      = _eq,
 	.timeout = _timeout,
