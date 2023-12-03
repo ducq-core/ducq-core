@@ -314,7 +314,7 @@ ducq_loop_t round_table(connection_t *conn, void *vctx) {
 			ducq_send_ack(ducq, state);
 			ducq_reactor_log(ctx->reactor, level, __func__, ducq_id(ducq),
 				"disconnecting: %s (%s) "
-				"buffer[%ld]\"%.*s\"\n",
+				"buffer[%ld]\"%.*s\"",
 				ducq_state_tostr(state), strerror(errno), 
 				size, (int)size, ctx->buffer);
 			control |= DUCQ_LOOP_DELETE;
@@ -404,7 +404,7 @@ int ducq_color_console_log(void *ctx, enum ducq_log_level level, const char *fun
 	strftime(now, sizeof(now), "%FT%T", localtime(&timer));
 	
 	switch(level) {
-		case DUCQ_LOG_DEBUG : printf("\033[92m"); break;
+		case DUCQ_LOG_DEBUG : printf("\033[90m"); break;
 		case DUCQ_LOG_INFO  : printf("\033[39m"); break;
 		case DUCQ_LOG_WARN  : printf("\033[93m"); break;
 		case DUCQ_LOG_ERROR : printf("\033[91m"); break;

@@ -4,7 +4,7 @@
 #include "../ducq_reactor.h"
 
 
-ducq_state PING(struct ducq_reactor *reactor, ducq_i *ducq, char *message, size_t size) {
+ducq_state PONG(struct ducq_reactor *reactor, ducq_i *ducq, char *message, size_t size) {
 	char *payload = ducq_parse_payload(messgae);
 	ducq_log(DEBUG, payload);
 	message[1] = 'O';
@@ -14,7 +14,7 @@ ducq_state PING(struct ducq_reactor *reactor, ducq_i *ducq, char *message, size_
 
 
 struct ducq_cmd_t command = {
-	.name = "PING",
-	.doc  = "Reply with a PONG command with unchanged payload.",
-	.exec =  PING
+	.name = "PONG",
+	.doc  = "Trap PONG command.",
+	.exec =  PONG
 };
