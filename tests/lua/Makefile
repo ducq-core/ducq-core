@@ -16,6 +16,7 @@ $(BUILDDIR)/%.o: $(SRCDIR)/%.c
 
 lua_test_objs= \
 	${SRCDIR}/ducq.c \
+	${SRCDIR}/ducq_log.c \
 	${SRCDIR}/ducq_reactor.c \
 	${SRCDIR}/ducq_dispatcher.c \
 	${SRCDIR}/ducq_lua.c \

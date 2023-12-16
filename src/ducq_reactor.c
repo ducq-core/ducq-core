@@ -45,9 +45,9 @@ struct ducq_reactor {
 
 	ducq_dispatcher *dispatcher;
 	
-	bool allow_monitor_route;
-	ducq_log_f log;
-	void *log_ctx;
+	bool allow_log_route;
+	void *logger;
+	ducq_log_f logfunc;
 };
 
 
@@ -55,9 +55,19 @@ struct ducq_reactor {
 //			C O N S T U C T O R   /   D E S T R U C T O R
 //
 
+static
+int _no_log(
+	void *ctx,
+	enum ducq_log_level level,
+	const char *function_name,
+	const char *sender_id,
+	const char *fmt,
+	va_list args
+) {
+	return 0;
+}
 
-
-ducq_reactor *ducq_reactor_new_with_log(ducq_log_f log, void *ctx) {
+ducq_reactor *ducq_reactor_new_with_log(void *logger, ducq_log_f logfunc) {
 	if(signal(SIGPIPE, SIG_IGN) == SIG_ERR)
 		return NULL;
 		
@@ -70,10 +80,9 @@ ducq_reactor *ducq_reactor_new_with_log(ducq_log_f log, void *ctx) {
 		it[i].fd = -1;
 	}
 
-
-	reactor->allow_monitor_route = true;
-	reactor->log     = log;
-	reactor->log_ctx = ctx;
+	reactor->allow_log_route = true;
+	reactor->logger          = logger;
+	reactor->logfunc         = logfunc ? logfunc : _no_log;
 
 	// create dispatcher after values are set
 	reactor->dispatcher = ducq_dispatcher_new(reactor);
@@ -303,7 +312,7 @@ ducq_loop_t round_table(connection_t *conn, void *vctx) {
 	ducq_state state = ducq_recv(ducq, ctx->buffer, &size);
 
 	char *route = conn->as.client.route;
-	enum ducq_log_level level = state == DUCQ_ECONNCLOSED ? DUCQ_LOG_INFO : DUCQ_LOG_WARN;
+	enum ducq_log_level level = state == DUCQ_ECONNCLOSED ? DUCQ_LOG_INFO : DUCQ_LOG_WARNING;
 	switch(state) {
 		case DUCQ_OK:
 			ducq_dispatch(ctx->reactor->dispatcher, ducq, ctx->buffer, size);
@@ -369,112 +378,100 @@ void ducq_loop(ducq_reactor *reactor) {
 //			L O G
 //
 
-char *ducq_loglevel_tostring(enum ducq_log_level level) {
-	switch(level) {
-		
-#define _build_enum_tostring_(str) case DUCQ_LOG_##str: return #str;
-FOREACH_DUCQ_LOG(_build_enum_tostring_)
-#undef _build_enum_tostring_
-
-		default: return "UNKNOWN";
-	}
-}
-
-bool ducq_reactor_set_monitor_route(ducq_reactor *reactor, bool is_allowed) {
-	bool old = reactor->allow_monitor_route;
-	reactor->allow_monitor_route = is_allowed;
+bool ducq_reactor_allow_log_route(ducq_reactor *reactor, bool is_allowed) {
+	bool old = reactor->allow_log_route;
+	reactor->allow_log_route = is_allowed;
 	return old;
 }
 
-void ducq_reactor_set_log(ducq_reactor *reactor, void* ctx, ducq_log_f log) {
-	reactor->log_ctx = ctx;
-	reactor->log     = log;
+void ducq_reactor_set_log(ducq_reactor *reactor, void* logger, ducq_log_f logfunc) {
+	reactor->logger  = logger;
+	reactor->logfunc = logfunc;
 }
 
-
-int ducq_no_log(void *ctx, enum ducq_log_level level, const char *function_name, const char *sender_id, const char *fmt, va_list args) {
-	return 0;
-}
-
-int ducq_color_console_log(void *ctx, enum ducq_log_level level, const char *function_name, const char *sender_id, const char *fmt, va_list args) {
-	(void) ctx; // unused
-	
-	char now[] = "YYYY-MM-DDTHH:MM:SS";
-	time_t timer = time(NULL);
-	strftime(now, sizeof(now), "%FT%T", localtime(&timer));
-	
+static
+char *_map_color(enum ducq_log_level level) {
 	switch(level) {
-		case DUCQ_LOG_DEBUG : printf("\033[90m"); break;
-		case DUCQ_LOG_INFO  : printf("\033[39m"); break;
-		case DUCQ_LOG_WARN  : printf("\033[93m"); break;
-		case DUCQ_LOG_ERROR : printf("\033[91m"); break;
+		case DUCQ_LOG_DEBUG   : return FG_LITE_BLACK ;
+		case DUCQ_LOG_INFO    : return FG_NORMAL     ;
+		case DUCQ_LOG_WARNING : return FG_LITE_YELLOW;
+		case DUCQ_LOG_ERROR   : return FG_LITE_RED   ;
+		default               : return FG_NORMAL     ;
 	}
-	printf("%s  %s  %s: ", now, function_name, sender_id);
-	vprintf(fmt, args);
-	printf("\n");
-	printf("\033[39m");
+}
+int ducq_log_tofile(
+	void *logger,
+	enum ducq_log_level level,
+	const char *function_name,
+	const char *sender_id,
+	const char *fmt,
+	va_list args
+) {
+	struct ducq_file_logger *l = (struct ducq_file_logger*) logger;
+	FILE * file = l ? l->file  : stdout;
+	int color   = l ? l->color : true;
+
+
+	char now[DUCQ_TIMESTAMP_SIZE] = "";
+	ducq_getnow(now, sizeof(now));
+
+	if(color) fprintf(file, "%s", _map_color(level));
+	 fprintf(file, "%s %s %s ", now, function_name, sender_id);
+	vfprintf(file, fmt, args);
+	 fprintf(file, "\n");
+	 if(color) fprintf(file, FG_NORMAL);
 
 	return 0;
 }
-void ducq_reactor_set_default_log(ducq_reactor *reactor) {
-	reactor->log     = ducq_color_console_log;
-}
 
 
-
-// LEVEL,funcname,id,msg
-struct pub_ctx {
-	char *route;
+struct msg {
 	char *buffer;
 	size_t size;
-	int count;
 };
-ducq_loop_t _do_send_to_monitor_routes(ducq_i *ducq, char *route, void *ctx) {
-	struct pub_ctx *msg = (struct pub_ctx*) ctx;
+static
+ducq_loop_t _do_send_to_log_route(ducq_i *ducq, char *route, void *ctx) {
+	if( !route || strcmp(route, DUCQ_LOG_ROUTE) != 0 )
+		return DUCQ_LOOP_CONTINUE; // exact match: don't send to * routes
 
-	ducq_loop_t loop = DUCQ_LOOP_CONTINUE;
+	struct msg *msg  = (struct msg*) ctx;
+	size_t size      = msg->size;
 
-	if( route && strcmp(route, DUCQ_MONITOR_ROUTE) == 0 ) { // exact match: don't send to * routes
-		size_t size = msg->size;
-		if( ducq_send(ducq, msg->buffer, &size) != DUCQ_OK)
-			loop |= DUCQ_LOOP_DELETE;
-	}
-
-	return loop;
+	return ducq_send(ducq, msg->buffer, &size)
+		? DUCQ_LOOP_DELETE
+		: DUCQ_LOOP_CONTINUE;
 
 }
-int ducq_reactor_log(ducq_reactor *reactor, enum ducq_log_level level, const char *function_name, const char *sender_id, const char *fmt, ...) {
+int ducq_reactor_log(
+	ducq_reactor *reactor,
+	enum ducq_log_level level,
+	const char *function_name,
+	const char *sender_id,
+	const char *fmt, ...
+) {
 	va_list args;
 
 	va_start(args, fmt);
-		int rc = reactor->log(reactor->log_ctx, level, function_name, sender_id, fmt, args);
+	int rc = reactor->logfunc(reactor->logger, level,
+		function_name, sender_id, fmt, args);
 	va_end(args);
 	
 
-	if(! reactor->allow_monitor_route)
+	if(! reactor->allow_log_route)
 		return rc;
 
 
 	va_start(args, fmt);
-		char buffer[DUCQ_MSGSZ] = "";
-		size_t size = 0;
-		size +=  snprintf(buffer    , DUCQ_MSGSZ    , "%s,%s,%s,", ducq_loglevel_tostring(level), function_name, sender_id);
-		size += vsnprintf(buffer+size, DUCQ_MSGSZ-size, fmt    , args);
+	char buffer[DUCQ_MSGSZ] = "";
+	size_t size = 0;
+	size += snprintf(buffer, DUCQ_MSGSZ, "%s,%s,%s,",
+		ducq_level_tostr(level), function_name, sender_id);
+	size += vsnprintf(buffer+size, DUCQ_MSGSZ-size, fmt, args);
 	va_end(args);
 	
-	struct pub_ctx msg = {
-		.route  = NULL,
-		.buffer = buffer,
-		.size   = size,
-		.count  = 0
-	};
-	ducq_reactor_loop(reactor, _do_send_to_monitor_routes, &msg);
+	struct msg msg = {.buffer = buffer, .size = size};
+	ducq_reactor_loop(reactor, _do_send_to_log_route, &msg);
 
 	return rc;
 }
-
-
-
-
-
 

@@ -1,6 +1,7 @@
 #ifndef _DUCQ_HEADER_
 #define _DUCQ_HEADER_
 
+#include <stddef.h>
 #include <stdbool.h>
 
 

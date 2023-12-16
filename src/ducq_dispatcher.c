@@ -344,7 +344,7 @@ void ducq_dispatcher_accept_notify(ducq_reactor *reactor, int fd, void *ctx) {
 
 ducq_state unknown(ducq_reactor *reactor, ducq_i *ducq, char *buffer, size_t size) {
 	struct ducq_msg msg = ducq_parse_msg(buffer);
-	ducq_log(WARN, "%s,%s", msg.command, msg.route);
+	ducq_log(WARNING, "%s,%s", msg.command, msg.route);
 
 	ducq_send_ack(ducq, DUCQ_ENOCMD);
 	return DUCQ_ENOCMD;

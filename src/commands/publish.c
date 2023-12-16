@@ -45,7 +45,7 @@ ducq_state publish(struct ducq_reactor *reactor, ducq_i *ducq, char *buffer, siz
 	ducq_state ack_state = ducq_send_ack(ducq, route_state);
 
 	ducq_state returned_state = route_state ? route_state : ack_state;
-	enum ducq_log_level level = returned_state ? DUCQ_LOG_WARN : DUCQ_LOG_INFO;
+	enum ducq_log_level level = returned_state ? DUCQ_LOG_WARNING : DUCQ_LOG_INFO;
 	ducq_reactor_log(reactor, level, __func__, ducq_id(ducq),
 			"%s,send: %s", msg.route, ducq_state_tostr(ack_state) );
 

@@ -71,7 +71,7 @@ void subscribe_msg_invalide_if_cant_parse_route(void **state) {
 	will_return(_send, DUCQ_OK);
 
 	expect_string(mock_log, function_name, "subscribe");
-	expect_value(mock_log, level, DUCQ_LOG_WARN);
+	expect_value(mock_log, level, DUCQ_LOG_WARNING);
 
 	// act
 	ducq_state actual_state = subscribe(reactor, subscriber, buffer, size);
@@ -270,7 +270,7 @@ void subscribe_send_ack_fail_cleans_up(void **state) {
 	will_return(_send, DUCQ_EWRITE);
 
 	expect_string(mock_log, function_name, "subscribe");
-	expect_value(mock_log, level, DUCQ_LOG_WARN);
+	expect_value(mock_log, level, DUCQ_LOG_WARNING);
 
 
 	expect_value(_close, ducq, subscriber);

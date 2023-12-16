@@ -2,56 +2,62 @@
 #define _DUCQ_REACTOR_HEADER_
 
 #include <stdarg.h>
+#include <stdio.h>
+
 #include "ducq.h"
+#include "ducq_log.h"
 
 
+// types
 typedef struct ducq_reactor ducq_reactor;
 
-
-
-// log
-#define FOREACH_DUCQ_LOG(apply) \
-	apply(DEBUG) \
-	apply(INFO) \
-	apply(WARN) \
-	apply(ERROR)
-enum ducq_log_level {
-	#define _build_enum_(str) DUCQ_LOG_##str,
-	FOREACH_DUCQ_LOG(_build_enum_)
-	#undef _build_enum_
-};
-char *ducq_loglevel_tostring(enum ducq_log_level level);
-
-// log callbacks
-typedef int (*ducq_log_f)(void *ctx, enum ducq_log_level level, const char *function_name, const char *sender_id, const char *fmt, va_list args);
-
-int ducq_color_console_log(void *ctx, enum ducq_log_level level, const char *function_name, const char *sender_id, const char *fmt, va_list args);
-int ducq_no_log(void *ctx, enum ducq_log_level level, const char *function_name, const char *sender_id, const char *fmt, va_list args);
-
-void ducq_reactor_set_log(ducq_reactor *reactor, void* ctx, ducq_log_f log);
-void ducq_reactor_set_default_log(ducq_reactor *reactor);
-
-// main log function and shortcut
-int ducq_reactor_log(ducq_reactor *reactor, enum ducq_log_level level, const char *function_name, const char *sender_id, const char *fmt, ...);
-#define ducq_log(level, fmt, ...) ducq_reactor_log(reactor, DUCQ_LOG_##level, __func__, ducq_id(ducq), fmt ,##__VA_ARGS__)
-
+typedef int (*ducq_log_f) (
+	void *logger,
+	enum ducq_log_level level,
+	const char *function_name,
+	const char *sender_id,
+	const char *fmt,
+	va_list args
+);
 
 
 // reactor
-ducq_reactor *ducq_reactor_new_with_log(ducq_log_f log, void *ctx);
-#define ducq_reactor_new() ducq_reactor_new_with_log(ducq_no_log, NULL)
+ducq_reactor *ducq_reactor_new_with_log(void *logger, ducq_log_f logfunc);
+#define ducq_reactor_new() ducq_reactor_new_with_log(NULL, NULL)
 void ducq_reactor_free(ducq_reactor* reactor);
 
-#define DUCQ_MONITOR_ROUTE "__MONITOR__"
-bool ducq_reactor_set_monitor_route(ducq_reactor *reactor, bool is_allowed);
-
 void ducq_loop(ducq_reactor *reactor);
+
+
+// log
+void ducq_reactor_set_log(ducq_reactor *reactor, void* logger, ducq_log_f logfunc);
+bool ducq_reactor_allow_log_route(ducq_reactor *reactor, bool is_allowed);
+int ducq_reactor_log(
+	ducq_reactor *reactor,
+	enum ducq_log_level level,
+	const char *function_name,
+	const char *sender_id,
+	const char *fmt, ...
+);
+#define ducq_log(level, fmt, ...) ducq_reactor_log( \
+	reactor,          \
+	DUCQ_LOG_##level, \
+	__func__,         \
+	ducq_id(ducq),    \
+	fmt ,##__VA_ARGS__)
+
+struct ducq_file_logger {
+	FILE *file;
+	int color;
+};
+int ducq_log_tofile(void *logger, enum ducq_log_level level, const char *function_name, const char *sender_id, const char *fmt, va_list args);
 
 
 // connections
 typedef void (*ducq_accept_f)(ducq_reactor *reactor, int fd, void *ctx);
 ducq_state ducq_reactor_add_server(ducq_reactor *reactor, int fd, ducq_accept_f accept_f, void *ctx);
 ducq_state ducq_reactor_add_client(ducq_reactor *reactor, int fd, ducq_i *ducq);
+
 
 // iteration
 typedef struct ducq_client_it ducq_client_it;

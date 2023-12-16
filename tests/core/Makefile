@@ -17,7 +17,7 @@ $(BUILDDIR)/%.o: $(SRCDIR)/%.c
 $(BUILDDIR)/commands/%.o: %.c
 	$(CC) -g -c -fPIC -Wall -c $< -o $@ $(HEADERS)
 
-$(BUILDDIR)/commands/%.so: $(BUILDDIR)/commands/%.o $(BUILDDIR)/ducq.o $(BUILDDIR)/ducq_reactor.o $(BUILDDIR)/ducq_dispatcher.o
+$(BUILDDIR)/commands/%.so: $(BUILDDIR)/commands/%.o
 	$(CC) -g -shared -Wl,-Bsymbolic $^ -o $@
 
 mock_commands = \
@@ -27,6 +27,7 @@ mock_commands = \
 	$(BUILDDIR)/commands/mock_command_err.so 
 core_test_objs= \
 	${SRCDIR}/ducq.c \
+	${SRCDIR}/ducq_log.c \
 	${SRCDIR}/ducq_tcp.c \
 	${SRCDIR}/sha1.c \
 	${SRCDIR}/base64.c \

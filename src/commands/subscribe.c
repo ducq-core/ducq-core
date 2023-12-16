@@ -12,7 +12,7 @@ ducq_state subscribe(struct ducq_reactor *reactor, ducq_i *ducq, char *buffer, s
 	const char *route = ducq_parse_route(buffer, (const char**) &end);
 	if(route == NULL) {
 		ducq_send_ack(ducq, DUCQ_EMSGINV);
-		ducq_log(WARN, "%s", ducq_state_tostr(DUCQ_EMSGINV) );
+		ducq_log(WARNING, "%s", ducq_state_tostr(DUCQ_EMSGINV) );
 		return DUCQ_EMSGINV;
 	}
 	*end = '\0';
@@ -22,7 +22,7 @@ ducq_state subscribe(struct ducq_reactor *reactor, ducq_i *ducq, char *buffer, s
 
 	ducq_state ack_state = ducq_send_ack(ducq, add_state);
 	if(ack_state) {
-		ducq_log(WARN, "%s", ducq_state_tostr(ack_state));
+		ducq_log(WARNING, "%s", ducq_state_tostr(ack_state));
 		ducq_reactor_delete(reactor, ducq);
 	}
 	else ducq_log(INFO,  "%s", route);
