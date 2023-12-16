@@ -54,8 +54,54 @@ void tcp_connect_econnect(void **state) {
 void tcp_close_ok(void **state) {
 	// arrange
 	int rc = 0;
-	will_return_count(inet_close, rc, 1);
+	int fd = 10;
+
+	// mock
+	will_return(inet_tcp_connect, fd);
+	will_return(inet_close, rc);
 	ducq_state expected_state = DUCQ_OK;
+
+	// act
+	ducq_i *ducq = ducq_new_tcp(NULL, NULL);
+	ducq_conn(ducq);
+	ducq_state actual_state  = ducq_close(ducq);
+
+	// audit
+	assert_int_equal(expected_state, actual_state);
+
+	// teardown
+	ducq_free(ducq);
+}
+
+
+void tcp_close_return_eclose_on_error(void **state) {
+	// arrange
+	int rc = -1;
+	int fd = 10;
+	ducq_state expected_state = DUCQ_ECLOSE;
+
+	// mock
+	will_return(inet_tcp_connect, fd);
+	will_return(inet_close, rc);
+
+	// act
+	ducq_i *ducq = ducq_new_tcp(NULL, NULL);
+	ducq_conn(ducq);
+	ducq_state actual_state  = ducq_close(ducq);
+
+	// audit
+	assert_int_equal(expected_state, actual_state);
+
+	// teardown
+	ducq_free(ducq);
+}
+
+void tcp_close_not_call_if_not_connected(void **state) {
+	// arrange
+	ducq_state expected_state = DUCQ_ECLOSE;
+
+	// mock
+	// not called
 
 	// act
 	ducq_i *ducq = ducq_new_tcp(NULL, NULL);
@@ -68,19 +114,26 @@ void tcp_close_ok(void **state) {
 	ducq_free(ducq);
 }
 
-
-void tcp_close_eclose(void **state) {
+void tcp_close_not_call_if_already_closed(void **state) {
 	// arrange
-	int rc = -1;
-	will_return_count(inet_close, rc, 1);
-	ducq_state expected_state = DUCQ_ECLOSE;
+	int rc = 0;
+	int fd = 10;
+	ducq_state expected_close_state = DUCQ_OK;
+	ducq_state expected_again_state = DUCQ_ECLOSE;
+
+	// mock
+	will_return(inet_tcp_connect, fd);
+	will_return(inet_close, rc);
 
 	// act
 	ducq_i *ducq = ducq_new_tcp(NULL, NULL);
-	ducq_state actual_state  = ducq_close(ducq);
+	ducq_conn(ducq);
+	ducq_state actual_close_state  = ducq_close(ducq);
+	ducq_state actual_again_state  = ducq_close(ducq);
 
 	// audit
-	assert_int_equal(expected_state, actual_state);
+	assert_int_equal(expected_close_state, actual_close_state);
+	assert_int_equal(expected_again_state, actual_again_state);
 
 	// teardown
 	ducq_free(ducq);

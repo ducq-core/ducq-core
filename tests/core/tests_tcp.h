@@ -7,7 +7,9 @@
 	apply(tcp_connect_ok) \
 	apply(tcp_connect_econnect) \
 	apply(tcp_close_ok) \
-	apply(tcp_close_eclose) \
+	apply(tcp_close_return_eclose_on_error) \
+	apply(tcp_close_not_call_if_not_connected) \
+	apply(tcp_close_not_call_if_already_closed) \
 	apply(tcp_id_ok) \
 	apply(tcp_id_called_only_once) \
 	apply(tcp_eq_ok) \

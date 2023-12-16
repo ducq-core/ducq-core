@@ -165,9 +165,14 @@ static
 ducq_state _close(ducq_i *ducq) {
 	ducq_tcp_t *tcp = (ducq_tcp_t*)ducq;
 
+	if(tcp->fd == -1)
+		return DUCQ_ECLOSE;
+
 	int rc = inet_close(tcp->fd);
 	if( rc == -1)
 		return DUCQ_ECLOSE;
+
+	tcp->fd = -1;
 	return DUCQ_OK;
 }
 
