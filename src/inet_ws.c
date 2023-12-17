@@ -258,19 +258,19 @@ ws_error_t ws_make_connection_key(unsigned int seed, char *result, size_t len) {
 ws_error_t ws_make_accept_key(char *client_key, char *result, size_t len) {
 	if(!client_key || !result) return WS_NULL_PARAM;
 	
-	char buffer[WS_B64_CONNECTION_KEY_LEN + sizeof(WS_GUID)] = "";
+	unsigned char buffer[WS_B64_CONNECTION_KEY_LEN + sizeof(WS_GUID)] = "";
 	static size_t buffer_size = sizeof(buffer)-2; // should be exaclty connect-key + guid
-	size_t n = snprintf(buffer, sizeof(buffer), "%s%s", client_key, WS_GUID);
+	size_t n = snprintf((char*)buffer, sizeof(buffer), "%s%s", client_key, WS_GUID);
         if(n != buffer_size) return WS_IN_LEN;
 
 //	sha1          
         SHA1Context sha1 = {};
         int sha_err = 0;
-        char sha1_result[SHA1HashSize] = "";
+        unsigned char sha1_result[SHA1HashSize] = "";
         
-        if ( sha_err = SHA1Reset(&sha1)                      ) return _sha1err_to_ws_err(sha_err);
-        if ( sha_err = SHA1Input(&sha1, buffer, buffer_size) ) return _sha1err_to_ws_err(sha_err);
-        if ( sha_err = SHA1Result(&sha1, sha1_result)        ) return _sha1err_to_ws_err(sha_err);
+        if (( sha_err = SHA1Reset(&sha1)                      )) return _sha1err_to_ws_err(sha_err);
+        if (( sha_err = SHA1Input(&sha1, buffer, buffer_size) )) return _sha1err_to_ws_err(sha_err);
+        if (( sha_err = SHA1Result(&sha1, sha1_result)        )) return _sha1err_to_ws_err(sha_err);
 
 //	base64
         int b64_err = base64_encode(sha1_result, SHA1HashSize, result, len);

@@ -16,7 +16,7 @@ static const char B64[] = {
 	'4', '5', '6', '7', '8', '9', '+', '/'
 };
 
-int base64_encode(char *src, int ssize, char *dst, int dsize) {
+int base64_encode(unsigned char *src, int ssize, char *dst, int dsize) {
 	if(!src || !dst)
 		return -1;
 

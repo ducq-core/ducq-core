@@ -311,7 +311,6 @@ ducq_loop_t round_table(connection_t *conn, void *vctx) {
 	ctx->buffer[0] = '\0';
 	ducq_state state = ducq_recv(ducq, ctx->buffer, &size);
 
-	char *route = conn->as.client.route;
 	enum ducq_log_level level = state == DUCQ_ECONNCLOSED ? DUCQ_LOG_INFO : DUCQ_LOG_WARNING;
 	switch(state) {
 		case DUCQ_OK:

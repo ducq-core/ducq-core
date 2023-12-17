@@ -20,7 +20,7 @@ ssize_t inet_get_http_header(int fd, char *buffer, size_t size, char **end) {
 		}
 	
 		buffer += n;
-		if( *end = strstr(start, "\r\n\r\n") ) {
+		if(( *end = strstr(start, "\r\n\r\n") )) {
 			*end += 2;
 			break;
 		}
@@ -33,7 +33,7 @@ ssize_t inet_get_http_header(int fd, char *buffer, size_t size, char **end) {
 // expects `http_header` to be null terminated.
 char *inet_find_http_header(char *http_header, char *header, char **end) {
 	char *found = http_header;
-	while( found = strstr(found, header) ) {
+	while(( found = strstr(found, header) )) {
 		found += strlen(header);
 		if(*found != ':') continue;
 

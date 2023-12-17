@@ -39,7 +39,6 @@ int _eq(lua_State *L) {
 }static
 int _timeout(lua_State *L) {
 	ducq_i *ducq = *(ducq_i**) luaL_checkudata(L, 1, DUCQ_METATABLE);
-	int isnum = 0;
 	int timeout = luaL_checkinteger(L, 2);
 
 	ducq_state state = ducq_timeout(ducq, timeout);
@@ -114,8 +113,6 @@ int _clients_iteration(lua_State *L) {
 }
 static
 int _clients(lua_State *L) {
-	ducq_i *ducq = *(ducq_i**) luaL_checkudata(L, 1, DUCQ_METATABLE);
-
 	lua_getfield(L, LUA_REGISTRYINDEX, "reactor");
 	ducq_reactor *reactor = (ducq_reactor*)lua_touserdata(L, -1);
 	if(!reactor)

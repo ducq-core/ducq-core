@@ -72,9 +72,7 @@ ducq_state _recv(ducq_i *ducq, char *ptr, size_t *count) {
 		return ducq_recv(http->ws, ptr, count);
 
 	char *end = NULL;
-	ssize_t n = 0;
-
-	n = inet_get_http_header(http->fd, http->header, sizeof(http->header), &end);
+	inet_get_http_header(http->fd, http->header, sizeof(http->header), &end);
 	if(!end) {
 		writen(http->fd, HTTP_BAD_REQUEST_400, sizeof(HTTP_BAD_REQUEST_400)-1); 
 		return DUCQ_EMSGINV;

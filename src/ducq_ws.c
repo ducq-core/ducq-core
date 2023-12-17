@@ -67,7 +67,7 @@ ducq_state _timeout(ducq_i *ducq, int timeout) {
 static
 ducq_state ws_send(ducq_ws *ws, const void *buf, size_t *count) {
 	ssize_t n = 0;
-	const char *payload = buf;
+	const void *payload = buf;
 	byte_t *hdr = ws->buf.as_hdr;
 
 	ws_set_len(hdr, *count);
@@ -76,12 +76,13 @@ ducq_state ws_send(ducq_ws *ws, const void *buf, size_t *count) {
 	if( is_client(ws) ) {
 	// change to inner buffer for masking: client buffer is const
 		 if(*count > DUCQ_MSGSZ) return DUCQ_EMSGSIZE;
-		payload = ws->buf.as_buffer + sizeof(ws_header_t);
-		memcpy((void*)payload, buf, *count);
+		byte_t * ptr = ws->buf.as_buffer + sizeof(ws_header_t);
+		memcpy((void*)ptr, buf, *count);
 		
 		ws_mask_t mask = ws_make_mask(time(NULL));
 		ws_set_msk(hdr, &mask);
-		ws_mask_message(&mask, (void*)payload, *count);
+		ws_mask_message(&mask, (void*)ptr, *count);
+		payload = ptr;
 	}
 
 	n = writen( ws->fd, hdr, ws_get_hdr_len(hdr) );
@@ -165,7 +166,6 @@ ducq_state _send(ducq_i *ducq, const void *buf, size_t *count) {
 
 static
 ducq_i *_copy(ducq_i * ducq) {
-	ducq_ws *ws = (ducq_ws*)ducq;
 	return NULL;
 }
 
@@ -322,9 +322,10 @@ ducq_state ducq_new_ws_upgrade_from_http(ducq_i **ws, int fd, char *http_header)
 
 char *ducq_buffer(ducq_i *ducq) {
 	ducq_ws *ws = (ducq_ws*)ducq;
-	return ws->tbl == &table
+	byte_t *ret = ws->tbl == &table
 		? ws->buf.as_buffer
 		: NULL;
+	return (char*) ret;
 }
 
 #undef is_client
