@@ -79,7 +79,7 @@ ducq_state ducq_send_ack(ducq_i *ducq, ducq_state state);
 ducq_state  ducq_receive(ducq_i *ducq, char *msg, size_t *size);
 ducq_state ducq_listen(ducq_i *ducq, struct ducq_listen_ctx *ctx);
 //ducq_state ducq_subscribe(ducq_i *ducq, const char *route, ducq_on_msg_f on_msg, void *ctx);
-ducq_state ducq_publish(ducq_i *ducq, char *route, char *payload, size_t size);
+ducq_state ducq_publish(ducq_i *ducq, const char *route, const char *payload, size_t size);
 
 
 

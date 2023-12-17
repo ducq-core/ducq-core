@@ -176,7 +176,7 @@ ducq_state ducq_listen(ducq_i *ducq, struct ducq_listen_ctx *ctx) {
 }
 
 
-ducq_state ducq_publish(ducq_i *ducq, char *route, char *payload, size_t size) {
+ducq_state ducq_publish(ducq_i *ducq, const char *route, const char *payload, size_t size) {
 	DUCQ_CHECK( ducq_emit(ducq, "publish", route, payload, size) );
 
 	char msg[DUCQ_MSGSZ] = "";
