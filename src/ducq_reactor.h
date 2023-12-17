@@ -82,8 +82,8 @@ ducq_dispatcher *ducq_reactor_get_dispatcher(ducq_reactor * reactor);
 typedef ducq_state (*ducq_command_f)(ducq_reactor*, ducq_i*, char *, size_t);
 
 struct ducq_cmd_t {
-	char *name;
-	char *doc;
+	const char *name;
+	const char *doc;
 	ducq_command_f exec;
 };
 

@@ -10,7 +10,7 @@ enum ducq_log_level {
 	DUCQ_LOG_WARNING,
 	DUCQ_LOG_ERROR
 };
-char *ducq_level_tostr(enum ducq_log_level level);
+const char *ducq_level_tostr(enum ducq_log_level level);
 
 #define DUCQ_TIMESTAMP_SIZE sizeof("YYYY-MM-DDTHH:MM:SS")
 char *ducq_getnow(char *buffer, size_t size);

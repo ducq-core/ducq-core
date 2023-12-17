@@ -389,7 +389,7 @@ void ducq_reactor_set_log(ducq_reactor *reactor, void* logger, ducq_log_f logfun
 }
 
 static
-char *_map_color(enum ducq_log_level level) {
+const char *_map_color(enum ducq_log_level level) {
 	switch(level) {
 		case DUCQ_LOG_DEBUG   : return FG_LITE_BLACK ;
 		case DUCQ_LOG_INFO    : return FG_NORMAL     ;

@@ -2,7 +2,7 @@
 
 #include "ducq_log.h"
 
-char *ducq_level_tostr(enum ducq_log_level level) {
+const char *ducq_level_tostr(enum ducq_log_level level) {
 	switch(level) {
 		case DUCQ_LOG_DEBUG:   return "debug";
 		case DUCQ_LOG_INFO:    return "info";
