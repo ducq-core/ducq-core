@@ -1,6 +1,9 @@
 #ifndef __DUCQ_LUA_HEADER__
 #define __DUCQ_LUA_HEADER__
 
+#include <lua.h>
+#include <lauxlib.h>
+
 #include "ducq.h"
 #include "ducq_reactor.h"
 

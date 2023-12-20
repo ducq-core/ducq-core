@@ -2,8 +2,6 @@
 #warning "as of now, Lua extension is supported on linux only"
 #else
 
-#include "lua.h"
-#include "lauxlib.h"
 
 #include "ducq.h"
 
