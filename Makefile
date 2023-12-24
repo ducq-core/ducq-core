@@ -22,4 +22,7 @@ install_commands:
 	$(CC) -g -fPIC -Wall ./src/commands/list_subscriptions.c -shared -o $(prefix)/lib/$(cmddir)/list_subscriptions.so
 	$(CC) -g -fPIC -Wall ./src/commands/PING.c -shared -o $(prefix)/lib/$(cmddir)/PING.so
 	$(CC) -g -fPIC -Wall ./src/commands/PONG.c -shared -o $(prefix)/lib/$(cmddir)/PONG.so
+	$(CC) -g -fPIC -Wall ./src/commands/time.c -shared -o $(prefix)/lib/$(cmddir)/time.so
+	$(CC) -g -fPIC -Wall ./src/commands/epoch.c -shared -o $(prefix)/lib/$(cmddir)/epoch.so
+	$(CC) -g -fPIC -Wall ./src/commands/list_connections.c -shared -o $(prefix)/lib/$(cmddir)/list_connections.so
 	sudo ldconfig
