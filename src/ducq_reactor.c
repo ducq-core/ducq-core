@@ -308,7 +308,7 @@ ducq_loop_t round_table(connection_t *conn, void *vctx) {
 
 	ducq_i * ducq = conn->as.client.ducq;
 	size_t size = DUCQ_MSGSZ;
-	ctx->buffer[0] = '\0';
+	memset(ctx->buffer, 0, DUCQ_MSGSZ);
 	ducq_state state = ducq_recv(ducq, ctx->buffer, &size);
 
 	enum ducq_log_level level = state == DUCQ_ECONNCLOSED ? DUCQ_LOG_INFO : DUCQ_LOG_WARNING;
