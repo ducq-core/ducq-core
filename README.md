@@ -1,8 +1,7 @@
 # ducq
-![ducq](/img/ducq.png)
 > a minimalist, extensible message queue framework for your lan
 
-**Project state: proof of concept (usable)**
+**Project state: proof of concept**
 
 This an exploration project to learn linux api, socket programming, Lua integration with C and design patterns.
 
@@ -22,40 +21,13 @@ Beside a few core commands that should not be changed (like publish and subscrib
 
 ## Todo toward beta version
 
-### interface implementations
-- recv: make *count = 0 on error
-- ws client-side connection
-- http
-- https, wss, mqtt (maybe)
-
-### protocol
-- formalize difference between "control command" and "application command"
-- CONT and END: message with unknown length sent in several packet
-- PING : keep alive mecanism
-
-### clients
-- review cli program
-- make writing clients in Lua trivial
-
-### reactor
-- better test with `inotify`
-- take out internal interator and review commands that use it
-- extract log object
-- review interface
-- end-to-end tests (with Lua client ?)
-
-### command
-- Lua command should comply with the (name, doc, exec) structure
-- dispatcher should return them with `list_commands`
+### test/review
+- better `reactor` unit tests for `round_table()`
+- review if `listen()` has read error
+  - this function shoud differentiate between message protocol and implementation specific protocol
+  - reconnection logic responsibility
 
 ### features
-- channels ("route with behavior")
-    - should be extensible like commands
-    - in Lua context or reactor aggregate ?
-    - should be CRUDable
-    - implementation ideas:
-        - control access channel
-        - send last message received on subscription channel
-
-### C++
-- fix C++ warnings (esp32 compilation)
+- lua: client-side
+- ws:  client-side connection
+- http: client and server side
