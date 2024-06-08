@@ -133,9 +133,11 @@ ducq_state  ducq_receive(ducq_i *ducq, char *msg, size_t *size) {
 
 		
 	// protocol
-	if(strncmp(msg, "ACK", 3) == 0 || strncmp(msg, "NACK", 4) == 0){
-		state = ducq_ack_to_state(msg);
-		return state <= DUCQ_PROTOCOL ? DUCQ_PROTOCOL : state;
+	if(strncmp(msg, "ACK", 3) == 0){
+		return DUCQ_PROTOCOL;
+	}
+	else if(strncmp(msg, "NACK", 4) == 0) {
+		return DUCQ_NACK;
 	}
 	else if(strncmp(msg, "PING", 4) == 0) {
 		msg[1] = 'O';
@@ -163,10 +165,17 @@ ducq_state ducq_listen(ducq_i *ducq, struct ducq_listen_ctx *ctx) {
 		size  = DUCQ_MSGSZ;
 		state = recv(ducq, msg, &size);
 
+		if(state >= DUCQ_ERROR) {
+			if(!ctx->on_error) continue;
+			if( ctx->on_error(ducq, state, ctx->ctx) )
+				break;
+			continue;
+		}
+
 		ducq_on_msg_f callback = 
 			state == DUCQ_OK       ? ctx->on_message  :
-			state == DUCQ_PROTOCOL ? ctx->on_protocol : ctx->on_error;
-	
+			state == DUCQ_PROTOCOL ? ctx->on_protocol :
+			state == DUCQ_NACK     ? ctx->on_nack     : NULL;
 		if(!callback) continue;
 		if( callback(ducq, msg, size, ctx->ctx) )
 			break;

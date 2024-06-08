@@ -69,9 +69,9 @@ void receive_ack(void **state) {
 void receive_nack(void **state) {
 	// arange
 	ducq_i *ducq = ducq_new_mock(NULL);
-	ducq_state expected_state = DUCQ_ECLOSE;
+	ducq_state expected_state = DUCQ_NACK;
 	char expected_msg[128] = "";
-	snprintf(expected_msg, 128, "NACK _\n%d",  expected_state);
+	snprintf(expected_msg, 128, "NACK _\n99");
 
 	// mock
 	strcpy(MOCK_CLIENT_RECV_BUFFER, expected_msg);

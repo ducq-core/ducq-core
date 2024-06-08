@@ -13,6 +13,8 @@
 
 #define _foreach_state(apply) \
 	apply(DUCQ_PROTOCOL,    "protocol-layer message (not an error)") \
+	apply(DUCQ_NACK,        "received NACK from server") \
+	apply(DUCQ_ERROR,       "error") \
 	apply(DUCQ_ENULL,       "null parameter") \
 	apply(DUCQ_ESTDC,       "std c lib error") \
 	apply(DUCQ_EMEMFAIL,    "os memory allocation failed") \
@@ -28,10 +30,10 @@
 	apply(DUCQ_EMSGSIZE,    "message too big") \
 	apply(DUCQ_ENOCMD,      "command unknown") \
 	apply(DUCQ_EACK,        "no ack received") \
-	apply(DUCQ_ENOTFOUND,	"connection not found") \
-	apply(DUCQ_ENOIMPL,	"not implemented yet") \
-	apply(DUCQ_EMAX,	"collection reached maximum count") \
-	apply(DUCQ_ELUA,	"lua error")
+	apply(DUCQ_ENOTFOUND,   "connection not found") \
+	apply(DUCQ_ENOIMPL,     "not implemented yet") \
+	apply(DUCQ_EMAX,        "collection reached maximum count") \
+	apply(DUCQ_ELUA,        "lua error")
 
 typedef enum ducq_state {
 	DUCQ_OK = 0,
@@ -66,14 +68,17 @@ void        ducq_free (ducq_i *ducq);
 // higher level
 typedef ducq_state (*ducq_apply_f)(void* ctx, ducq_i* ducq);
 typedef int (*ducq_on_msg_f)(ducq_i * ducq, char *payload, size_t size, void *ctx);
+typedef int (*ducq_on_err_f)(ducq_i * ducq, ducq_state state, void *ctx);
 struct ducq_listen_ctx {
 	ducq_on_msg_f on_message;
 	ducq_on_msg_f on_protocol;
-	ducq_on_msg_f on_error;
+	ducq_on_msg_f on_nack;
+	ducq_on_err_f on_error;
 	bool recv_raw;
 	void *ctx;
 };
 
+// emit a command
 ducq_state  ducq_emit(ducq_i *ducq, const char *command, const char *route, const char *payload, size_t payload_size);
 ducq_state ducq_send_ack(ducq_i *ducq, ducq_state state);
 ducq_state  ducq_receive(ducq_i *ducq, char *msg, size_t *size);

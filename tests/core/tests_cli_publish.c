@@ -107,7 +107,7 @@ void pub_nack_state_returned(void **state) {
 	ducq_i *ducq = ducq_new_mock(NULL);
 	char payload[] = "payload";
 	size_t size = sizeof(payload);
-	ducq_state expected_state = 22;
+	ducq_state expected_state = DUCQ_NACK;
 
 	// mock
 	char expected_message[] = "publish route\npayload";
