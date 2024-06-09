@@ -99,8 +99,8 @@ void list_commands_list_all_commands(void **state) {
 
 
 	// act
-	ducq_dispatcher_load_commands_path(dispatcher, "./commands");
-	ducq_dispatcher_add(dispatcher, "./commands");
+	ducq_dispatcher_load_commands_path(dispatcher, "./list_commands");
+	ducq_dispatcher_add(dispatcher, "./list_commands");
 
 	char request[] = "list_commands _\n";
 	size_t req_size = sizeof(request);

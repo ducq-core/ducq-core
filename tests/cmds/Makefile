@@ -16,6 +16,7 @@ cmd_test_objs= \
 	$(BUILDDIR)/commands/publish.so \
 	$(BUILDDIR)/commands/subscribe.so \
 	$(BUILDDIR)/commands/list_subscriptions.so \
+	$(BUILDDIR)/commands/unsubscribe.so \
 	${SRCDIR}/ducq.c \
 	${SRCDIR}/ducq_log.c \
 	${SRCDIR}/ducq_reactor.c \
@@ -28,6 +29,12 @@ cmd_test_objs= \
 tests_cmds: PREREQ  $(cmd_test_objs)
 	cp *.lua $(BUILDDIR)/commands/
 	$(CC) -o $(BUILDDIR)/$@ $(cmd_test_objs) $(HEADERS) -ldl -llua -lm -rdynamic $(LINK_TEST_LIB)
+	cd $(BUILDDIR)/commands/ && cp \
+		subscribe.so \
+		publish.so \
+		list_subscriptions.so \
+		lua_command.lua \
+		../list_commands
 	cd $(BUILDDIR) && valgrind ./$@
 
 
@@ -43,7 +50,8 @@ $(BUILDDIR)/commands/%.so: $(BUILDDIR)/commands/%.o
 
 .PHONY: PREREQ
 PREREQ:
-	mkdir -p build/commands
+	mkdir -p $(BUILDDIR)/commands
+	mkdir -p $(BUILDDIR)/list_commands
 
 .PHONY: clean
 clean:
