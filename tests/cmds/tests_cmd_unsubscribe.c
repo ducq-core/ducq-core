@@ -47,6 +47,12 @@ void unsubscribe_close_connection_and_remove_client(void **state) {
 	char buffer[] = "unsubscribe *\nto_unsub";
 	size_t size = sizeof(buffer);
 
+	char expected_msg[128];
+	snprintf(expected_msg, 128, "ACK *\n%d\n%s",
+		expected_state,
+		ducq_state_tostr(expected_state)
+	);
+
 	// mock
 	expect_string(mock_log, function_name, "unsubscribe");
 	expect_value(mock_log, level, DUCQ_LOG_INFO);
@@ -54,11 +60,13 @@ void unsubscribe_close_connection_and_remove_client(void **state) {
 	expect_value(_close, ducq, to_unsub);
 	will_return(_close, DUCQ_OK);
 
-	// act
-	ducq_state actual_state = unsubscribe(reactor, sender, buffer, size);
+	expect_value(_send, ducq, sender);
+	expect_string(_send, buf, expected_msg);
+	expect_value(_send, *count, strlen(expected_msg));
+	will_return(_send, DUCQ_OK);
 
-	//audit
-	assert_int_equal(expected_state, actual_state);
+	// act
+	unsubscribe(reactor, sender, buffer, size);
 
 	//teardown
 	expect_value(_close, ducq, sender);
@@ -85,15 +93,23 @@ void unsubscribe_client_not_found(void **state) {
 	char buffer[] = "unsubscribe *\nto_unsub";
 	size_t size = sizeof(buffer);
 
+	char expected_msg[128];
+	snprintf(expected_msg, 128, "NACK *\n%d\n%s",
+		expected_state,
+		ducq_state_tostr(expected_state)
+	);
+
 	// mock
 	expect_string(mock_log, function_name, "unsubscribe");
 	expect_value(mock_log, level, DUCQ_LOG_WARNING);
 
-	// act
-	ducq_state actual_state = unsubscribe(reactor, sender, buffer, size);
+	expect_value(_send, ducq, sender);
+	expect_string(_send, buf, expected_msg);
+	expect_value(_send, *count, strlen(expected_msg));
+	will_return(_send, DUCQ_OK);
 
-	//audit
-	assert_int_equal(expected_state, actual_state);
+	// act
+	unsubscribe(reactor, sender, buffer, size);
 
 	//teardown
 	expect_value(_close, ducq, sender);
@@ -122,15 +138,23 @@ void unsubscribe_no_payload(void **state) {
 	char buffer[] = "unsubscribe *";
 	size_t size = sizeof(buffer);
 
+	char expected_msg[128];
+	snprintf(expected_msg, 128, "NACK *\n%d\n%s",
+		expected_state,
+		ducq_state_tostr(expected_state)
+	);
+
 	// mock
 	expect_string(mock_log, function_name, "unsubscribe");
 	expect_value(mock_log, level, DUCQ_LOG_WARNING);
 
-	// act
-	ducq_state actual_state = unsubscribe(reactor, sender, buffer, size);
+	expect_value(_send, ducq, sender);
+	expect_string(_send, buf, expected_msg);
+	expect_value(_send, *count, strlen(expected_msg));
+	will_return(_send, DUCQ_OK);
 
-	//audit
-	assert_int_equal(expected_state, actual_state);
+	// act
+	unsubscribe(reactor, sender, buffer, size);
 
 	//teardown
 	expect_value(_close, ducq, sender);
@@ -160,15 +184,23 @@ void unsubscribe_empty_payload(void **state) {
 	char buffer[] = "unsubscribe *\n";
 	size_t size = sizeof(buffer);
 
+	char expected_msg[128];
+	snprintf(expected_msg, 128, "NACK *\n%d\n%s",
+		expected_state,
+		ducq_state_tostr(expected_state)
+	);
+
 	// mock
 	expect_string(mock_log, function_name, "unsubscribe");
 	expect_value(mock_log, level, DUCQ_LOG_WARNING);
 
-	// act
-	ducq_state actual_state = unsubscribe(reactor, sender, buffer, size);
+	expect_value(_send, ducq, sender);
+	expect_string(_send, buf, expected_msg);
+	expect_value(_send, *count, strlen(expected_msg));
+	will_return(_send, DUCQ_OK);
 
-	//audit
-	assert_int_equal(expected_state, actual_state);
+	// act
+	unsubscribe(reactor, sender, buffer, size);
 
 	//teardown
 	expect_value(_close, ducq, sender);

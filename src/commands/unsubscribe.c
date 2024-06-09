@@ -33,18 +33,18 @@ ducq_state unsubscribe(struct ducq_reactor *reactor, ducq_i *ducq, char *buffer,
 	if (unsub.id == NULL
 	|| (strcmp(unsub.id, "") == 0) ) {
 		ducq_log(WARNING, "%s,%d unsubscribed", unsub.id, unsub.count);
-		return DUCQ_EMSGINV;
+		return ducq_send_ack(ducq, DUCQ_EMSGINV);
 	}
 
 	ducq_reactor_loop(reactor, _unsubscribe, &unsub);
 
 	if(unsub.count <= 0 ) {
 		ducq_log(WARNING, "%s,%d unsubscribed", unsub.id, unsub.count);
-		return DUCQ_ENOTFOUND;
+		return ducq_send_ack(ducq, DUCQ_ENOTFOUND);
 	}
 
 	ducq_log(INFO, "%s,%d unsubscribed", unsub.id, unsub.count);
-	return DUCQ_OK;
+	return ducq_send_ack(ducq, DUCQ_OK);
 }
 
 
