@@ -25,4 +25,5 @@ install_commands:
 	$(CC) -g -fPIC -Wall ./src/commands/time.c -shared -o $(prefix)/lib/$(cmddir)/time.so
 	$(CC) -g -fPIC -Wall ./src/commands/epoch.c -shared -o $(prefix)/lib/$(cmddir)/epoch.so
 	$(CC) -g -fPIC -Wall ./src/commands/list_connections.c -shared -o $(prefix)/lib/$(cmddir)/list_connections.so
+	$(CC) -g -fPIC -Wall ./src/commands/unsubscribe.c -shared -o $(prefix)/lib/$(cmddir)/unsubscribe.so
 	sudo ldconfig
