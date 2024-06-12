@@ -15,7 +15,7 @@ LINK_TEST_LIB = -lcmocka
 cmd_test_objs= \
 	$(BUILDDIR)/commands/publish.so \
 	$(BUILDDIR)/commands/subscribe.so \
-	$(BUILDDIR)/commands/list_subscriptions.so \
+	$(BUILDDIR)/commands/list_connections.so \
 	$(BUILDDIR)/commands/unsubscribe.so \
 	${SRCDIR}/ducq.c \
 	${SRCDIR}/ducq_log.c \
@@ -32,7 +32,7 @@ tests_cmds: PREREQ  $(cmd_test_objs)
 	cd $(BUILDDIR)/commands/ && cp \
 		subscribe.so \
 		publish.so \
-		list_subscriptions.so \
+		list_connections.so \
 		lua_command.lua \
 		../list_commands
 	cd $(BUILDDIR) && valgrind ./$@

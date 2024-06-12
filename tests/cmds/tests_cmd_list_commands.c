@@ -44,7 +44,7 @@ int _check_function(const LargestIntegralType param, LargestIntegralType check_d
 		count->publish++;
 	else if( 0 == strcmp(ptr, "list_commands"))
 		count->list_commands++;
-	else if( 0 == strcmp(ptr, "list_subscriptions"))
+	else if( 0 == strcmp(ptr, "list_connections"))
 		count->list_subscriptions++;
 	else if( 0 == strcmp(ptr, "lua_command"))
 		count->lua_command++;

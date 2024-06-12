@@ -19,24 +19,24 @@
 
 
 #if DUCQ_MSGSZ != 256
-#error "expect DUCQ_MSGSZ == 256 for list_subscriptions tests"
+#error "expect DUCQ_MSGSZ == 256 for list_connections tests"
 #endif
 
 
 
-int list_subscriptions_tests_setup(void **state) {
-	*state = fix_new("list_subscriptions");
+int list_connections_tests_setup(void **state) {
+	*state = fix_new("list_connections");
 	return *state == NULL;
 }
-int list_subscriptions_tests_teardown(void **state) {
+int list_connections_tests_teardown(void **state) {
 	struct fixture *fix = *state;
 	return fix_free(fix);
 }
 
 
-void list_subscriptions_list_all_subscribers_id(void **state) {
+void list_connections_list_all_connections_id(void **state) {
 	//arrange
-	ducq_command_f list_subscriptions = get_command(state);
+	ducq_command_f list_connections = get_command(state);
 	
 
 	ducq_reactor *reactor = ducq_reactor_new();
@@ -55,29 +55,36 @@ void list_subscriptions_list_all_subscribers_id(void **state) {
 	ducq_i *emitter = ducq_new_mock("emitter");
 	ducq_reactor_add_client(reactor, 14, emitter);
 
-	char request[] = "list_subscriptions *\n";
+	char request[] = "list_connections *\n";
 	size_t req_size = sizeof(request);
 	
 	ducq_state expected_state = DUCQ_OK;
-	char expected_msg[] = 
-		"sub_id_1,route_1\n"
-		"sub_id_2,route_2\n"
-		"sub_id_3,route_3\n"
-		"emitter,\n"
-	;
+
+	// mock
+	expect_value(_parts, ducq, emitter);
+	will_return(_parts, DUCQ_OK);
+
+	expect_value_count(_send, ducq, emitter, 4);
+	expect_string(_send, buf,          "sub_id_1,route_1\n") ;
+	expect_value(_send, *count, strlen("sub_id_1,route_1\n"));
+	expect_string(_send, buf,          "sub_id_2,route_2\n") ;
+	expect_value(_send, *count, strlen("sub_id_2,route_2\n"));
+	expect_string(_send, buf,          "sub_id_3,route_3\n") ;
+	expect_value(_send, *count, strlen("sub_id_3,route_3\n"));
+	expect_string(_send, buf,          "emitter,\n") ;
+	expect_value(_send, *count, strlen("emitter,\n"));
+	will_return_always(_send, DUCQ_OK);
+
+	will_return(_end, DUCQ_OK);
+	expect_value(_end, ducq, emitter);
 
 
-	expect_value(_send, ducq, emitter);
-	expect_string(_send, buf, expected_msg);
-	expect_value(_send, *count, strlen(expected_msg));
-	will_return(_send, DUCQ_OK);
-
-	expect_string(mock_log, function_name, "list_subscriptions");
+	expect_string(mock_log, function_name, "list_connections");
 	expect_value(mock_log, level, DUCQ_LOG_INFO);
 
 
 	// act
-	ducq_state actual_state = list_subscriptions(reactor, emitter, request, req_size);
+	ducq_state actual_state = list_connections(reactor, emitter, request, req_size);
 
 	//audit
 	assert_int_equal(expected_state, actual_state);
@@ -88,9 +95,9 @@ void list_subscriptions_list_all_subscribers_id(void **state) {
 	ducq_reactor_free(reactor);
 }
 
-void list_subscriptions_list_all_non_subscribers(void **state) {
+void list_connections_list_all_non_subscribers(void **state) {
 	//arrange
-	ducq_command_f list_subscriptions = get_command(state);
+	ducq_command_f list_connections = get_command(state);
 	
 
 	ducq_reactor *reactor = ducq_reactor_new();
@@ -109,29 +116,36 @@ void list_subscriptions_list_all_non_subscribers(void **state) {
 	ducq_i *emitter = ducq_new_mock("emitter");
 	ducq_reactor_add_client(reactor, 14, emitter);
 
-	char request[] = "list_subscriptions *\n";
+	char request[] = "list_connections *\n";
 	size_t req_size = sizeof(request);
 	
 	ducq_state expected_state = DUCQ_OK;
-	char expected_msg[] = 
-		"sub_id_1,route_1\n"
-		"sub_id_2,\n"
-		"sub_id_3,route_3\n"
-		"emitter,\n"
-	;
+
+	// mock
+	expect_value(_parts, ducq, emitter);
+	will_return(_parts, DUCQ_OK);
+
+	expect_value_count(_send, ducq, emitter, 4);
+	expect_string(_send, buf,          "sub_id_1,route_1\n") ;
+	expect_value(_send, *count, strlen("sub_id_1,route_1\n"));
+	expect_string(_send, buf,          "sub_id_2,\n") ;
+	expect_value(_send, *count, strlen("sub_id_2,\n"));
+	expect_string(_send, buf,          "sub_id_3,route_3\n") ;
+	expect_value(_send, *count, strlen("sub_id_3,route_3\n"));
+	expect_string(_send, buf,          "emitter,\n") ;
+	expect_value(_send, *count, strlen("emitter,\n"));
+	will_return_always(_send, DUCQ_OK);
+
+	will_return(_end, DUCQ_OK);
+	expect_value(_end, ducq, emitter);
 
 
-	expect_value(_send, ducq, emitter);
-	expect_string(_send, buf, expected_msg);
-	expect_value(_send, *count, strlen(expected_msg));
-	will_return(_send, DUCQ_OK);
-
-	expect_string(mock_log, function_name, "list_subscriptions");
+	expect_string(mock_log, function_name, "list_connections");
 	expect_value(mock_log, level, DUCQ_LOG_INFO);
 
 
 	// act
-	ducq_state actual_state = list_subscriptions(reactor, emitter, request, req_size);
+	ducq_state actual_state = list_connections(reactor, emitter, request, req_size);
 
 	//audit
 	assert_int_equal(expected_state, actual_state);
