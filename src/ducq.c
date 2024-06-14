@@ -136,15 +136,21 @@ ducq_state  ducq_receive(ducq_i *ducq, char *msg, size_t *size) {
 	if(strncmp(msg, "ACK", 3) == 0){
 		return DUCQ_PROTOCOL;
 	}
-	else if(strncmp(msg, "NACK", 4) == 0) {
+	if(strncmp(msg, "PARTS", 5) == 0){
+		return DUCQ_PROTOCOL;
+	}
+	if(strncmp(msg, "END", 3) == 0){
+		return DUCQ_PROTOCOL;
+	}
+	if(strncmp(msg, "NACK", 4) == 0) {
 		return DUCQ_NACK;
 	}
-	else if(strncmp(msg, "PING", 4) == 0) {
+	if(strncmp(msg, "PING", 4) == 0) {
 		msg[1] = 'O';
 		DUCQ_CHECK( ducq_send(ducq, msg, size) );
 		return DUCQ_PROTOCOL;
 	}
-	else if(strncmp(msg, "PONG", 4) == 0) {
+	if(strncmp(msg, "PONG", 4) == 0) {
 		return DUCQ_PROTOCOL;
 	}
 

@@ -131,7 +131,7 @@ void listen_return_state(void **state) {
 
 //			M A N A G E D
 
-void listen_managed_call_on_protocol(void **state) {
+void listen_managed_call_on_protocol_PING(void **state) {
 	// arrange
 	ducq_i *ducq = (ducq_i*) *state;
 
@@ -148,6 +148,42 @@ void listen_managed_call_on_protocol(void **state) {
 	expect_any(_send, *count);
 	will_return(_send, DUCQ_OK);
 
+	will_return(on_proto, 1);
+
+	// act
+	ducq_listen(ducq, &ctx);
+}
+
+void listen_managed_call_on_protocol_PARTS(void **state) {
+	// arrange
+	ducq_i *ducq = (ducq_i*) *state;
+
+	char msg[] = "PARTS";
+	strcpy(MOCK_CLIENT_RECV_BUFFER, msg);
+	MOCK_CLIENT_RECV_BUFFER_LEN = strlen(msg);
+
+	ctx.recv_raw = false;
+
+	// mock
+	ignore_recv();
+	will_return(on_proto, 1);
+
+	// act
+	ducq_listen(ducq, &ctx);
+}
+
+void listen_managed_call_on_protocol_END(void **state) {
+	// arrange
+	ducq_i *ducq = (ducq_i*) *state;
+
+	char msg[] = "END";
+	strcpy(MOCK_CLIENT_RECV_BUFFER, msg);
+	MOCK_CLIENT_RECV_BUFFER_LEN = strlen(msg);
+
+	ctx.recv_raw = false;
+
+	// mock
+	ignore_recv();
 	will_return(on_proto, 1);
 
 	// act

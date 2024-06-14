@@ -7,7 +7,9 @@
 	apply(listen_pass_ctx_to_callback) \
 	apply(listen_pass_ctx_to_callback) \
 	apply(listen_return_state) \
-	apply(listen_managed_call_on_protocol) \
+	apply(listen_managed_call_on_protocol_PING) \
+	apply(listen_managed_call_on_protocol_PARTS) \
+	apply(listen_managed_call_on_protocol_END) \
 	apply(listen_managed_call_on_nack) \
 	apply(listen_managed_call_on_error) \
 	apply(listen_managed_error_on_sending_pong_call_on_error) \
