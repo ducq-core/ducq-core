@@ -10,6 +10,18 @@
 #define DUCQ_MSGSZ 256
 #endif
 
+#ifndef DUCQ_MAX_CONNECTIONS
+#define DUCQ_MAX_CONNECTIONS 25
+#endif
+
+#ifndef DUCQ_MAX_ROUTE_LEN
+#define DUCQ_MAX_ROUTE_LEN 100
+#endif
+
+#ifndef DUCQ_MAX_CHANNELS
+#define DUCQ_MAX_CHANNELS 5
+#endif
+
 
 #define _foreach_state(apply) \
 	apply(DUCQ_PROTOCOL,    "protocol-layer message (not an error)") \

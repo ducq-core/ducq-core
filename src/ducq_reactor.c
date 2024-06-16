@@ -11,13 +11,6 @@
 #include "ducq_reactor.h"
 #include "ducq_dispatcher.h"
 
-#ifndef DUCQ_MAX_CONNECTIONS
-#define DUCQ_MAX_CONNECTIONS 25
-#endif
-#ifndef DUCQ_MAX_ROUTE_LEN
-#define DUCQ_MAX_ROUTE_LEN 100
-#endif
-
 enum connection_type {
 	DUCQ_CONNECTION_CLIENT,
 	DUCQ_CONNECTION_SERVER
@@ -40,6 +33,11 @@ typedef struct connection_t {
 	} as;
 } connection_t;
 
+struct last_msg {
+	char route[DUCQ_MAX_ROUTE_LEN];
+	char msg[DUCQ_MSGSZ];
+};
+
 struct ducq_reactor {
 	connection_t connections[DUCQ_MAX_CONNECTIONS];
 
@@ -48,6 +46,8 @@ struct ducq_reactor {
 	bool allow_log_route;
 	void *logger;
 	ducq_log_f logfunc;
+
+	struct last_msg last_msgs[DUCQ_MAX_CHANNELS];
 };
 
 
@@ -83,6 +83,12 @@ ducq_reactor *ducq_reactor_new_with_log(void *logger, ducq_log_f logfunc) {
 	reactor->allow_log_route = true;
 	reactor->logger          = logger;
 	reactor->logfunc         = logfunc ? logfunc : _no_log;
+
+
+	for(int i = 0; i < DUCQ_MAX_CHANNELS; i++) {
+		reactor->last_msgs[i].route[0] = '\0';
+		reactor->last_msgs[i].msg[0]   = '\0';
+	}
 
 	// create dispatcher after values are set
 	reactor->dispatcher = ducq_dispatcher_new(reactor);
@@ -127,8 +133,33 @@ ducq_dispatcher *ducq_reactor_get_dispatcher(ducq_reactor * reactor) {
 	return reactor->dispatcher;
 }
 
+const char *ducq_get_last_msg(ducq_reactor *reactor, const char *route) {
+	for(int i = 0; i < DUCQ_MAX_CHANNELS; i++) {
+		struct last_msg *last = &reactor->last_msgs[i];
 
+		if (last->route[0] == '\0')
+			return "ACK";
+		if (strcmp(last->route, route) == 0)
+			return last->msg;
+	}
 
+	return "ACK\n_";
+}
+
+ducq_state ducq_set_last_msg(ducq_reactor *reactor, const char *route, const char *msg) {
+	for(int i = 0; i < DUCQ_MAX_CHANNELS; i++) {
+		struct last_msg *last = &reactor->last_msgs[i];
+
+		if (last->route[0] == '\0'
+		||  strcmp(last->route, route ) == 0) {
+			strncpy(last->route, route, DUCQ_MAX_ROUTE_LEN);
+			strncpy(last->msg,     msg, DUCQ_MSGSZ);
+			return DUCQ_OK;
+		}
+	}
+
+	return DUCQ_EMAX;
+}
 
 
 

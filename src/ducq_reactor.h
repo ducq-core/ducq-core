@@ -87,6 +87,7 @@ struct ducq_cmd_t {
 	ducq_command_f exec;
 };
 
-
+const char *ducq_get_last_msg(ducq_reactor *reactor, const char *route);
+ducq_state ducq_set_last_msg(ducq_reactor *reactor, const char *route, const char *msg);
 
 #endif // _DUCQ_REACTOR_HEADER_
