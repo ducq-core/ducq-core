@@ -28,7 +28,7 @@ cmd_test_objs= \
 .PHONY: test_cmds
 tests_cmds: PREREQ  $(cmd_test_objs)
 	cp *.lua $(BUILDDIR)/commands/
-	$(CC) -o $(BUILDDIR)/$@ $(cmd_test_objs) $(HEADERS) -ldl -llua -lm -rdynamic $(LINK_TEST_LIB)
+	$(CC) -o $(BUILDDIR)/$@ $(cmd_test_objs) $(HEADERS) -ldl -llua -lm -rdynamic $(LINK_TEST_LIB) -Wall
 	cd $(BUILDDIR)/commands/ && cp \
 		subscribe.so \
 		publish.so \

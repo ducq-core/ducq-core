@@ -52,4 +52,5 @@ int fix_free(struct fixture *fix) {
 int mock_log(void *ctx, enum ducq_log_level level, const char *function_name, const char *sender_id, const char *fmt, va_list args) {
 	check_expected(function_name);
 	check_expected(level);
+	return 0;
 }

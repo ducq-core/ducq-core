@@ -210,12 +210,12 @@ void subscribe_subscribe_inexistent_return_not_found(void **state) {
 	
 	expect_value(_send, ducq, connected);
 	expect_string(_send, buf, buffer_ok);
-	expect_any(_send, *count);
+	expect_value(_send, *count, size_ok-1);
 	will_return(_send, DUCQ_OK);
 
 	expect_value(_send, ducq, notconnected);
 	expect_string(_send, buf, buffer_error);
-	expect_any(_send, *count);
+	expect_value(_send, *count, size_error);
 	will_return(_send, DUCQ_OK);
 
 	
