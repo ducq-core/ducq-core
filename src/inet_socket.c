@@ -81,11 +81,16 @@ int inet_tcp_connect(const char *host, const char *service) {
 		.sin_family = AF_INET,
 		.sin_port   = htons(atoi(service)),
 	};
-	if(inet_pton(AF_INET, host, &addr.sin_addr) == -1)
+	if(inet_pton(AF_INET, host, &addr.sin_addr) == -1) {
+		inet_close(fd);
 		return -1;
+	}
 
-	if(connect(fd, (struct sockaddr*)&addr, sizeof(addr)) == -1)
+	if(connect(fd, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
+		inet_close(fd);
 		return -1;
+	}
+
 
 	return fd;
 }
