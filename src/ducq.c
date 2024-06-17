@@ -109,11 +109,15 @@ ducq_state ducq_emit(ducq_i *ducq, const char *command, const char *route, const
 
 ducq_state ducq_send_ack(ducq_i *ducq, ducq_state state) {
 	char msg[128];
-	size_t size = snprintf(msg, 128, "%s *\n%d\n%s",
-		state == DUCQ_OK ? "ACK" : "NACK",
-		state,
-		ducq_state_tostr(state)
-	);
+
+	size_t size = 0;
+	if (state == DUCQ_OK) {
+		size = 	snprintf(msg, 128, "ACK");
+	} else {
+		size = snprintf(msg, 128, "NACK *\n%d\n%s",
+			state, ducq_state_tostr(state) );
+	}
+
 	return ducq_send(ducq, msg, &size);
 }
 

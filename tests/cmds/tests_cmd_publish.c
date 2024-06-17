@@ -94,7 +94,7 @@ void publish_subscribers_has_ducq_send_called(void **state) {
 	ducq_reactor_subscribe(reactor, ducq3, "route");
 
 	expect_value(_send, ducq, publisher);
-	char ack_msg[] = "ACK *\n0\nok";
+	char ack_msg[] = "ACK";
 	expect_string(_send, buf, ack_msg);
 	expect_value(_send, *count, sizeof(ack_msg)-1);
 	will_return(_send, DUCQ_OK);
@@ -162,7 +162,7 @@ void publish_unsubcribe_sub_on_write_error(void **state) {
 
 
 	expect_value(_send, ducq, publisher);
-	char ack_msg[] = "ACK *\n0\nok";
+	char ack_msg[] = "ACK";
 	expect_string(_send, buf, ack_msg);
 	expect_value(_send, *count, sizeof(ack_msg)-1);
 	will_return(_send, DUCQ_OK);

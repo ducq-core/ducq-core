@@ -18,7 +18,7 @@
 
 void send_ack_ok(void **state) {
 	// arange
-	char expected_message[] = "ACK *\n0\nok";
+	char expected_message[] = "ACK";
 	ducq_i *ducq = ducq_new_mock(NULL);
 	ducq_state expected_state = DUCQ_OK;
 

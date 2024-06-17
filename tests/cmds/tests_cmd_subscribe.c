@@ -201,7 +201,7 @@ void subscribe_subscribe_inexistent_return_not_found(void **state) {
 	char msg[] = "subscribe ROUTE\npayload";
 	size_t size_msg = sizeof(msg);
 
-	char buffer_ok[] = "ACK *\n0\nok";
+	char buffer_ok[] = "ACK";
 	size_t size_ok = sizeof(buffer_ok);
 
 	char buffer_error[DUCQ_MSGSZ] = "";

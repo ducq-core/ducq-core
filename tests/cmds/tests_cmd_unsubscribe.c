@@ -31,8 +31,6 @@ void unsubscribe_close_connection_and_remove_client(void **state) {
 	//arrange
 	ducq_command_f unsubscribe = get_command(state);
 	
-	ducq_state expected_state = DUCQ_OK;
-
 	ducq_reactor *reactor = ducq_reactor_new();
 	ducq_reactor_set_log(reactor, NULL, mock_log);
 
@@ -48,10 +46,7 @@ void unsubscribe_close_connection_and_remove_client(void **state) {
 	size_t size = sizeof(buffer);
 
 	char expected_msg[128];
-	snprintf(expected_msg, 128, "ACK *\n%d\n%s",
-		expected_state,
-		ducq_state_tostr(expected_state)
-	);
+	snprintf(expected_msg, 128, "ACK");
 
 	// mock
 	expect_string(mock_log, function_name, "unsubscribe");
