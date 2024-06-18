@@ -81,8 +81,19 @@ int pub_sub_last_msg_group_teardown(void **state) {
 
 
 
-void pub_sub_last_msg_send_ack_no_payload(void **state) {
+void pub_sub_last_msg_send_ack_if_not_requested(void **state) {
 	fix_t *fix = *state;
+
+	expect_value(_send, ducq, fix->pub_client);
+	expect_string(_send, buf, ack_res);
+	expect_value(_send, *count, ack_len);
+	will_return(_send, DUCQ_OK);
+
+	char pub_cmd[] = "publish route\nlast_message";
+	size_t pub_len = strlen(pub_cmd);
+
+	fix->pub->command(fix->reactor, fix->pub_client, pub_cmd, pub_len);
+
 
 	expect_value(_send, ducq, fix->sub_client);
 	expect_string(_send, buf, ack_res);
@@ -108,7 +119,7 @@ void pub_sub_last_msg_send_last_if_requested(void **state) {
 	fix->pub->command(fix->reactor, fix->pub_client, pub_cmd, pub_len);
 
 
-	
+
 	char sub_cmd[] = "subscribe route\nlast";
 	size_t sub_len = strlen(sub_cmd);
 	

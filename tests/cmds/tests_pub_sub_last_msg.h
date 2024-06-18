@@ -11,7 +11,7 @@ int pub_sub_last_msg_group_teardown(void **state);
 
 
 #define foreach_pub_sub_last_msg_tests(apply) \
-	apply(pub_sub_last_msg_send_ack_no_payload) \
+	apply(pub_sub_last_msg_send_ack_if_not_requested) \
 	apply(pub_sub_last_msg_send_last_if_requested) \
 	apply(pub_sub_last_msg_send_last_of_route) \
 	apply(pub_sub_last_msg_ignore_wildcards)

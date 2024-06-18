@@ -1,3 +1,4 @@
+#include <ducq.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -8,6 +9,7 @@
 
 #include <stdio.h>
 ducq_state subscribe(struct ducq_reactor *reactor, ducq_i *ducq, char *buffer, size_t size) {
+	const char *payload = ducq_parse_payload(buffer);
 	char *end = NULL;
 	const char *route = ducq_parse_route(buffer, (const char**) &end);
 	if(route == NULL) {
@@ -22,12 +24,16 @@ ducq_state subscribe(struct ducq_reactor *reactor, ducq_i *ducq, char *buffer, s
 
 
 	ducq_state ack_state = DUCQ_OK;
-	if(add_state) {
+	if(add_state != DUCQ_OK) {
 		ack_state = ducq_send_ack(ducq, add_state);
-	} else {
+	}
+	else if(payload && (strcmp(payload, "last") == 0) ) {
 		const char *last = ducq_get_last_msg(reactor, route);
 		size_t len = strlen(last);
 		ack_state = ducq_send(ducq, last, &len);
+	}
+	else {
+		ack_state = ducq_send_ack(ducq, DUCQ_OK);
 	}
 
 	if(ack_state) {
@@ -44,6 +50,9 @@ ducq_state subscribe(struct ducq_reactor *reactor, ducq_i *ducq, char *buffer, s
 
 struct ducq_cmd_t command = {
 	.name = "subscribe",
-	.doc  = "subscribe to a message queue.",
+	.doc  =
+		"subscribe to a message queue. "
+		"send 'last' as payload to received last published message "
+		"on this route (if any).",
 	.exec =  subscribe
 };
