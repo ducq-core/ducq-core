@@ -136,6 +136,8 @@ ducq_i *ducq_new_mock(const char *id) {
 	else
 		snprintf(cli->id, MAX_ID, "%d", next_id++);
 
+	cli->id[MAX_ID] = '\0';
+
 	return (ducq_i *) cli;
 }
 

@@ -41,7 +41,10 @@ ducq_state publish(struct ducq_reactor *reactor, ducq_i *ducq, char *buffer, siz
 		! route                                   ? DUCQ_EMSGINV  :
 		! (msg.route = strndup(route, end-route)) ? DUCQ_EMEMFAIL : DUCQ_OK;
 
-		
+	if (route_state == DUCQ_OK) {
+		ducq_set_last_msg(reactor, msg.route, buffer);
+	}
+
 	ducq_state ack_state = ducq_send_ack(ducq, route_state);
 
 	ducq_state returned_state = route_state ? route_state : ack_state;
