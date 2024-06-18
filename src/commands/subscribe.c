@@ -20,10 +20,16 @@ ducq_state subscribe(struct ducq_reactor *reactor, ducq_i *ducq, char *buffer, s
 	ducq_state add_state = ducq_reactor_subscribe(reactor, ducq, route);
 	if(add_state) ducq_log(ERROR, "%s", ducq_state_tostr(add_state));
 
-	const char *last = ducq_get_last_msg(reactor, route);
-	size_t len = strlen(last);
 
-	ducq_state ack_state = ducq_send(ducq, last, &len);
+	ducq_state ack_state = DUCQ_OK;
+	if(add_state) {
+		ack_state = ducq_send_ack(ducq, add_state);
+	} else {
+		const char *last = ducq_get_last_msg(reactor, route);
+		size_t len = strlen(last);
+		ack_state = ducq_send(ducq, last, &len);
+	}
+
 	if(ack_state) {
 		ducq_log(WARNING, "%s", ducq_state_tostr(ack_state));
 		ducq_reactor_delete(reactor, ducq);
