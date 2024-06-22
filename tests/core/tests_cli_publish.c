@@ -21,7 +21,7 @@ void pub_ok(void **state) {
 	ducq_state expected_state = DUCQ_OK;
 
 	// mock
-	char expected_message[] = "publish route\npayload";
+	char expected_message[] = "pub route\npayload";
 	expect_value (_send, ducq, ducq);
 	expect_string(_send, buf, expected_message);
 	expect_value (_send, *count, strlen(expected_message));
@@ -35,7 +35,7 @@ void pub_ok(void **state) {
 	will_return (_recv, DUCQ_OK);
 
 	// act
-	ducq_state actual_state = ducq_publish(ducq, "route", payload, size);
+	ducq_state actual_state = ducq_pub(ducq, "route", payload, size);
 
 	// audit
 	assert_int_equal(expected_state, actual_state);
@@ -53,14 +53,14 @@ void pub_send_error(void **state) {
 	ducq_state expected_state = DUCQ_ECLOSE;
 
 	// mock
-	char expected_message[] = "publish route\npayload";
+	char expected_message[] = "pub route\npayload";
 	expect_value (_send, ducq, ducq);
 	expect_string(_send, buf, expected_message);
 	expect_value (_send, *count, strlen(expected_message));
 	will_return  (_send, DUCQ_ECLOSE);
 
 	// act
-	ducq_state actual_state = ducq_publish(ducq, "route", payload, size);
+	ducq_state actual_state = ducq_pub(ducq, "route", payload, size);
 
 	// audit
 	assert_int_equal(expected_state, actual_state);
@@ -79,7 +79,7 @@ void pub_recv_error(void **state) {
 	ducq_state expected_state = DUCQ_ECLOSE;
 
 	// mock
-	char expected_message[] = "publish route\npayload";
+	char expected_message[] = "pub route\npayload";
 	expect_value (_send, ducq, ducq);
 	expect_string(_send, buf, expected_message);
 	expect_value (_send, *count, strlen(expected_message));
@@ -93,7 +93,7 @@ void pub_recv_error(void **state) {
 	will_return (_recv, DUCQ_ECLOSE);
 
 	// act
-	ducq_state actual_state = ducq_publish(ducq, "route", payload, size);
+	ducq_state actual_state = ducq_pub(ducq, "route", payload, size);
 
 	// audit
 	assert_int_equal(expected_state, actual_state);
@@ -110,7 +110,7 @@ void pub_nack_state_returned(void **state) {
 	ducq_state expected_state = DUCQ_NACK;
 
 	// mock
-	char expected_message[] = "publish route\npayload";
+	char expected_message[] = "pub route\npayload";
 	expect_value (_send, ducq, ducq);
 	expect_string(_send, buf, expected_message);
 	expect_value (_send, *count, strlen(expected_message));
@@ -125,7 +125,7 @@ void pub_nack_state_returned(void **state) {
 	will_return (_recv, DUCQ_OK);
 
 	// act
-	ducq_state actual_state = ducq_publish(ducq, "route", payload, size);
+	ducq_state actual_state = ducq_pub(ducq, "route", payload, size);
 
 	// audit
 	assert_int_equal(expected_state, actual_state);
