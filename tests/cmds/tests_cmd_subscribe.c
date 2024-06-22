@@ -17,7 +17,7 @@
 
 
 int subscribe_tests_setup(void **state) {
-	*state = fix_new("subscribe");
+	*state = fix_new("sub");
 	return *state == NULL;
 }
 int subscribe_tests_teardown(void **state) {
@@ -60,7 +60,7 @@ void subscribe_msg_invalide_if_cant_parse_route(void **state) {
 	ducq_reactor_set_log(reactor, NULL, mock_log);
 
 	ducq_i *subscriber = ducq_new_mock(NULL);
-	char buffer[] = "subscriberoute\npayload";
+	char buffer[] = "subroute\npayload";
 	size_t size = sizeof(buffer);
 
 	char expected_msg[64] = "";
@@ -70,7 +70,7 @@ void subscribe_msg_invalide_if_cant_parse_route(void **state) {
 	expect_value(_send, *count, count);
 	will_return(_send, DUCQ_OK);
 
-	expect_string(mock_log, function_name, "subscribe");
+	expect_string(mock_log, function_name, "sub");
 	expect_value(mock_log, level, DUCQ_LOG_WARNING);
 
 	// act
@@ -95,7 +95,7 @@ void subscribe_add_subscriber_to_reactor_subs(void **state) {
 	ducq_i *subscriber = ducq_new_mock(expected_id);
 	ducq_reactor_add_client(reactor, 10, subscriber);
 
-	char buffer[] = "subscribe ROUTE\npayload";
+	char buffer[] = "sub ROUTE\npayload";
 	size_t size = sizeof(buffer);
 
 
@@ -143,7 +143,7 @@ void subscribe_add_second_subscriber_to_reactor_subs(void **state) {
 	ducq_reactor_add_client(reactor, 10, subscriber1);
 	ducq_reactor_add_client(reactor, 20, subscriber2);
 
-	char buffer[] = "subscribe ROUTE\npayload";
+	char buffer[] = "sub ROUTE\npayload";
 	size_t size = sizeof(buffer);
 
 	expect_value(_send, ducq, subscriber1);
@@ -198,7 +198,7 @@ void subscribe_subscribe_inexistent_return_not_found(void **state) {
 	ducq_i *connected    = ducq_new_mock(expected_id1);
 	ducq_i *notconnected = ducq_new_mock(expected_id2);
 	ducq_reactor_add_client(reactor, 10, connected);
-	char msg[] = "subscribe ROUTE\npayload";
+	char msg[] = "sub ROUTE\npayload";
 	size_t size_msg = sizeof(msg);
 
 	char buffer_ok[] = "ACK";
@@ -260,7 +260,7 @@ void subscribe_send_ack_fail_cleans_up(void **state) {
 	ducq_i *subscriber = ducq_new_mock(NULL);
 	ducq_reactor_add_client(reactor, 10, subscriber);
 
-	char buffer[] = "subscribe ROUTE\npayload";
+	char buffer[] = "sub ROUTE\npayload";
 	size_t size = sizeof(buffer);
 
 	
@@ -269,7 +269,7 @@ void subscribe_send_ack_fail_cleans_up(void **state) {
 	expect_any(_send, *count);
 	will_return(_send, DUCQ_EWRITE);
 
-	expect_string(mock_log, function_name, "subscribe");
+	expect_string(mock_log, function_name, "sub");
 	expect_value(mock_log, level, DUCQ_LOG_WARNING);
 
 

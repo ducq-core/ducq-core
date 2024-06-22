@@ -5,10 +5,10 @@
 
 struct fixture {
 	void *handle;
-	ducq_command_f command;
+	struct ducq_cmd_t *command;
 };
 
-#define get_command(state) ((struct fixture*)*state)->command
+#define get_command(state) ((struct fixture*)*state)->command->exec
 
 struct fixture * fix_new(const char *cmd_name);
 int fix_free(struct fixture *fix);

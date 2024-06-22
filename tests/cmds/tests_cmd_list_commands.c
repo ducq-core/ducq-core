@@ -38,13 +38,13 @@ int _check_function(const LargestIntegralType param, LargestIntegralType check_d
 	char *ptr = strtok(reply, "\",");
 	if(!ptr) fail();
 
-	     if( 0 == strcmp(ptr, "subscribe"))
+	     if( 0 == strcmp(ptr, "sub"))
 		count->subscribe++;
-	else if( 0 == strcmp(ptr, "publish"))
+	else if( 0 == strcmp(ptr, "pub"))
 		count->publish++;
-	else if( 0 == strcmp(ptr, "list_commands"))
+	else if( 0 == strcmp(ptr, "lscmd"))
 		count->list_commands++;
-	else if( 0 == strcmp(ptr, "list_connections"))
+	else if( 0 == strcmp(ptr, "lsconn"))
 		count->list_subscriptions++;
 	else if( 0 == strcmp(ptr, "lua_command"))
 		count->lua_command++;
@@ -55,7 +55,7 @@ int _check_log(const LargestIntegralType param, LargestIntegralType check_data) 
 	char *name = (char*) param;
 	int *count = (int *) check_data;
 
-	if( 0 == strcmp(name, "list_commands"))
+	if( 0 == strcmp(name, "lscmd"))
 		(*count)++;
 	else
 		expect_check(mock_log, function_name, _check_log, count);
@@ -102,7 +102,7 @@ void list_commands_list_all_commands(void **state) {
 	ducq_dispatcher_load_commands_path(dispatcher, "./list_commands");
 	ducq_dispatcher_add(dispatcher, "./list_commands");
 
-	char request[] = "list_commands _\n";
+	char request[] = "lscmd _\n";
 	size_t req_size = sizeof(request);
 	ducq_state actual_state = ducq_dispatch(dispatcher, emitter, request, req_size);
 

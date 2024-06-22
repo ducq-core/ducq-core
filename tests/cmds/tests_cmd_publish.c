@@ -17,7 +17,7 @@
 
 
 int publish_tests_setup(void **state) {
-	*state = fix_new("publish");
+	*state = fix_new("pub");
 	return *state == NULL;
 }
 int publish_tests_teardown(void **state) {
@@ -41,7 +41,7 @@ void publish_send_msg_invalid_and_disconnect_if_cant_parse_route(void **state) {
 	ducq_i *publisher = ducq_new_mock(NULL);
 	ducq_reactor_add_client(reactor, 10, publisher);
 
-	char buffer[] = "publishroute\npayload";
+	char buffer[] = "pubroute\npayload";
 	size_t size = sizeof(buffer);
 	char expected_msg[128];
 	snprintf(expected_msg, 128, "NACK *\n%d\n%s",
@@ -53,7 +53,7 @@ void publish_send_msg_invalid_and_disconnect_if_cant_parse_route(void **state) {
 	expect_value(_send, *count, strlen(expected_msg));
 	will_return(_send, DUCQ_OK);
 
-	expect_string(mock_log, function_name, "publish");
+	expect_string(mock_log, function_name, "pub");
 	expect_value(mock_log, level, DUCQ_LOG_WARNING);
 
 	expect_value(_close, ducq, publisher);
@@ -79,7 +79,7 @@ void publish_subscribers_has_ducq_send_called(void **state) {
 	ducq_reactor_set_log(reactor, NULL, mock_log);
 
 	ducq_i *publisher = ducq_new_mock(NULL);
-	char buffer[] = "publish route\npayload";
+	char buffer[] = "pub route\npayload";
 	size_t size = sizeof(buffer);
 
 
@@ -105,9 +105,9 @@ void publish_subscribers_has_ducq_send_called(void **state) {
 	expect_value_count(_send, *count, sizeof(buffer), 2);
 	will_return_count(_send, DUCQ_OK, 2);
 	
-	expect_string(mock_log, function_name, "publish"); // error
+	expect_string(mock_log, function_name, "pub"); // error
 	expect_value(mock_log, level, DUCQ_LOG_INFO);
-	expect_string(mock_log, function_name, "publish"); // subscriber count
+	expect_string(mock_log, function_name, "pub"); // subscriber count
 	expect_value(mock_log, level, DUCQ_LOG_INFO);
 
 
@@ -147,7 +147,7 @@ void publish_unsubcribe_sub_on_write_error(void **state) {
 
 	ducq_reactor *reactor = ducq_reactor_new();
 	ducq_i *publisher = ducq_new_mock(NULL);
-	char buffer[] = "publish route\npayload";
+	char buffer[] = "pub route\npayload";
 	size_t size = strlen(buffer);
 
 	ducq_i *ducq1 =  ducq_new_mock("A");

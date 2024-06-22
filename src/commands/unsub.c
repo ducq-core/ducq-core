@@ -24,7 +24,7 @@ ducq_loop_t _unsubscribe(ducq_i *ducq, char *route, void *ctx) {
 }
 
 
-ducq_state unsubscribe(struct ducq_reactor *reactor, ducq_i *ducq, char *buffer, size_t size) {
+ducq_state unsub(struct ducq_reactor *reactor, ducq_i *ducq, char *buffer, size_t size) {
 	struct unsub_ctx unsub = {
 		.id    = ducq_parse_payload(buffer),
 		.count = 0
@@ -50,7 +50,7 @@ ducq_state unsubscribe(struct ducq_reactor *reactor, ducq_i *ducq, char *buffer,
 
 
 struct ducq_cmd_t command = {
-	.name = "unsubscribe",
+	.name = "unsub",
 	.doc  =	"close a client's connection. set payload as id to unsubscribe.",
-	.exec = unsubscribe
+	.exec = unsub
 };

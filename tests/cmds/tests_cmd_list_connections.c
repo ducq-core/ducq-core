@@ -25,7 +25,7 @@
 
 
 int list_connections_tests_setup(void **state) {
-	*state = fix_new("list_connections");
+	*state = fix_new("lsconn");
 	return *state == NULL;
 }
 int list_connections_tests_teardown(void **state) {
@@ -55,7 +55,7 @@ void list_connections_list_all_connections_id(void **state) {
 	ducq_i *emitter = ducq_new_mock("emitter");
 	ducq_reactor_add_client(reactor, 14, emitter);
 
-	char request[] = "list_connections *\n";
+	char request[] = "lsconn *\n";
 	size_t req_size = sizeof(request);
 	
 	ducq_state expected_state = DUCQ_OK;
@@ -79,7 +79,7 @@ void list_connections_list_all_connections_id(void **state) {
 	expect_value(_end, ducq, emitter);
 
 
-	expect_string(mock_log, function_name, "list_connections");
+	expect_string(mock_log, function_name, "lsconn");
 	expect_value(mock_log, level, DUCQ_LOG_INFO);
 
 
@@ -116,7 +116,7 @@ void list_connections_list_all_non_subscribers(void **state) {
 	ducq_i *emitter = ducq_new_mock("emitter");
 	ducq_reactor_add_client(reactor, 14, emitter);
 
-	char request[] = "list_connections *\n";
+	char request[] = "lsconn *\n";
 	size_t req_size = sizeof(request);
 	
 	ducq_state expected_state = DUCQ_OK;
@@ -140,7 +140,7 @@ void list_connections_list_all_non_subscribers(void **state) {
 	expect_value(_end, ducq, emitter);
 
 
-	expect_string(mock_log, function_name, "list_connections");
+	expect_string(mock_log, function_name, "lsconn");
 	expect_value(mock_log, level, DUCQ_LOG_INFO);
 
 

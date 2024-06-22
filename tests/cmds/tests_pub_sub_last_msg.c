@@ -26,17 +26,20 @@ typedef struct {
 	ducq_i *pub_client;
 } fix_t;
 
+#define get_pub(fix) get_command(&fix->pub)
+#define get_sub(fix) get_command(&fix->sub)
+
 int pub_sub_last_msg_group_setup(void **state) {
 	fix_t *fix = malloc(sizeof(fix_t));
 	if (!fix) return -1;
 
-	fix->pub = fix_new("publish");
+	fix->pub = fix_new("pub");
 	if (!fix->pub) {
 		free(fix);
 		return -1;
 	}	
 
-	fix->sub = fix_new("subscribe");
+	fix->sub = fix_new("sub");
 	if (!fix->sub) {
 		fix_free(fix->pub);
 		free(fix);
@@ -92,7 +95,7 @@ void pub_sub_last_msg_send_ack_if_not_requested(void **state) {
 	char pub_cmd[] = "publish route\nlast_message";
 	size_t pub_len = strlen(pub_cmd);
 
-	fix->pub->command(fix->reactor, fix->pub_client, pub_cmd, pub_len);
+	get_pub(fix)(fix->reactor, fix->pub_client, pub_cmd, pub_len);
 
 
 	expect_value(_send, ducq, fix->sub_client);
@@ -102,7 +105,7 @@ void pub_sub_last_msg_send_ack_if_not_requested(void **state) {
 
 	char sub_cmd[] = "subscribe route\n";
 	size_t sub_len = strlen(sub_cmd);
-	fix->sub->command(fix->reactor, fix->sub_client, sub_cmd, sub_len);
+	get_sub(fix)(fix->reactor, fix->sub_client, sub_cmd, sub_len);
 }
 
 void pub_sub_last_msg_send_last_if_requested(void **state) {
@@ -116,7 +119,7 @@ void pub_sub_last_msg_send_last_if_requested(void **state) {
 	char pub_cmd[] = "publish route\nlast_message";
 	size_t pub_len = strlen(pub_cmd);
 
-	fix->pub->command(fix->reactor, fix->pub_client, pub_cmd, pub_len);
+	get_pub(fix)(fix->reactor, fix->pub_client, pub_cmd, pub_len);
 
 
 
@@ -128,7 +131,7 @@ void pub_sub_last_msg_send_last_if_requested(void **state) {
 	expect_value(_send, *count, pub_len);
 	will_return(_send, DUCQ_OK);
 
-	fix->sub->command(fix->reactor, fix->sub_client, sub_cmd, sub_len);
+	get_sub(fix)(fix->reactor, fix->sub_client, sub_cmd, sub_len);
 }
 
 void pub_sub_last_msg_send_last_of_route(void **state) {
@@ -142,19 +145,19 @@ void pub_sub_last_msg_send_last_of_route(void **state) {
 
 	char pub_cmd1[] = "publish route/1\na first message";
 	size_t pub_len1 = strlen(pub_cmd1);
-	fix->pub->command(fix->reactor, fix->pub_client, pub_cmd1, pub_len1);
+	get_pub(fix)(fix->reactor, fix->pub_client, pub_cmd1, pub_len1);
 
 	char pub_cmd2[] = "publish requested/route\nfirst message";
 	size_t pub_len2 = strlen(pub_cmd2);
-	fix->pub->command(fix->reactor, fix->pub_client, pub_cmd2, pub_len2);
+	get_pub(fix)(fix->reactor, fix->pub_client, pub_cmd2, pub_len2);
 
 	char pub_cmd3[] = "publish requested/route\nexpected_message";
 	size_t pub_len3 = strlen(pub_cmd3);
-	fix->pub->command(fix->reactor, fix->pub_client, pub_cmd3, pub_len3);
+	get_pub(fix)(fix->reactor, fix->pub_client, pub_cmd3, pub_len3);
 
 	char pub_cmd4[] = "publish route/2\nanother message";
 	size_t pub_len4 = strlen(pub_cmd4);
-	fix->pub->command(fix->reactor, fix->pub_client, pub_cmd4, pub_len4);
+	get_pub(fix)(fix->reactor, fix->pub_client, pub_cmd4, pub_len4);
 
 	
 
@@ -166,7 +169,7 @@ void pub_sub_last_msg_send_last_of_route(void **state) {
 	expect_value(_send, *count, pub_len3);
 	will_return(_send, DUCQ_OK);
 
-	fix->sub->command(fix->reactor, fix->sub_client, sub_cmd, sub_len);
+	get_sub(fix)(fix->reactor, fix->sub_client, sub_cmd, sub_len);
 }
 
 void pub_sub_last_msg_ignore_wildcards(void **state) {
@@ -181,7 +184,7 @@ void pub_sub_last_msg_ignore_wildcards(void **state) {
 	char pub_cmd[] = "publish route\nlast_message";
 	size_t pub_len = strlen(pub_cmd);
 
-	fix->pub->command(fix->reactor, fix->pub_client, pub_cmd, pub_len);
+	get_pub(fix)(fix->reactor, fix->pub_client, pub_cmd, pub_len);
 
 	
 	char sub_cmd[] = "subscribe route/*\nlast";
@@ -192,5 +195,5 @@ void pub_sub_last_msg_ignore_wildcards(void **state) {
 	expect_value(_send, *count, ack_len);
 	will_return(_send, DUCQ_OK);
 
-	fix->sub->command(fix->reactor, fix->sub_client, sub_cmd, sub_len);
+	get_sub(fix)(fix->reactor, fix->sub_client, sub_cmd, sub_len);
 }

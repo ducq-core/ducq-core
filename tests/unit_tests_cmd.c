@@ -27,7 +27,9 @@ struct fixture * fix_new(const char *cmd_name) {
 		return NULL;
 	}
 
-	fix->command = dlsym(fix->handle, cmd_name);
+
+
+	fix->command = dlsym(fix->handle, "command");
 	char *err = dlerror();
 	if(!fix->command  || err) {
 		fprintf(stderr, "dlsym failed: %s\n", err);

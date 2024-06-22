@@ -31,7 +31,7 @@ ducq_state _list_connections(ducq_reactor *reactor, ducq_i *ducq) {
 	return DUCQ_OK;
 }
 
-ducq_state list_connections(struct ducq_reactor *reactor, ducq_i *ducq, char *message, size_t size) {
+ducq_state lsconn(struct ducq_reactor *reactor, ducq_i *ducq, char *message, size_t size) {
 	(void) message;
 	(void) size;
 
@@ -47,7 +47,7 @@ ducq_state list_connections(struct ducq_reactor *reactor, ducq_i *ducq, char *me
 
 
 struct ducq_cmd_t command = {
-	.name = "list_connections",
+	.name = "lsconn",
 	.doc  = "list all current connections as csv: <id>,<route>\\n.",
-	.exec =  list_connections
+	.exec =  lsconn
 };

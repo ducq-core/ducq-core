@@ -377,7 +377,7 @@ ducq_state lua_command(ducq_reactor *reactor, ducq_i *ducq, char *buffer, size_t
 	return state;
 }
 
-ducq_state list_commands(ducq_reactor *reactor, ducq_i *ducq, char *_buffer, size_t _size) {
+ducq_state lscmd(ducq_reactor *reactor, ducq_i *ducq, char *_buffer, size_t _size) {
 	(void) _buffer;
 	(void) _size;
 	ducq_log(INFO, "");
@@ -387,7 +387,7 @@ ducq_state list_commands(ducq_reactor *reactor, ducq_i *ducq, char *_buffer, siz
 	ducq_parts(ducq);
 
 	char payload[DUCQ_MSGSZ] =
-		"\"list_commands\",\"list all loaded commands as csv: <name>,<doc>\"\n";
+		"\"lscmd\",\"list all loaded commands as csv: <name>,<doc>\"\n";
 	size_t size = strlen(payload);
 	DUCQ_CHECK( ducq_send(ducq, payload, &size) );
 
@@ -437,8 +437,8 @@ ducq_command_f _find_command(ducq_dispatcher *dispatcher, const char *msg) {
 	if (!name) return unknown;
 	*end = '\0';
 
-	if(strcmp(name, "list_commands") == 0 || strcmp(name, "help") == 0)
-		return list_commands;
+	if(strcmp(name, "lscmd") == 0 || strcmp(name, "help") == 0)
+		return lscmd;
 
 	ducq_command_f command = unknown;
 	for(int i = 0; i < dispatcher->ncmd ; i++) {
