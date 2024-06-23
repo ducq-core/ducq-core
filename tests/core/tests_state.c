@@ -63,7 +63,7 @@ void state_negative_return_msg(void **state) {
 
 void state_out_of_range_return_unknown(void **state) {
 	// arrange
-	const char *expected = "unknown";
+	const char *expected = "unknown error";
 	int out_of_range = 999;
 	// act
 	const char *actual = ducq_state_tostr(out_of_range);
@@ -75,7 +75,7 @@ void state_out_of_range_return_unknown(void **state) {
 
 void state_negative_out_of_range_return_unknown(void **state) {
 	// arrange
-	const char *expected = "unknown";
+	const char *expected = "unknown error";
 	int out_of_range = -999;
 
 	// act
@@ -84,3 +84,28 @@ void state_negative_out_of_range_return_unknown(void **state) {
 	// audit
 	assert_string_equal(expected, actual);
 }
+
+void state_short_version(void **state) {
+	// arrange
+	const char *expected = "EMSGINV";
+	ducq_state error = DUCQ_EMSGINV;
+
+	// act
+	const char *actual = ducq_state_short(error);
+
+	// audit
+	assert_string_equal(expected, actual);
+}
+
+void state_unknown_short_version(void **state) {
+	// arrange
+	const char *expected = "UNKNOWN";
+	ducq_state error = -999;
+
+	// act
+	const char *actual = ducq_state_short(error);
+
+	// audit
+	assert_string_equal(expected, actual);
+}
+

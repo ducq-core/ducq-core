@@ -11,25 +11,38 @@
 
 
 static
-const char *state_str[] = {
-	"ok",
-	#define list_msg(_, str) str,
+const char *state_str[][2] = {
+	{"ok", "ok"},
+
+	#define list_msg(code, str) {#code, str},
 	_foreach_state(list_msg)
 	#undef list_msg
-
-	"unknown"
 };
 
-const char *ducq_state_tostr(int state) {
+static
+ducq_state _sanitize_state(int state) {
 	if(state < 0)
 		 state = -state;
 
-	static const int last = (sizeof(state_str) / sizeof(char*)) - 1;
+	static const int last = (sizeof(state_str) / sizeof(char*) / 2) - 1;
 	if(state > last)
 		 state = last;
-	
-	return state_str[state];
+
+	return state;
 };
+
+const char *ducq_state_tostr(int state) {
+	state = _sanitize_state(state);
+	return state_str[state][1];
+};
+
+const char *ducq_state_short(int state) {
+	state = _sanitize_state(state);
+	const char *ptr = state_str[state][0];
+	ptr += 5;
+	return ptr;
+};
+
 
 
 

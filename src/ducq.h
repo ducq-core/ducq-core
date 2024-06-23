@@ -45,7 +45,8 @@
 	apply(DUCQ_ENOTFOUND,   "connection not found") \
 	apply(DUCQ_ENOIMPL,     "not implemented yet") \
 	apply(DUCQ_EMAX,        "collection reached maximum count") \
-	apply(DUCQ_ELUA,        "lua error")
+	apply(DUCQ_ELUA,        "lua error") \
+	apply(DUCQ_UNKNOWN,     "unknown error")
 
 typedef enum ducq_state {
 	DUCQ_OK = 0,
@@ -55,7 +56,7 @@ typedef enum ducq_state {
 } ducq_state;
 
 const char *ducq_state_tostr(int state);
-
+const char *ducq_state_short(int state);
 
 
 #define DUCQ_CHECK(func) do { ducq_state state = func; if(state != DUCQ_OK) return state; } while(0)
