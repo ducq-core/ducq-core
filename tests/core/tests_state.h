@@ -11,6 +11,8 @@
 	apply(state_out_of_range_return_unknown) \
 	apply(state_negative_out_of_range_return_unknown) \
 	apply(state_short_version) \
+	apply(state_ok_short_version) \
+	apply(state_protocol_short_version) \
 	apply(state_unknown_short_version)
 	
 foreach_state_tests(build_forward_declarations)

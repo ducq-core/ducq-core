@@ -97,6 +97,30 @@ void state_short_version(void **state) {
 	assert_string_equal(expected, actual);
 }
 
+void state_protocol_short_version(void **state) {
+	// arrange
+	const char *expected = "PROTOCOL";
+	ducq_state error = DUCQ_PROTOCOL;
+
+	// act
+	const char *actual = ducq_state_short(error);
+
+	// audit
+	assert_string_equal(expected, actual);
+}
+
+void state_ok_short_version(void **state) {
+	// arrange
+	const char *expected = "ok";
+	ducq_state error = DUCQ_OK;
+
+	// act
+	const char *actual = ducq_state_short(error);
+
+	// audit
+	assert_string_equal(expected, actual);
+}
+
 void state_unknown_short_version(void **state) {
 	// arrange
 	const char *expected = "UNKNOWN";

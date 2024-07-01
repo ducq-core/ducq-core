@@ -39,7 +39,8 @@ const char *ducq_state_tostr(int state) {
 const char *ducq_state_short(int state) {
 	state = _sanitize_state(state);
 	const char *ptr = state_str[state][0];
-	ptr += 5;
+	if(state != DUCQ_OK)
+		ptr += 5;
 	return ptr;
 };
 
