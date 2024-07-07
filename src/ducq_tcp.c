@@ -18,6 +18,7 @@ typedef struct ducq_tcp_t {
 	ducq_vtbl *tbl;
 	
 	int fd;
+	bool reuseaddr;
 	const char *host;
 	const char *port;
 	char  id[MAX_ID];
@@ -77,7 +78,7 @@ static
 ducq_state _conn(ducq_i *ducq) {
 	ducq_tcp_t *tcp = (ducq_tcp_t*)ducq;
 
-	int fd = inet_tcp_connect(tcp->host, tcp->port);
+	int fd = inet_tcp_connect(tcp->host, tcp->port, tcp->reuseaddr);
 	if( fd == -1)
 		return DUCQ_ECONNECT;
 	
@@ -102,6 +103,13 @@ ducq_state _timeout(ducq_i *ducq, int timeout) {
 
 	int rc = inet_set_read_timeout(tcp->fd, timeout);
 	return rc ? DUCQ_ECOMMLAYER : DUCQ_OK;
+}
+
+static
+ducq_state _reuseaddr(ducq_i *ducq) {
+	ducq_tcp_t *tcp = (ducq_tcp_t*)ducq;
+	tcp->reuseaddr = true;
+	return DUCQ_OK;
 }
 
 static
@@ -189,29 +197,31 @@ void _dtor (ducq_i *ducq) {
 
 
 static ducq_vtbl table = {
-	.conn    = _conn,
-	.close   = _close,
-	.id      = _id,
-	.recv    = _recv,
-	.send    = _send,
-	.parts   = _parts,
-	.end     = _end,
-	.copy    = _copy,
-	.eq      = _eq,
-	.timeout = _timeout,
-	.free    = _free,
-	.dtor    = _dtor
+	.conn      = _conn,
+	.close     = _close,
+	.id        = _id,
+	.recv      = _recv,
+	.send      = _send,
+	.parts     = _parts,
+	.end       = _end,
+	.copy      = _copy,
+	.eq        = _eq,
+	.timeout   = _timeout,
+	.reuseaddr = _reuseaddr,
+	.free      = _free,
+	.dtor      = _dtor
 };
 
 ducq_i *ducq_new_tcp(const char *host, const char *port) {
 	ducq_tcp_t *tcp = malloc(sizeof(ducq_tcp_t));
 	if(!tcp) return NULL;
 
-	tcp->tbl = &table;
-	tcp->fd   = -1;
-	tcp->host = host;
-	tcp->port = port;
-	tcp->id[0] = '\0';
+	tcp->tbl       = &table;
+	tcp->fd        = -1;
+	tcp->reuseaddr = false;
+	tcp->host      = host;
+	tcp->port      = port;
+	tcp->id[0]     = '\0';
 
 	return (ducq_i *) tcp;
 }
@@ -220,11 +230,12 @@ ducq_i *ducq_new_tcp_connection(int fd) {
 	ducq_tcp_t *tcp = malloc(sizeof(ducq_tcp_t));
 	if(!tcp) return NULL;
 
-	tcp->tbl   = &table;
-	tcp->fd    = fd;
-	tcp->host  = NULL;
-	tcp->port  = NULL;
-	tcp->id[0] = '\0';
+	tcp->tbl       = &table;
+	tcp->fd        = fd;
+	tcp->reuseaddr = false;
+	tcp->host      = NULL;
+	tcp->port      = NULL;
+	tcp->id[0]     = '\0';
 
 	return (ducq_i *) tcp;
 }

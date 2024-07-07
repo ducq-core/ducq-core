@@ -19,6 +19,8 @@
 	apply(tcp_timeout_ok) \
 	apply(tcp_timeout_err) \
 	apply(tcp_recv_timeout) \
+	apply(tcp_reuseaddr_ok) \
+	apply(tcp_reuseaddr_err) \
 	apply(tcp_send_count_ok) \
 	apply(tcp_send_ewrite_header) \
 	apply(tcp_send_ewrite_payload) \

@@ -274,6 +274,7 @@ void tcp_timeout_ok(void **state) {
 	// teardown
 	ducq_free(ducq);
 }
+
 void tcp_timeout_err(void **state) {
 	// arrange
 	ducq_i *ducq = ducq_new_tcp(NULL, NULL);
@@ -291,6 +292,7 @@ void tcp_timeout_err(void **state) {
 	// teardown
 	ducq_free(ducq);
 }
+
 void tcp_recv_timeout(void **state) {
 	// arrange
 	ducq_i *ducq = ducq_new_tcp(NULL, NULL);
@@ -318,6 +320,44 @@ void tcp_recv_timeout(void **state) {
 
 
 
+void tcp_reuseaddr_ok(void **state) {
+	// arrange
+	ducq_i *ducq = ducq_new_tcp(NULL, NULL);
+	ducq_state expected_state = DUCQ_OK;
+
+	int rc = 0;
+	will_return(inet_reuseaddr,   rc);
+	will_return(inet_tcp_connect, rc);
+
+	// act
+	ducq_reuseaddr(ducq);
+	ducq_state actual_state = ducq_conn(ducq);
+
+	// audit
+	assert_int_equal(expected_state, actual_state);
+
+	// teardown
+	ducq_free(ducq);
+}
+
+void tcp_reuseaddr_err(void **state) {
+	// arrange
+	ducq_i *ducq = ducq_new_tcp(NULL, NULL);
+	ducq_state expected_state = DUCQ_ECONNECT;
+
+	int rc = -1;
+	will_return(inet_reuseaddr, rc);
+
+	// act
+	ducq_reuseaddr(ducq);
+	ducq_state actual_state = ducq_conn(ducq);
+
+	// audit
+	assert_int_equal(expected_state, actual_state);
+
+	// teardown
+	ducq_free(ducq);
+}
 
 
 void tcp_send_count_ok(void **state) {

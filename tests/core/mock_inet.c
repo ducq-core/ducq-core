@@ -33,7 +33,15 @@ int inet_shutdown_write(int fd) {
 int inet_set_read_timeout(int fd, unsigned timeout_sec) {
 	return mock();
 }
-int inet_tcp_connect(const char *host, const char *service) {
+int inet_reuseaddr(int fd) {
+	return mock();
+}
+int inet_tcp_connect(const char *host, const char *service, int reuseaddr) {
+	if(reuseaddr) {
+		int ret = inet_reuseaddr(-1);
+		if(ret) return ret;
+	}
+
 	return mock();
 }
 char *inet_socket_tostring(int socket, int self, char *buffer, size_t len) {

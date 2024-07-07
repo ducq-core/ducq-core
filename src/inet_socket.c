@@ -72,7 +72,7 @@ int inet_set_read_timeout(int fd, unsigned timeout_sec) {
 	return setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 }
 
-int inet_tcp_connect(const char *host, const char *service) {
+int inet_tcp_connect(const char *host, const char *service, int reuseaddr) {
 	int fd = socket(AF_INET, SOCK_STREAM, 0);
 	if( fd == -1)
 		return  -1;
@@ -81,18 +81,22 @@ int inet_tcp_connect(const char *host, const char *service) {
 		.sin_family = AF_INET,
 		.sin_port   = htons(atoi(service)),
 	};
-	if(inet_pton(AF_INET, host, &addr.sin_addr) == -1) {
-		inet_close(fd);
-		return -1;
+	if(inet_pton(AF_INET, host, &addr.sin_addr) == -1)
+		goto err;
+
+	if(reuseaddr) {
+		int flag = 1;
+		if(setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(flag)))
+			goto err;
 	}
 
-	if(connect(fd, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
-		inet_close(fd);
-		return -1;
-	}
-
+	if(connect(fd, (struct sockaddr*)&addr, sizeof(addr)) == -1)
+		goto err;
 
 	return fd;
+err:
+	inet_close(fd);
+	return -1;
 }
 
 int inet_close(int fd) {

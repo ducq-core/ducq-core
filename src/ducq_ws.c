@@ -21,6 +21,7 @@ typedef struct ducq_ws {
 	ducq_vtbl *tbl;
 	
 	int fd;
+	bool reuseaddr;
 	char  id[MAX_ID];
 
 	union {
@@ -61,6 +62,13 @@ ducq_state _timeout(ducq_i *ducq, int timeout) {
 
 	int rc = inet_set_read_timeout(ws->fd, timeout);
 	return rc ? DUCQ_ECOMMLAYER : DUCQ_OK;
+}
+
+static
+ducq_state _reuseaddr(ducq_i *ducq) {
+	ducq_ws *ws = (ducq_ws*)ducq;
+	ws->reuseaddr = true;
+	return DUCQ_OK;
 }
 
 
@@ -232,31 +240,33 @@ void _dtor (ducq_i *ducq) {
 
 
 static ducq_vtbl table = {
-	.conn    = _conn,
-	.close   = _close,
-	.id      = _id,
-	.recv    = _recv,
-	.send    = _send,
-	.parts   = _parts,
-	.end     = _end,
-	.copy    = _copy,
-	.eq      = _eq,
-	.timeout = _timeout,
-	.free    = _free,
-	.dtor    = _dtor
+	.conn      = _conn,
+	.close     = _close,
+	.id        = _id,
+	.recv      = _recv,
+	.send      = _send,
+	.parts     = _parts,
+	.end       = _end,
+	.copy      = _copy,
+	.eq        = _eq,
+	.timeout   = _timeout,
+	.reuseaddr = _reuseaddr,
+	.free      = _free,
+	.dtor      = _dtor
 };
 
 ducq_i *ducq_new_ws_client(const char *host, const char *port) {
 	ducq_ws *ws = malloc(sizeof(ducq_ws));
 	if(!ws) return NULL;
 
-	ws->tbl = &table;
-	ws->fd   = -1;
-	ws->host = host;
-	ws->port = port;
-	ws->id[0] = '\0';
+	ws->tbl       = &table;
+	ws->fd        = -1;
+	ws->reuseaddr = false;
+	ws->host      = host;
+	ws->port      = port;
+	ws->id[0]     = '\0';
 	ws->is_client = true;
-	ws->state = WS_CLOSED;
+	ws->state     = WS_CLOSED;
 
 	memset(ws->buf.as_buffer, 0, sizeof(ws->buf.as_buffer) );
 	
@@ -269,13 +279,14 @@ ducq_i *ducq_new_ws_connection(int fd) {
 	ducq_ws *ws = malloc(sizeof(ducq_ws));
 	if(!ws) return NULL;
 
-	ws->tbl   = &table;
-	ws->fd    = fd;
-	ws->host  = NULL;
-	ws->port  = NULL;
-	ws->id[0] = '\0';
+	ws->tbl       = &table;
+	ws->fd        = fd;
+	ws->reuseaddr = false;
+	ws->host      = NULL;
+	ws->port      = NULL;
+	ws->id[0]     = '\0';
 	ws->is_client = false;
-	ws->state = WS_CLOSED;
+	ws->state     = WS_CLOSED;
 
 	memset(ws->buf.as_buffer, 0, sizeof(ws->buf.as_buffer) );
 

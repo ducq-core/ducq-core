@@ -14,7 +14,7 @@ ssize_t readn(int fd, void *vptr, size_t n);
 ssize_t writen(int fd, const void *vptr, size_t n);
 
 int inet_set_read_timeout(int fd, unsigned timeout_sec);
-int inet_tcp_connect(const char *host, const char *service);
+int inet_tcp_connect(const char *host, const char *service, int reuseaddr);
 int inet_close(int fd);
 int inet_shutdown_write(int fd);
 

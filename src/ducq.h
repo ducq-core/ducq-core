@@ -74,6 +74,7 @@ const char *ducq_id  (ducq_i *ducq);
 bool        ducq_eq  (ducq_i *a, ducq_i *b);
 ducq_i     *ducq_copy(ducq_i *ducq);
 ducq_state  ducq_timeout(ducq_i *ducq, int timeout);
+ducq_state  ducq_reuseaddr(ducq_i *ducq);
 ducq_state  ducq_close(ducq_i *ducq);
 void        ducq_free (ducq_i *ducq);
 

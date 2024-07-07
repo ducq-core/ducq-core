@@ -96,6 +96,11 @@ ducq_state  ducq_timeout(ducq_i *ducq, int timeout) {
 		? ducq->tbl->timeout(ducq, timeout)
 		: DUCQ_ENULL;
 }
+ducq_state  ducq_reuseaddr(ducq_i *ducq) {
+	return ducq
+		? ducq->tbl->reuseaddr(ducq)
+		: DUCQ_ENULL;
+}
 ducq_state ducq_close(ducq_i *ducq) {
 	return ducq
 		? ducq->tbl->close(ducq)
