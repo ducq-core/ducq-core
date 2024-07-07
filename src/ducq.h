@@ -19,7 +19,7 @@
 #endif
 
 #ifndef DUCQ_MAX_CHANNELS
-#define DUCQ_MAX_CHANNELS 5
+#define DUCQ_MAX_CHANNELS 25
 #endif
 
 
