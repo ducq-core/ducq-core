@@ -128,6 +128,28 @@ void last_msg_null_route_dont_stop(void **state) {
 	assert_string_equal(last_msg_route2, "route2 message2");
 }
 
+void last_msg_null_msg_dont_stop(void **state) {
+	ducq_reactor *reactor = *state;
+
+	ducq_set_last_msg(reactor, "route/1", "route1 message1");
+	ducq_set_last_msg(reactor, "route/2", "route2 message1");
+	ducq_set_last_msg(reactor, "route/1", "");
+	ducq_set_last_msg(reactor, "route/2", "route2 message2");
+	ducq_set_last_msg(reactor, "route/3", "route3 message3");
+
+	const char *last_msg_route1 = ducq_get_last_msg(reactor, "route/1");
+	const char *last_msg_route2 = ducq_get_last_msg(reactor, "route/2");
+	const char *last_msg_route3 = ducq_get_last_msg(reactor, "route/3");
+
+
+	assert_string_equal(last_msg_route1, "");
+	assert_string_equal(last_msg_route2, "route2 message2");
+	assert_string_equal(last_msg_route3, "route3 message3");
+
+	ducq_set_last_msg(reactor, "route/1", "route1 messageX");
+	dump_last_msg(reactor);
+}
+
 
 
 void last_msg_set_reach_max(void **state) {
